@@ -19,7 +19,11 @@ describe("commandStore", () => {
     beforeEach(() => {
       vi.clearAllMocks();
       useGameStore.setState({ muted: false });
-      useAudioSettings.setState({ channels: { music: true, voice: true, effects: true }, volume: 0.35 });
+      useAudioSettings.setState({
+        channels: { music: true, voice: true, effects: true },
+        volume: 0.35,
+        channelVolumes: { music: 1, voice: 1, effects: 1 },
+      });
       vi.stubGlobal(
         "SpeechSynthesisUtterance",
         class {
@@ -39,6 +43,15 @@ describe("commandStore", () => {
     it("applies master volume to the utterance", () => {
       useCommandStore.getState().announce("command.fire");
       expect(speak).toHaveBeenCalledWith(expect.objectContaining({ volume: 0.35 }));
+    });
+
+    it("scales narration by the commander channel volume", () => {
+      useAudioSettings.setState({ channelVolumes: { music: 1, voice: 0.5, effects: 1 } });
+      useCommandStore.getState().announce("command.fire");
+      expect(speak).toHaveBeenCalledWith(expect.objectContaining({ volume: 0.175 }));
+      useAudioSettings.setState({ channelVolumes: { music: 1, voice: 0, effects: 1 } });
+      useCommandStore.getState().announce("command.fire");
+      expect(speak).toHaveBeenCalledOnce();
     });
 
     it("logs a structure event without interrupting spoken combat announcements", () => {

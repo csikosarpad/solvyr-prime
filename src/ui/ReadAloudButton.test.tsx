@@ -23,7 +23,11 @@ describe("explicit read-aloud controls", () => {
     vi.mocked(speechSupported).mockReturnValue(true);
     useLocaleStore.getState().setLocale("hu");
     useGameStore.setState({ muted: false, sector: TRAINING_SECTOR, matchMode: "skirmish" });
-    useAudioSettings.setState({ channels: { music: true, voice: true, effects: true }, volume: 0.4 });
+    useAudioSettings.setState({
+      channels: { music: true, voice: true, effects: true },
+      volume: 0.4,
+      channelVolumes: { music: 1, voice: 1, effects: 1 },
+    });
     useBriefingPreferences.setState({ hiddenSectorIds: [], error: null });
   });
 
@@ -43,19 +47,24 @@ describe("explicit read-aloud controls", () => {
     expect(speak).toHaveBeenCalledWith("Második szöveg", "en", undefined, 0, 0.4, expect.any(Object));
   });
 
-  it.each(["muted", "voice-disabled", "zero-volume", "unsupported"])("does not speak when %s", (reason) => {
-    if (reason === "muted") useGameStore.setState({ muted: true });
-    if (reason === "voice-disabled")
-      useAudioSettings.setState({ channels: { music: true, effects: true, voice: false } });
-    if (reason === "zero-volume") useAudioSettings.setState({ volume: 0 });
-    if (reason === "unsupported") vi.mocked(speechSupported).mockReturnValue(false);
-    render(<ReadAloudButton text="Test" />);
-    const button = screen.getByRole("button", { name: "Felolvasás" });
-    expect(button).toBeDisabled();
-    expect(button).toHaveAttribute("title");
-    fireEvent.click(button);
-    expect(speak).not.toHaveBeenCalled();
-  });
+  it.each(["muted", "voice-disabled", "zero-volume", "zero-voice-volume", "unsupported"])(
+    "does not speak when %s",
+    (reason) => {
+      if (reason === "muted") useGameStore.setState({ muted: true });
+      if (reason === "voice-disabled")
+        useAudioSettings.setState({ channels: { music: true, effects: true, voice: false } });
+      if (reason === "zero-volume") useAudioSettings.setState({ volume: 0 });
+      if (reason === "zero-voice-volume")
+        useAudioSettings.setState({ channelVolumes: { music: 1, voice: 0, effects: 1 } });
+      if (reason === "unsupported") vi.mocked(speechSupported).mockReturnValue(false);
+      render(<ReadAloudButton text="Test" />);
+      const button = screen.getByRole("button", { name: "Felolvasás" });
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute("title");
+      fireEvent.click(button);
+      expect(speak).not.toHaveBeenCalled();
+    },
+  );
 
   it("reads the campaign goal only when its button is pressed", () => {
     render(<CampaignMap />);

@@ -38,7 +38,11 @@ describe("synchronized read-aloud highlighting", () => {
     });
     useLocaleStore.getState().setLocale("hu");
     useGameStore.setState({ muted: false, sector: sectorById("forge-17"), matchMode: "campaign" });
-    useAudioSettings.setState({ channels: { music: true, voice: true, effects: true }, volume: 0.4 });
+    useAudioSettings.setState({
+      channels: { music: true, voice: true, effects: true },
+      volume: 0.4,
+      channelVolumes: { music: 1, voice: 1, effects: 1 },
+    });
     useBriefingPreferences.setState({ hiddenSectorIds: [], error: null });
   });
 

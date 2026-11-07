@@ -1,4 +1,4 @@
-import { useAudioSettings } from "@/game/state/audioSettings";
+import { channelVolume, useAudioSettings } from "@/game/state/audioSettings";
 import { useGameStore } from "@/game/state/gameStore";
 import { speechSupported } from "@/game/systems/speech";
 import { useT } from "@/i18n";
@@ -15,9 +15,9 @@ export function ReadAloudButton({
   const ownPlayback = useReadAloud(playback ? "" : text);
   const { read, stop, isReading } = playback ?? ownPlayback;
   const muted = useGameStore((state) => state.muted);
-  const { channels, volume } = useAudioSettings();
+  const volume = useAudioSettings((state) => channelVolume(state, "voice"));
   const supported = speechSupported();
-  const enabled = supported && !muted && channels.voice && volume > 0;
+  const enabled = supported && !muted && volume > 0;
 
   return (
     <button

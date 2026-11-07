@@ -156,12 +156,15 @@ session és a szoba érvényes. Ez nem fiókalapú, eszközök közötti felhőm
   böngészőnyelv esetén az adott nyelv, egyébként angol indul.
 - **Játékosnevek:** P1/P2 neve legfeljebb 16 karakter. Üres névnél az azonosító marad;
   online a lobbyban megadott név az elsődleges.
-- **Hang:** Zene, Parancsnok és Effektek külön kapcsolhatók; az M némítás mindet felülírja.
+- **Hang:** Zene, Parancsnok és Effektek külön kapcsolhatók egy-egy be/ki kapcsolóval; az M némítás mindet felülírja.
   A Beállítások **Játék hangereje** csúszkája 0–100% között szabályozza mindhárom hangcsoportot,
   és a választás megmarad újratöltés után. A 100% az eddigi hangkeverésnek felel meg;
-  a némítás nem törli a beállított hangerőt. A hangerő módosítása megszakítja az aktuális
+  a némítás nem törli a beállított hangerőt. Mindhárom csoport kapcsolója mellett saját
+  0–100%-os csúszka van (**Zene / Parancsnok / Effektek hangereje**); a tényleges hangerő
+  a központi és a csoport hangerejének szorzata, így a zene halkítható a parancsnok
+  halkítása nélkül. A parancsnoki hangerő módosítása megszakítja az aktuális
   felolvasást; a következő közlés már az új hangerőn szól. Mentési hiba esetén figyelmeztetés jelenik meg.
-  A háttérzene energysound „Cyberpunk Neon City”; zeneválasztó és külön csatornahangerők még nincsenek.
+  A háttérzene energysound „Cyberpunk Neon City”; zeneválasztó még nincs.
 - **Parancsnoki konzol:** időbélyeges taktikai közlések és böngészős felolvasás.
   A hangok a böngészőtől/operációs rendszertől függnek; P2 magasabban és gyorsabban szól.
   Győzelemkor szintetizált fanfár és győzelmi bemondás hallható.

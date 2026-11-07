@@ -3,7 +3,7 @@ import explosionUrl from "@game/assets/audio/explosion.ogg?url";
 import moveUrl from "@game/assets/audio/tank-move.ogg?url";
 import { useGameStore } from "@game/state/gameStore";
 import { HoldGate } from "@game/systems/holdGate";
-import { useAudioSettings } from "@game/state/audioSettings";
+import { channelVolume, useAudioSettings } from "@game/state/audioSettings";
 import { DEFAULT_TRACK_ID, trackById } from "@game/data/music";
 import { cancelSpeech } from "@game/systems/speech";
 
@@ -55,22 +55,23 @@ export class AudioManager {
       this.applyVolume();
       this.syncMusic();
       // A Web Speech API a már futó mondat hangerejét nem tudja megbízhatóan módosítani.
-      if (s.volume !== previous.volume || (!s.channels.voice && previous.channels.voice)) cancelSpeech();
+      if (channelVolume(s, "voice") !== channelVolume(previous, "voice")) cancelSpeech();
     });
   }
 
   private applyVolume(): void {
-    const { volume, channels } = useAudioSettings.getState();
     if (this.master) {
-      this.master.gain.value = useGameStore.getState().muted || !channels.effects ? 0 : MASTER_VOLUME * volume;
+      const effects = channelVolume(useAudioSettings.getState(), "effects");
+      this.master.gain.value = useGameStore.getState().muted ? 0 : MASTER_VOLUME * effects;
     }
   }
 
   /** A zene a globális némítástól és a zenecsatorna kapcsolójától függ; a lejátszás felhasználói gesztusra indulhat. */
   private syncMusic(): void {
     if (!this.music) return;
-    this.music.volume = MUSIC_VOLUME * useAudioSettings.getState().volume;
-    const wanted = !useGameStore.getState().muted && useAudioSettings.getState().channels.music;
+    const settings = useAudioSettings.getState();
+    this.music.volume = MUSIC_VOLUME * settings.volume * settings.channelVolumes.music;
+    const wanted = !useGameStore.getState().muted && settings.channels.music;
     if (wanted) void this.music.play().catch(() => {});
     else this.music.pause();
   }

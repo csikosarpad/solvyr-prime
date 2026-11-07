@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useAudioSettings } from "@/game/state/audioSettings";
+import { channelVolume, useAudioSettings } from "@/game/state/audioSettings";
 import { useGameStore } from "@/game/state/gameStore";
 import { cancelSpeech, speak, speechSupported } from "@/game/systems/speech";
 import { useLocaleStore } from "@/i18n";
@@ -12,8 +12,8 @@ export interface SpeechRange {
 export function useReadAloud(text: string) {
   const locale = useLocaleStore((state) => state.locale);
   const muted = useGameStore((state) => state.muted);
-  const { channels, volume } = useAudioSettings();
-  const enabled = !muted && channels.voice && volume > 0;
+  const volume = useAudioSettings((state) => channelVolume(state, "voice"));
+  const enabled = !muted && volume > 0;
   const [range, setRange] = useState<SpeechRange | null>(null);
   const [isReading, setIsReading] = useState(false);
   const stop = useRef<(() => void) | undefined>(undefined);

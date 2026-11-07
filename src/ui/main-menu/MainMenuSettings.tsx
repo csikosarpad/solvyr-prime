@@ -10,6 +10,41 @@ interface MainMenuSettingsProps {
   onBack: () => void;
 }
 
+function VolumeSlider({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label?: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const percent = Math.round(value * 100);
+  const style: CSSProperties & { "--volume-whiteness": string } = {
+    "--volume-whiteness": `${Math.min(100, (percent / 80) * 100)}%`,
+  };
+  return (
+    <div className="audio-volume-control">
+      <input
+        id={id}
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={percent}
+        aria-label={label}
+        aria-valuetext={`${percent}%`}
+        style={style}
+        data-volume-high={percent >= 80}
+        onChange={(event) => onChange(Number(event.target.value) / 100)}
+      />
+      <output htmlFor={id}>{percent}%</output>
+    </div>
+  );
+}
+
 export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
   const t = useT();
   const muted = useGameStore((s) => s.muted);
@@ -19,11 +54,9 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
   const channels = useAudioSettings((s) => s.channels);
   const setChannel = useAudioSettings((s) => s.setChannel);
   const volume = useAudioSettings((s) => s.volume);
-  const volumePercent = Math.round(volume * 100);
-  const volumeStyle: CSSProperties & { "--volume-whiteness": string } = {
-    "--volume-whiteness": `${Math.min(100, (volumePercent / 80) * 100)}%`,
-  };
   const setVolume = useAudioSettings((s) => s.setVolume);
+  const channelVolumes = useAudioSettings((s) => s.channelVolumes);
+  const setChannelVolume = useAudioSettings((s) => s.setChannelVolume);
   const audioError = useAudioSettings((s) => s.error);
   const aiEnabled = useAiSettings((s) => s.enabled);
   const setAiEnabled = useAiSettings((s) => s.setEnabled);
@@ -48,37 +81,33 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
         </div>
         <div className="main-menu-setting">
           <label htmlFor="master-volume">{t("audio.volume")}</label>
-          <div className="audio-volume-control">
-            <input
-              id="master-volume"
-              type="range"
-              min={0}
-              max={100}
-              step={1}
-              value={volumePercent}
-              aria-valuetext={`${volumePercent}%`}
-              style={volumeStyle}
-              data-volume-high={volumePercent >= 80}
-              onChange={(event) => setVolume(Number(event.target.value) / 100)}
-            />
-            <output htmlFor="master-volume">{volumePercent}%</output>
-          </div>
+          <VolumeSlider id="master-volume" value={volume} onChange={setVolume} />
           {audioError && <small role="alert">{t(audioError)}</small>}
         </div>
         <div className="main-menu-setting">
           <span>{t("menu.audioChannels")}</span>
-          <div className="audio-channel-buttons">
+          <div className="audio-channel-list">
             {AUDIO_CHANNELS.map((channel) => (
-              <button
-                key={channel}
-                className="btn secondary"
-                aria-pressed={channels[channel]}
-                onClick={() => setChannel(channel, !channels[channel])}
-              >
-                {t(`audio.${channel}` as MessageKey, {
-                  state: channels[channel] ? t("hud.soundOn") : t("hud.soundOff"),
-                })}
-              </button>
+              <div key={channel} className="audio-channel">
+                <button
+                  type="button"
+                  role="switch"
+                  className="audio-switch"
+                  aria-checked={channels[channel]}
+                  onClick={() => setChannel(channel, !channels[channel])}
+                >
+                  <span className="audio-switch-track" aria-hidden="true">
+                    <span className="audio-switch-thumb" />
+                  </span>
+                  <span className="audio-switch-label">{t(`audio.${channel}` as MessageKey)}</span>
+                </button>
+                <VolumeSlider
+                  id={`${channel}-volume`}
+                  label={t(`audio.${channel}Volume` as MessageKey)}
+                  value={channelVolumes[channel]}
+                  onChange={(value) => setChannelVolume(channel, value)}
+                />
+              </div>
             ))}
           </div>
         </div>

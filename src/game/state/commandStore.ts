@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { t, useLocaleStore, type MessageKey, type Params } from "@/i18n";
 import { cancelSpeech, speak } from "../systems/speech";
 import { useGameStore } from "./gameStore";
-import { useAudioSettings } from "./audioSettings";
+import { channelVolume, useAudioSettings } from "./audioSettings";
 
 export type CommandTone = "info" | "warning" | "critical";
 
@@ -41,8 +41,8 @@ export const useCommandStore = create<CommandState>((set, get) => ({
   announce: (key, params, tone = "info", speaker) => {
     get().log(key, params, tone);
     const { muted } = useGameStore.getState();
-    const { channels, volume } = useAudioSettings.getState();
-    if (!muted && channels.voice && volume > 0) {
+    const volume = channelVolume(useAudioSettings.getState(), "voice");
+    if (!muted && volume > 0) {
       speak(t(key, params), useLocaleStore.getState().locale, undefined, speaker === "P2" ? 1 : 0, volume);
     }
   },

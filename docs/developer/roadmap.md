@@ -353,7 +353,7 @@ itt azok továbbfejlesztése szerepel. Új egységosztály nem része ennek az �
 - [x] Parallax világűr-háttér: csillagköd-kép (`src/game/assets/backgrounds/siege-sky.jpg`, 126 KB), lassan sodródó köd- és csillagréteg, három halványodó hegyréteg légköri homállyal; reduced-motion esetén mozdulatlan
 - [ ] Sötét cyberpunk UI továbbfejlesztése
 - [ ] Hang-redesign következő fázisai: eseményhangok, lazy loading, zeneválasztó,
-  csatornánkénti hangerő, fanfár és beszédbeállítások; részletes státuszlista: [hangterv](./sound-redesign.md)
+  fanfár és beszédbeállítások; részletes státuszlista: [hangterv](./sound-redesign.md)
 - [x] Parancsnoki konzol a HUD-ban (`CommandConsole`, `commandStore`): időbélyeges napló, gépelési effekt, reduced-motion esetén azonnali kiírás
 - [x] Kompakt mobil HUD: 42 px védelmi műszerek, kisebb térközök; a konzol
   legfrissebb közlése egysoros sávként a felső HUD alatt, a csatatérre lógó napló helyett.
@@ -362,6 +362,7 @@ itt azok továbbfejlesztése szerepel. Új egységosztály nem része ennek az �
 - [x] Játékosnevek a Beállításokban (offline), online a lobbynév az erősebb
 - [x] Háttérzene (alap: energysound „Cyberpunk Neon City"); zene, parancsnok és effektek külön ki/be kapcsolható a Beállításokban
 - [x] Mentett játék-hangerőcsúszka a Beállításokban (0–100%): zene, effektek és parancsnoki felolvasás; a némítás megőrzi a hangerőt
+- [x] Csatornánkénti hangerő (zene / parancsnok / effektek) a központi hangerő mellett, mentve
 - [ ] Assetlicencek és fájlonkénti források ellenőrzése következő publikálás előtt,
   „Kreditek” nézet; a korábbi telepítés nem helyettesíti ezt az ellenőrzést
 - [ ] Eredményképernyőn is látszó győzelmi közlés

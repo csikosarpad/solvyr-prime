@@ -18,7 +18,12 @@ describe("MainMenu", () => {
     useGameStore.setState({ screen: "menu", muted: false, matchMode: "skirmish", aiActive: false });
     useMultiplayerStore.getState().leave();
     useCampaignStore.getState().reset();
-    useAudioSettings.setState({ channels: { music: true, voice: true, effects: true }, volume: 1, error: null });
+    useAudioSettings.setState({
+      channels: { music: true, voice: true, effects: true },
+      volume: 1,
+      channelVolumes: { music: 1, voice: 1, effects: 1 },
+      error: null,
+    });
   });
 
   it("a játékcím alatt a jelenlegi harctér azonosítója és neve szerepel", () => {
@@ -117,6 +122,30 @@ describe("MainMenu", () => {
     fireEvent.change(slider, { target: { value: String(value) } });
     expect(slider.style.getPropertyValue("--volume-whiteness")).toBe(whiteness);
     expect(slider).toHaveAttribute("data-volume-high", high);
+  });
+
+  it("a csatornák hangereje külön állítható, ment, és nem módosítja a központi hangerőt", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    fireEvent.change(screen.getByRole("slider", { name: "Zene hangereje" }), { target: { value: "20" } });
+    fireEvent.change(screen.getByRole("slider", { name: "Parancsnok hangereje" }), { target: { value: "90" } });
+    fireEvent.change(screen.getByRole("slider", { name: "Effektek hangereje" }), { target: { value: "60" } });
+    expect(useAudioSettings.getState()).toMatchObject({
+      volume: 1,
+      channelVolumes: { music: 0.2, voice: 0.9, effects: 0.6 },
+    });
+    expect(JSON.parse(localStorage.getItem("ballistic-front:audio-settings")!).channelVolumes).toEqual({
+      music: 0.2,
+      voice: 0.9,
+      effects: 0.6,
+    });
+    expect(screen.getByRole("slider", { name: "Zene hangereje" })).toHaveAttribute("aria-valuetext", "20%");
+    const musicSwitch = screen.getByRole("switch", { name: "Zene" });
+    expect(musicSwitch).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(musicSwitch);
+    expect(musicSwitch).toHaveAttribute("aria-checked", "false");
+    expect(useAudioSettings.getState().channels.music).toBe(false);
+    expect(screen.getByRole("slider", { name: "Zene hangereje" })).toHaveValue("20");
   });
 
   it("megjeleníti a hangbeállítások mentési hibáját", () => {
