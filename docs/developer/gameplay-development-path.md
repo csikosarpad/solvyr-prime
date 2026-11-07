@@ -56,13 +56,26 @@ flowchart TD
     end
 
     subgraph LONGTERM["Hosszú távú stratégiai játék"]
-        SIEGE["Ostromhadjárat – Phase 1 MVP<br/>Kormányzó · megszállt szektor felszabadítása<br/>Felderítés: kulcscél + alternatívák"]
+        subgraph SIEGE_MAP["Következményes ostromhadjárat – első játszható térképszelet"]
+            direction LR
+            SIEGE_ALPHA["ALPHA-01<br/>meglévő tréning"]
+            RECON["Opcionális felderítés<br/>felfedi a kulcscélt"]
+            DELTA["DELTA-08<br/>helyi felszabadítás<br/>FORGE-17 később is választható"]
+            FORGE["FORGE-17 · kulcsszektor<br/>ostromplatform megsemmisítése<br/>ENERGY_NODE + CIVIL_HABITAT védelme"]
+            OUTCOME["Szerződés 50/25/25<br/>1,5 egység játékos-kárkeret<br/>ENERGY_NODE → következő kulcscsata pajzsa"]
+            VANGUARD["VANGUARD-12<br/>kulcsszektor után"]
+            PRIME["PRIME-00<br/>későbbi kampánylépés"]
+            SIEGE_ALPHA --> RECON
+            SIEGE_ALPHA --> DELTA
+            SIEGE_ALPHA --> FORGE
+            FORGE --> OUTCOME --> VANGUARD --> PRIME
+        end
         CAMPAIGN_OPS["Single-player hadjárat<br/>küldetések · szektorfoglalás · stratégiai AI"]
         ROGUE["Roguelite útvonalak<br/>run-állapot · kockázat/jutalom"]
         ONLINE_CAMPAIGN["Közös online kampány<br/>külön backend- és hitelesítési projekt"]
         CAMPAIGN --> CAMPAIGN_OPS
-        CAMPAIGN --> SIEGE
-        SIEGE --> CAMPAIGN_OPS
+        CAMPAIGN --> SIEGE_ALPHA
+        SIEGE_MAP --> CAMPAIGN_OPS
         C4 --> CAMPAIGN_OPS
         ABILITIES --> CAMPAIGN_OPS
         CLASSES --> CAMPAIGN_OPS
@@ -84,7 +97,8 @@ flowchart TD
 
     class CORE,PLAY,CAMPAIGN,SYNC done
     class VALIDATE,C4,RULES validate
-    class CATALOG,UNLOCK,TYPES,FIRE,ONLINE,VERIFY,ENERGY,ABILITIES,CLASSES,TERRAIN,SIEGE proposed
+    class CATALOG,UNLOCK,TYPES,FIRE,ONLINE,VERIFY,ENERGY,ABILITIES,CLASSES,TERRAIN proposed
+    class SIEGE_ALPHA,RECON,DELTA,FORGE,OUTCOME,VANGUARD,PRIME proposed
     class CAMPAIGN_OPS,ROGUE,ONLINE_CAMPAIGN long
     class VISUAL,QUALITY parallel
 ```
@@ -95,12 +109,27 @@ flowchart TD
 ostromhadjárat Phase 1 MVP-je.** A diagramon a hosszú távú hadjárathoz
 kapcsolódik, de ez a következő gameplay-próba: nem előfeltétele a teljes C4-,
 fegyver-, orbitális vagy egységosztály-csomag. A rendszer a Campaign térképhez
-tartozik, nem a sima offline módhoz. A három küldetés csak lehetséges bemutató,
-nem rögzített útvonal vagy kötelező teljesítési darabszám. Az opcionális
-küldetés jutalmat vagy előnyt ad, de nem blokkolja a kulcsfontosságú
-felszabadítást. Az AI/ellenfél által okozott rombolás nem csökkenti a játékos
-küldetésteljesítését. Előbb az ostromhelyzetet és a kampánykövetkezményt kell
-igazolni játékpróbával.
+tartozik, nem a sima offline módhoz. Az első térképszelet az `ALPHA-01`
+tréningből, opcionális felderítésből és két megszállt célágból áll: a
+`DELTA-08` helyi eredményt ad; a `FORGE-17` a felderítéssel felfedhető
+kulcsszektor, amelynek felszabadítása nyitja meg a `VANGUARD-12`-t. A
+felderítés kihagyható, és egyik célág teljesítése sem zárja el a másikat.
+Ez a próbához választott kampánygráf módosítja a jelenlegi C3 hozzáférési
+szabályát: jelenleg a `VANGUARD-12` a `DELTA-08` **vagy** `FORGE-17`
+teljesítése után nyílik meg; a próbában csak `FORGE-17` nyitja meg.
+
+`FORGE-17`-ben az ostromplatform a fő cél, az `ENERGY_NODE` és
+`CIVIL_HABITAT` védendő szerződéses objektum; a 50/25/25 súlyok csak erre a
+küldetésre vonatkoznak. A szerződéses kredit és XP a folyamatos pontszámmal
+lineárisan skálázódik, míg a harci XP külön marad; a kredit Phase 1-ben csak
+jelentés, elkölthető kampányegyenleg későbbi terv. A játékos okozta objektumkár
+az 1,5 súlyozott egységű kampánykeretet fogyasztja, AI-kár nem csökkenti sem
+a szerződést, sem ezt a keretet. Az `ENERGY_NODE` fizikai állapota — AI-kár
+esetén is — a következő kulcscsata maximális pajzsát módosítja (+10/0/−10%).
+Vereség, döntetlen vagy csataelhagyás nem szabadítja fel a szektort, de
+elmenti az objektumállapotot és a játékos kárát; a kampányreset törli az új
+kampányadatokat, az XP-profilt és a fejlesztéseket viszont megtartja.
+Előbb az ostromhelyzetet és a kampánykövetkezményt kell igazolni játékpróbával.
 Részletes terv: [11. fejezet](./gameplay-progression.md#11-következményes-ostromhadjárat);
 végrehajtás: [TODO, 6A](./gameplay-progression-todo.md#6a-következményes-ostromhadjárat--első-játszható-próba).
 
@@ -108,9 +137,9 @@ végrehajtás: [TODO, 6A](./gameplay-progression-todo.md#6a-következményes-ost
   játékpróba és eszközös ellenőrzés még szükséges.
 - **Sárga:** következő validációs/közös szabályalap; a C4 és a verziózott
   konfiguráció részletes döntései még nyitottak.
-- **Lila:** tervezett taktikai bővítés. A fegyvereknél az alapelvek és több
-  döntés elfogadott, de az implementáció és a központi roadmap-prioritás még
-  nincs jóváhagyva.
+- **Lila:** tervezett, még nem implementált bővítés. A fegyvereknél az
+  implementáció és a központi roadmap-prioritás még nincs jóváhagyva; a
+  következményes ostromhadjárat Phase 1 viszont elfogadott következő gameplay-próba.
 - **Szürke:** hosszú távú stratégiai irány, külön specifikációt igényel.
 - **Türkiz:** a gameplay-szabályoktól elkülöníthető vizuális és eszközminőségi
   munka.
