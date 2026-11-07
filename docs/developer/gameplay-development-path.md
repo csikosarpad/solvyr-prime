@@ -56,10 +56,13 @@ flowchart TD
     end
 
     subgraph LONGTERM["Hosszú távú stratégiai játék"]
+        SIEGE["Ostromhadjárat – Phase 1 MVP<br/>Kormányzó · megszállt szektor felszabadítása<br/>Felderítés: kulcscél + alternatívák"]
         CAMPAIGN_OPS["Single-player hadjárat<br/>küldetések · szektorfoglalás · stratégiai AI"]
         ROGUE["Roguelite útvonalak<br/>run-állapot · kockázat/jutalom"]
         ONLINE_CAMPAIGN["Közös online kampány<br/>külön backend- és hitelesítési projekt"]
         CAMPAIGN --> CAMPAIGN_OPS
+        CAMPAIGN --> SIEGE
+        SIEGE --> CAMPAIGN_OPS
         C4 --> CAMPAIGN_OPS
         ABILITIES --> CAMPAIGN_OPS
         CLASSES --> CAMPAIGN_OPS
@@ -81,12 +84,25 @@ flowchart TD
 
     class CORE,PLAY,CAMPAIGN,SYNC done
     class VALIDATE,C4,RULES validate
-    class CATALOG,UNLOCK,TYPES,FIRE,ONLINE,VERIFY,ENERGY,ABILITIES,CLASSES,TERRAIN proposed
+    class CATALOG,UNLOCK,TYPES,FIRE,ONLINE,VERIFY,ENERGY,ABILITIES,CLASSES,TERRAIN,SIEGE proposed
     class CAMPAIGN_OPS,ROGUE,ONLINE_CAMPAIGN long
     class VISUAL,QUALITY parallel
 ```
 
 ## A diagram olvasása
+
+**2026-11-07: elfogadott következő gameplay-prioritás a következményes
+ostromhadjárat Phase 1 MVP-je.** A diagramon a hosszú távú hadjárathoz
+kapcsolódik, de ez a következő gameplay-próba: nem előfeltétele a teljes C4-,
+fegyver-, orbitális vagy egységosztály-csomag. A rendszer a Campaign térképhez
+tartozik, nem a sima offline módhoz. A három küldetés csak lehetséges bemutató,
+nem rögzített útvonal vagy kötelező teljesítési darabszám. Az opcionális
+küldetés jutalmat vagy előnyt ad, de nem blokkolja a kulcsfontosságú
+felszabadítást. Az AI/ellenfél által okozott rombolás nem csökkenti a játékos
+küldetésteljesítését. Előbb az ostromhelyzetet és a kampánykövetkezményt kell
+igazolni játékpróbával.
+Részletes terv: [11. fejezet](./gameplay-progression.md#11-következményes-ostromhadjárat);
+végrehajtás: [TODO, 6A](./gameplay-progression-todo.md#6a-következményes-ostromhadjárat--első-játszható-próba).
 
 - **Zöld:** megvalósított alap. A Campaign Map C3 működik, de további
   játékpróba és eszközös ellenőrzés még szükséges.

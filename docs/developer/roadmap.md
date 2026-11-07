@@ -108,9 +108,11 @@ főmenü-/HUD-kijelzés és nem blokkoló briefing. A részletes
 kapuit és ellenőrzéseit tartalmazza. A térképközpontú irány elfogadott prioritás;
 a részletes mód-, jutalom- és balanszszabályok még döntést igényelnek.
 
-A [gameplay-elemzés](./gameplay-progression.md) végrehajtási sorrendje:
+Az eredeti [gameplay-elemzés](./gameplay-progression.md) végrehajtási sorrendje:
 **térkép + ALPHA-01 csatakör → mentett haladás → új szektorok és elágazások →
 modifikátorok → horizontális feloldások/képességek/osztályok → stratégiai hadjárat**.
+A C3 utáni prioritást a lent rögzített következményes ostromhadjárat pontosítja;
+a kis kampánypróbához nem kell előbb minden taktikai bővítést elkészíteni.
 
 **Elkészült csomag: Campaign Map Foundation (C1+C2).**
 Főmenü → térkép → meglévő ALPHA-01 csata → eredmény → térkép, helyi teljesítésmentéssel.
@@ -128,7 +130,9 @@ Közös szektorkatalógus, négy valódi új csatadefiníció, szektor-ID alapú
 a meglévő ALPHA-teljesítés migrációja elkészült. Az ALPHA gyorscsata/online pálya változatlan.
 A [részletes csataprofil-terv](./gameplay-progression.md#1010-c3-csataprofilok--részletes-tervezési-javaslat)
 geometriája és palettája bekötött; a balansz játékpróbával tovább finomítandó.
-Következő lépés: játékpróba, majd C4 közös modifikátor-/AI-policy fejlesztés külön döntéssel.
+Következő lépés: játékpróba, majd a következményes ostromhadjárat kis prototípusa.
+A C4 közös modifikátor-/AI-policy fejlesztése továbbra is nyitott, de nem teljes
+csomagként előfeltétele ennek a próbának.
 
 A Sector Operations közös katalógus-/terepkonfig része C3-at támogatja; két
 modifikátor és online szektorválasztás későbbi bővítés. A korábbi háromszektoros
@@ -136,6 +140,103 @@ tartalmi javaslatot az öt célpontos C3 váltja fel. Tervezett szektor nem ját
 növeli a teljesítési nevezőt. A [megvalósíthatósági elemzés](./gameplay-progression.md#10-campaign-map--sector-progression-megvalósíthatóság)
 elválasztja a Foundationt a teljes stratégiai hadjárattól és a közös online kampánytól.
 A részletes feladatok a [progressziós TODO](./gameplay-progression-todo.md) 2. pontjában vannak.
+
+## Gameplay-identitás – következményes ostromhadjárat (2026-11-07)
+
+**Elfogadott Phase 1 MVP-specifikáció, még nem megvalósított funkció.**
+Alapígéret: a csata megnyerhető úgy is, hogy a játékos részben vagy teljesen
+elbukja a küldetés szerződéses célját. A harci győzelem továbbra is az ellenfél
+megsemmisítésétől függ; az objektumok állapota a jutalmat és a kampány következő
+küldetését befolyásolja.
+
+- **Első próbára kiválasztott kampánykeret:** kis elágazású Campaign-térkép,
+  galaktikus kormányzó fennhatósága alatt, ellenséges megszállás alatt álló
+  szektorok felszabadítására. Ez nem rögzít küldetések számát; három küldetés
+  csak lehetséges bemutató, és a kampány tartalmazhat kihagyható, illetve
+  kulcsfontosságú feladatokat. Az opcionális küldetés jutalmat vagy előnyt ad,
+  de kihagyása nem zárja el a kulcsfontosságú felszabadítási küldetést. Az
+  első próba felderítése megmutatja a kulcsfontosságú megszállt szektort és
+  a lehetséges alternatívákat. Felderítés nélkül is választható szektor;
+  más felszabadítás helyi eredményt ad, de nem halad a fő céllal, amely
+  később továbbra is teljesíthető.
+- A rendszer a Campaign térképhez és az ott definiált célokhoz tartozik;
+  a sima offline gyorscsatát nem módosítja. A kampánytartalom határozza meg,
+  ki felel a térségért és mi a cél. A három küldetés csak lehetséges bemutató,
+  nem fix MVP-terjedelem: lehetnek kihagyható és később kulcsfontosságú
+  küldetések, a kampánycél pedig egy titkos terv felkutatásától több szektor
+  erőforrásának megszerzésén át szektorok felszabadításáig terjedhet.
+- Az MVP két objektumtípusa `ENERGY_NODE` és `CIVIL_HABITAT`; az
+  `ENERGY_NODE` a következő kapcsolódó kulcscsatában a maximális
+  energiapajzsra hat. Mozgó civilek, diplomácia,
+  frakciókapcsolatok, gazdasági szimuláció, piac, kereskedelem és procedurális
+  történet nem része.
+- Az első C3 térképszeletben az `ALPHA-01` tréning után opcionális
+  felderítés, illetve a `DELTA-08` és `FORGE-17` megszállt célágai jelennek
+  meg. A `FORGE-17` a rejtett kulcsszektor; felszabadítása nyitja meg a
+  `VANGUARD-12`-t. A `DELTA-08` helyi eredményt ad, de a `FORGE-17` később
+  is elérhető; a `PRIME-00` későbbi kampánylépés marad.
+- Az első kulcsküldetésben az energiaellátó és a civil létesítmény egyaránt
+  védett szerződéses objektum, a saját szerződéssúlyával. Az első próbában
+  mindkettő maximális HP-ja 100; a stratégiai fontosságot a súly fejezi ki.
+- A `FORGE-17` felszabadításának elsődleges célja az ellenséges
+  ostromplatform megsemmisítése; az adott küldetés súlyai 50% platform,
+  25% `ENERGY_NODE` és 25% `CIVIL_HABITAT`. Ez nem minden küldetésre érvényes
+  globális szerződés.
+- Phase 1-ben a kreditek csak a szerződésben és az eredményjelentésben
+  látszanak, nem elkölthető egyenlegként; a kampányegyenleg későbbi bővítés.
+- A szerződéses kredit- és XP-jutalom a folyamatos szerződésponttal
+  lineárisan skálázódik; 0%-nál csak a külön számolt harci XP marad.
+- Az objektumok robbanástól sérülnek; a HP-állapot `INTACT` (70–100%),
+`DAMAGED` (20–69%) vagy `DESTROYED` (0–19%). A szerződés teljesítését csak
+a játékosnak tulajdonítható kár befolyásolja; AI/ellenfél által okozott
+rombolás nem csökkenti a teljesítést és nem a játékosnak számít.
+- A szerződés százaléka súlyozott és folyamatos: a fő cél és a védett
+objektumok külön, küldetésenként meghatározott súlyt kapnak. A játékos
+okozta HP-vesztés arányosan csökkenti a védett objektum szerződéspontját;
+az AI/ellenfél okozta fizikai kár nem von le szerződéspontot. A játékos
+okozta kár a HP-vesztés aránya
+szorozva az objektum fontossági súlyával; kampányszinten egy összesített
+kampányspecifikus járulékos kárkeretet fogyaszt. A keret kimerülése
+meghiúsíthatja és lezárhatja az adott hadjáratot, lehetséges csökkentett
+jutalommal. Új, hasonló kampányban később újra próbálkozhat. Az első próbában
+az `ENERGY_NODE` és `CIVIL_HABITAT` kárkeret-súlya egyaránt 1; későbbi
+kampányok saját súlyokat adhatnak. Az első kampány kárkerete 1,5 súlyozott
+objektum-egység; elérése vagy átlépése kampánykudarcot okoz. Alapértelmezésben
+a teljes és hátralévő keret látszik, de a kijelzés egyszerűsíthető játékpróba után.
+- Az első felszabadítási próba fő céljának pontja az ostromplatformon elért
+játékos-sebzés aránya; a szektor csak az ellenfél megsemmisítésekor szabadul fel.
+Az első küldetés súlyai: platform 50%, energiaellátó 25%, civil létesítmény
+25%; más küldetések saját súlyokat definiálnak.
+- Vereségkor, döntetlennél vagy csataelhagyáskor a szektor nem szabadul fel,
+de az objektumok fizikai végállapota és a játékos okozta, kampánykárkeretbe
+számító kár megmarad; újrapróbáláskor ezek az állapotok érvényesek.
+- Az `ENERGY_NODE` fizikai végállapota a következő kapcsolódó kulcscsatában
+a P1 maximális energiapajzsát módosítja: ép `+10%`, sérült `0%`,
+megsemmisült `-10%`; a tank a módosított maximumon indul és eddig
+regenerálódik. Az alap a P1 fejlesztésekkel számolt aktuális
+`maxEnergyShield`. AI/ellenfél által okozott pusztítás is befolyásolja ezt
+a kampányhatást, de nem csökkenti a szerződéspontot vagy a játékos
+kárkeretét. A szerződés eredménye különül el a
+Victory/Defeat harci eredménytől; az elszámolás a jutalmat,
+objektumállapotot és kampányhatást is megjeleníti.
+- A következményrendszer a meglévő Campaign Map/C3 fokozatos bővítése,
+  párhuzamos kampánymód nélkül. A korábbi C3-haladás és XP-profil megőrzendő;
+  az új objektum- és kárkeret-adat nem következtethető ki a régi teljesítésből.
+  A kampányreset az új kampányállapotokat is törli, de az XP-t és fejlesztéseket
+  megtartja; a teljes mentéstörlés külön művelet.
+  A gyorscsata/hot-seat/online változatlan. Bizalom, támogatás, nyersanyag és
+  nagyobb stratégiai rendszerek későbbi fázisra maradnak.
+
+**Végrehajtási sorrend:** ostromhelyzet és terepre illesztett objektumok →
+robbanási sebzés és játékosnak tulajdonítható kár → Campaign-térképi célok és
+kihagyható/kulcsfontosságú küldetések → mentett következménylánc és
+szerződéses-katonai elszámolás → játékpróba.
+Nem előfeltétel új egységosztály, orbitális képességcsomag, teljes gazdaság,
+bázisépítés vagy tartós pixelterep.
+
+Részletes design és döntési kapuk: [gameplay-terv, 11. fejezet](./gameplay-progression.md#11-következményes-ostromhadjárat).
+Végrehajtási checklist: [TODO, 6A](./gameplay-progression-todo.md#6a-következményes-ostromhadjárat--első-játszható-próba).
+A pontos számértékek, felelősségi szabályok és prototípustartalom implementáció előtt eldöntendők.
 
 ## Milestone-ok
 
