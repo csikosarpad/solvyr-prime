@@ -186,6 +186,9 @@ küldetését befolyásolja.
   látszanak, nem elkölthető egyenlegként; a kampányegyenleg későbbi bővítés.
 - A szerződéses kredit- és XP-jutalom a folyamatos szerződésponttal
   lineárisan skálázódik; 0%-nál csak a külön számolt harci XP marad.
+  Újrapróbálások között a játékos szerződéses kára és pontja összeadódik;
+  vereség, döntetlen vagy csataelhagyás után a pontszám előzetes, szerződéses
+  jutalom pedig csak a küldetés végleges lezárásakor, egyszer jár.
 - Az objektumok robbanástól sérülnek; a HP-állapot `INTACT` (70–100%),
 `DAMAGED` (20–69%) vagy `DESTROYED` (0–19%). A szerződés teljesítését csak
 a játékosnak tulajdonítható kár befolyásolja; AI/ellenfél által okozott
@@ -209,7 +212,10 @@ Az első küldetés súlyai: platform 50%, energiaellátó 25%, civil létesítm
 25%; más küldetések saját súlyokat definiálnak.
 - Vereségkor, döntetlennél vagy csataelhagyáskor a szektor nem szabadul fel,
 de az objektumok fizikai végállapota és a játékos okozta, kampánykárkeretbe
-számító kár megmarad; újrapróbáláskor ezek az állapotok érvényesek.
+számító kár megmarad; újrapróbáláskor ezek az állapotok érvényesek. A
+csatánkénti állapotmentés meccsazonosítóhoz, a végleges jutalomelszámolás
+kampányküldetés-/szerződésazonosítóhoz kötött, hogy ismételt esemény se
+duplikálja az elszámolást.
 - Az `ENERGY_NODE` fizikai végállapota a következő kapcsolódó kulcscsatában
 a P1 maximális energiapajzsát módosítja: ép `+10%`, sérült `0%`,
 megsemmisült `-10%`; a tank a módosított maximumon indul és eddig

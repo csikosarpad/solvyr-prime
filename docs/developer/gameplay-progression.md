@@ -1008,7 +1008,11 @@ felfedi a kulcscélt és az alternatívát. A `PRIME-00` későbbi kampánylép�
    A szerződéses kredit- és XP-jutalom az alapjutalom és a szerződéspont
    arányának szorzata; a harci XP külön számolódik.
    A kampánykárkeretbe a játékos által okozott kár összeadódik, az AI/ellenfél
-   okozta kár nem.
+   okozta kár nem. Az újrapróbálások között a játékos szerződéses sebzése
+   összeadódik, a vereség, döntetlen vagy csataelhagyás után mutatott pontszám
+   előzetes érték. Szerződéses kredit és XP csak a küldetés végleges
+   lezárásakor jár, a végleges összesített pontszám alapján, és ugyanahhoz a
+   szerződéshez legfeljebb egyszer számolható el.
 7. Az `ENERGY_NODE` fizikai végállapota a következő kapcsolódó kulcscsatában
    a P1 maximális energiapajzsát módosítja: ép állapot +10%, sérült 0%,
    megsemmisült −10%. A tank a módosított maximumon indul, és a csata során
@@ -1050,11 +1054,17 @@ globális, fix háromlépéses sorozatból következnek.
 - Elsőre objektumállapotokat és eredményjelzőket mentsünk, ne teljes pixelterepet.
   Mentésbővítéshez migráció, validáció és explicit hibajelzés szükséges.
   Vereség, döntetlen vagy csataelhagyás esetén a stratégiai objektumállapotok
-  és a játékos kampánykár-keretébe számító károk is mentődnek; a szerződéses
-  pont/jutalom a rögzített képletet követi, de a szektor nem szabadul fel.
-  Újrapróbáláskor ezek az állapotok maradnak érvényben.
-- A következményelszámolás legyen egyszeri, meccsazonosítóhoz kötött; reload,
-  eredményképernyő-remount és ismételt esemény ne adjon ismét jutalmat.
+  és a játékos kampánykár-keretébe számító károk is mentődnek; a szerződés
+  aktuális pontszáma az összes próbálkozás játékos által okozott káraiból
+  számolódik. A vereség, döntetlen vagy csataelhagyás utáni pontszám csak
+  előzetes kijelzés, a szektor nem szabadul fel és szerződéses jutalom nem
+  kerül kifizetésre. Újrapróbáláskor ezek az állapotok maradnak érvényben;
+  kredit és szerződéses XP csak a küldetés végleges lezárásakor, egyszer
+  számolható el.
+- A csataállapot commitja legyen meccsazonosítóhoz kötött, a végleges
+  szerződéselszámolás pedig kampányküldetés-/szerződésazonosítóhoz. Reload,
+  eredményképernyő-remount vagy ismételt esemény egyik műveletet se
+  duplikálhassa.
 - A küldetésszerződés értékelése a játékos által okozott károkat vegye
   figyelembe. Ehhez a játékos kárhozzájárulását kell követni; külön AI-kárnapló
   vagy az ellenfél rombolásának szerződéses elszámolása Phase 1-ben nem cél.

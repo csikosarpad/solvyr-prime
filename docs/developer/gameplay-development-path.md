@@ -62,7 +62,7 @@ flowchart TD
             RECON["Opcionális felderítés<br/>felfedi a kulcscélt"]
             DELTA["DELTA-08<br/>helyi felszabadítás<br/>FORGE-17 később is választható"]
             FORGE["FORGE-17 · kulcsszektor<br/>ostromplatform megsemmisítése<br/>ENERGY_NODE + CIVIL_HABITAT védelme"]
-            OUTCOME["Szerződés 50/25/25<br/>1,5 egység játékos-kárkeret<br/>ENERGY_NODE → következő kulcscsata pajzsa"]
+            OUTCOME["Szerződés 50/25/25<br/>1,5 egység játékos-kárkeret<br/>újrapróbálás: pont gyűlik · jutalom egyszer, lezáráskor<br/>ENERGY_NODE → következő kulcscsata pajzsa"]
             VANGUARD["VANGUARD-12<br/>kulcsszektor után"]
             PRIME["PRIME-00<br/>későbbi kampánylépés"]
             SIEGE_ALPHA --> RECON
@@ -127,8 +127,11 @@ az 1,5 súlyozott egységű kampánykeretet fogyasztja, AI-kár nem csökkenti s
 a szerződést, sem ezt a keretet. Az `ENERGY_NODE` fizikai állapota — AI-kár
 esetén is — a következő kulcscsata maximális pajzsát módosítja (+10/0/−10%).
 Vereség, döntetlen vagy csataelhagyás nem szabadítja fel a szektort, de
-elmenti az objektumállapotot és a játékos kárát; a kampányreset törli az új
-kampányadatokat, az XP-profilt és a fejlesztéseket viszont megtartja.
+elmenti az objektumállapotot és a játékos kárát. Az eredményképernyőn ilyenkor
+csak előzetes szerződéspont látszik; az újrapróbálások kárai összeadódnak, a
+szerződéses jutalom pedig csak a küldetés végleges lezárásakor, egyszer jár.
+A kampányreset törli az új kampányadatokat, az XP-profilt és a fejlesztéseket
+viszont megtartja.
 Előbb az ostromhelyzetet és a kampánykövetkezményt kell igazolni játékpróbával.
 Részletes terv: [11. fejezet](./gameplay-progression.md#11-következményes-ostromhadjárat);
 végrehajtás: [TODO, 6A](./gameplay-progression-todo.md#6a-következményes-ostromhadjárat--első-játszható-próba).

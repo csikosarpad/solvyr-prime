@@ -395,11 +395,18 @@ Részletes alapelvek és hatókör:
   ellenség megsemmisítésekor szabadul fel.
 - [x] Vereség vagy döntetlen esetén is mentődik az objektumok fizikai
   végállapota és a játékos okozta, kampánykárkeretbe számító kár; a szektor
-  nem szabadul fel, részleges szerződéspont járhat. Újrapróbáláskor ezek az
-  állapotok megmaradnak.
+  nem szabadul fel. Az eredményképernyőn látható szerződéspont előzetes;
+  szerződéses jutalom nem jár, amíg a küldetés végleg le nem zárul.
+  Újrapróbáláskor ezek az állapotok megmaradnak, a játékos szerződéses kára
+  és pontja a próbálkozások között összeadódik.
 - [x] A csata kifejezett elhagyása vereségnek számít: az objektumállapot és
-  játékos-kárkeret commitolódik, nincs kampányelőrelépés, a részpont/jutalom
-  a rögzített képletet követi.
+  játékos-kárkeret commitolódik, nincs kampányelőrelépés; az eredmény
+  előzetes pontot mutat, szerződéses jutalom nem kerül kifizetésre.
+- [x] A kredit- és szerződéses XP-jutalom csak a küldetés végleges
+  lezárásakor, az összes próbálkozásból számolt végső pont alapján jár, és
+  szerződésenként egyszer számolható el. A csatánkénti állapotmentés
+  meccsazonosítót, a jutalomelszámolás kampányküldetés-/szerződésazonosítót
+  használ az ismételt eseményekből eredő duplikáció ellen.
 - [x] Az első kulcsküldetésben az `ENERGY_NODE` és `CIVIL_HABITAT` is
   védett szerződéses objektum, külön súllyal.
 - [x] A `FORGE-17` felszabadításakor az ostromplatform megsemmisítése az
