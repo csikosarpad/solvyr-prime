@@ -44,7 +44,9 @@ fordítást kapnak. Az alap pálya fizikája, terepgenerálása és assetjei nem
 - [x] Felolvasás közben a teljes szöveg látható marad; Web Speech `word`
   szóhatár-eseménynél az aktuális szó világosabb színnel, finom statikus
   glow-val jelölődik. Befejezés, megszakítás, bezárás és nyelvváltás törli
-  a kiemelést. Szóhatárjelzés nélküli hangnál nincs időzítős utánzás.
+  a kiemelést. Ha a hang (pl. Chrome online angol/német hangjai) 700 ms-on
+  belül nem küld szóhatárt, a kiemelés becsült ütemben halad (karakterszám,
+  írásjel-szünetek, beszédtempó); az első valódi szóhatár átveszi az irányítást.
 - [x] Felolvasás alatt ugyanaz a gomb „Leállítás”-ra vált, szóhatárjelzés
   nélkül is. Leállítás törli a kiemelést; új gombnyomás az elejéről olvas.
   Befejezés vagy megszakítás visszaállítja a „Felolvasás” feliratot.

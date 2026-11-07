@@ -238,6 +238,25 @@ Ezzel a böngésző a `https://delawer.hu/solvyr-prime/api` címet éri el. Elt�
 
 Töltsd fel a `dist/` teljes tartalmát a `public_html/solvyr-prime/` könyvtárba. Az API ugyanazon az originen van, ezért a CORS allowlistben a `https://delawer.hu` origin szerepeljen (útvonal nélkül).
 
+#### Automatikus feltöltés FTP-n
+
+A `scripts/deploy-ftp.mjs` buildel és feltölti a `dist/` tartalmát:
+
+1. Másold le a `.env.deploy.example` fájlt `.env.deploy.local` néven (a `*.local` gitignore-olt), és add meg a hostot, a felhasználót és a távoli mappát (`FTP_REMOTE_DIR`, pl. `/public_html/solvyr-prime`). A jelszó üresen hagyható; ekkor futáskor rejtett beírással kéri.
+2. Futtatás:
+
+```powershell
+pnpm deploy:ftp                          # build + feltöltés
+pnpm deploy:ftp:only -- --dry-run        # csak kiírja, mit töltene fel
+pnpm deploy:ftp:only -- --prune-assets   # feltöltés a meglévő dist/-ből, régi assets/ fájlok törlésével
+```
+
+- Alapból FTPS (explicit TLS); `FTP_SECURE=implicit` a 990-es porthoz, `false` titkosítatlan FTP-hez. FTPS-nél az `FTP_HOST` a tanúsítványban szereplő szervernév legyen (jelenleg `s036.netmask.hu`), ne IP-cím.
+- Semmit nem töröl; `--prune-assets` esetén is csak a távoli `assets/` mappa már nem használt fájljait. Az `api/`, `lib/`, `config.php` és `.htaccess` érintetlen marad; ha a `dist/` ilyen nevű elemet tartalmazna, a script leáll.
+- A távoli mappának a `solvyr-prime` nevet tartalmaznia kell (véletlen webroot-felülírás ellen).
+- A már fent lévő, azonos méretű hash-es `assets/` fájlokat kihagyja; az `index.html` kerül fel utoljára.
+- `DEPLOY_PUBLIC_URL` megadásakor a végén ellenőrzi, hogy az élő oldal a friss `index.html`-t adja.
+
 ### 4. Feltöltési lista
 
 Az API szerverre a következők kerüljenek:

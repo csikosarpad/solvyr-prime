@@ -87,6 +87,7 @@ const pendingObservers = new Set<() => void>();
 export interface SpeechObserver {
   onBoundary: (charIndex: number) => void;
   onFinish: () => void;
+  onStart?: () => void;
 }
 
 /** Tetszőleges szöveget felolvas; a mondatok sorban követik egymást, de a felgyülemlett sort eldobja. */
@@ -122,6 +123,9 @@ export function speak(
     observer?.onFinish();
   };
   if (observer) pendingObservers.add(finish);
+  utterance.onstart = () => {
+    if (active) observer?.onStart?.();
+  };
   utterance.onboundary = (event) => {
     if (active && event.name === "word") observer?.onBoundary(event.charIndex);
   };

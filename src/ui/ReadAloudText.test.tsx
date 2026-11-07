@@ -7,11 +7,13 @@ import { sectorById } from "@/game/data/sectors";
 import { useLocaleStore } from "@/i18n";
 import { cancelSpeech, speak } from "@/game/systems/speech";
 import { CampaignMap } from "./CampaignMap";
+import { BOUNDARY_GRACE_MS, estimateWordTimeline } from "./ReadAloudText";
 import { SectorBriefing } from "./SectorBriefing";
 
 vi.mock("./CampaignStarfieldCanvas", () => ({ CampaignStarfieldCanvas: () => null }));
 
 class Utterance {
+  onstart?: () => void;
   onboundary?: (event: { name: string; charIndex: number }) => void;
   onend?: () => void;
   onerror?: () => void;
@@ -186,5 +188,72 @@ describe("synchronized read-aloud highlighting", () => {
       for (let i = 0; i < 3; i++) speak("Combat", "en");
     });
     expect(container.querySelector(".read-aloud-word")).toBeNull();
+  });
+
+  describe("estimated highlighting for voices without word boundaries", () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it.each(["en", "de"] as const)("advances the highlight in %s when the voice sends no boundaries", (locale) => {
+      useLocaleStore.getState().setLocale(locale);
+      const { container } = render(<CampaignMap />);
+      fireEvent.click(screen.getByRole("button", { name: /Read aloud|Vorlesen/ }));
+      const utterance = currentUtterance();
+      act(() => utterance.onstart?.());
+      act(() => vi.advanceTimersByTime(BOUNDARY_GRACE_MS - 1));
+      expect(container.querySelector(".read-aloud-word")).toBeNull();
+      act(() => vi.advanceTimersByTime(1));
+      const first = container.querySelector(".read-aloud-word")?.textContent;
+      expect(first).toBeTruthy();
+      act(() => vi.advanceTimersByTime(4000));
+      const later = container.querySelector(".read-aloud-word")?.textContent;
+      expect(later).toBeTruthy();
+      expect(later).not.toBe(first);
+      expect(container.querySelectorAll(".read-aloud-word")).toHaveLength(1);
+      act(() => utterance.onend?.());
+      expect(container.querySelector(".read-aloud-word")).toBeNull();
+      act(() => vi.advanceTimersByTime(4000));
+      expect(container.querySelector(".read-aloud-word")).toBeNull();
+    });
+
+    it("lets real boundaries take over from the estimate", () => {
+      const { container } = render(<CampaignMap />);
+      fireEvent.click(screen.getByRole("button", { name: "Felolvasás" }));
+      const utterance = currentUtterance();
+      act(() => utterance.onstart?.());
+      act(() => vi.advanceTimersByTime(BOUNDARY_GRACE_MS + 2000));
+      boundary(utterance, "Haladj");
+      expect(container.querySelector(".read-aloud-word")?.textContent).toBe("Haladj");
+      act(() => vi.advanceTimersByTime(5000));
+      expect(container.querySelector(".read-aloud-word")?.textContent).toBe("Haladj");
+    });
+
+    it("never starts the estimate when boundaries arrive in time, and stops it on stop", () => {
+      const { container } = render(<CampaignMap />);
+      fireEvent.click(screen.getByRole("button", { name: "Felolvasás" }));
+      act(() => currentUtterance().onstart?.());
+      boundary(currentUtterance(), "Haladj");
+      act(() => vi.advanceTimersByTime(5000));
+      expect(container.querySelector(".read-aloud-word")?.textContent).toBe("Haladj");
+      act(() => currentUtterance().onend?.());
+      fireEvent.click(screen.getByRole("button", { name: "Felolvasás" }));
+      act(() => currentUtterance().onstart?.());
+      fireEvent.click(screen.getByRole("button", { name: "Leállítás" }));
+      act(() => vi.advanceTimersByTime(5000));
+      expect(container.querySelector(".read-aloud-word")).toBeNull();
+    });
+  });
+});
+
+describe("estimateWordTimeline", () => {
+  it("orders words, pauses at punctuation and scales with the speech rate", () => {
+    const text = "Alpha bravo, charlie. Delta";
+    const words = estimateWordTimeline(text, 1);
+    expect(words.map((word) => text.slice(word.start, word.end))).toEqual(["Alpha", "bravo", "charlie", "Delta"]);
+    const [alpha, bravo, charlie, delta] = words.map((word) => word.at) as [number, number, number, number];
+    expect(alpha).toBe(0);
+    expect(charlie - bravo).toBeGreaterThan(bravo - alpha);
+    expect(delta - charlie).toBeGreaterThan(charlie - bravo);
+    expect(estimateWordTimeline(text, 2)[3]!.at).toBeCloseTo(delta / 2);
   });
 });

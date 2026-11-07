@@ -1,9 +1,10 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { MAX_NAME_LENGTH, usePlayerNamesStore } from "@/game/state/playerNames";
 import { AUDIO_CHANNELS, useAudioSettings } from "@/game/state/audioSettings";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useGameStore } from "@/game/state/gameStore";
 import { useT, type MessageKey } from "@/i18n";
+import { ConfirmDialog } from "../ConfirmDialog";
 import { LanguageSwitch } from "./LanguageSwitch";
 
 interface MainMenuSettingsProps {
@@ -62,6 +63,7 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
   const setAiEnabled = useAiSettings((s) => s.setEnabled);
   const aiMatches = useAiSettings((s) => s.memory.matches);
   const resetAiMemory = useAiSettings((s) => s.resetMemory);
+  const [aiResetOpen, setAiResetOpen] = useState(false);
 
   return (
     <div className="panel main-menu-panel">
@@ -118,7 +120,7 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
               {aiEnabled ? t("menu.opponentAi") : t("menu.opponentHuman")}
             </button>
             {aiEnabled && (
-              <button className="btn secondary" onClick={resetAiMemory} disabled={aiMatches === 0}>
+              <button className="btn secondary" onClick={() => setAiResetOpen(true)} disabled={aiMatches === 0}>
                 {t("menu.aiExperience", { matches: aiMatches })}
               </button>
             )}
@@ -144,6 +146,20 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
       <button className="btn secondary main-menu-back" onClick={onBack}>
         {t("lobby.back")}
       </button>
+      {aiResetOpen && (
+        <ConfirmDialog
+          destructive
+          title={t("menu.aiResetTitle")}
+          message={t("menu.aiResetConfirm", { matches: aiMatches })}
+          cancelLabel={t("dialog.cancel")}
+          confirmLabel={t("dialog.delete")}
+          onCancel={() => setAiResetOpen(false)}
+          onConfirm={() => {
+            setAiResetOpen(false);
+            resetAiMemory();
+          }}
+        />
+      )}
     </div>
   );
 }
