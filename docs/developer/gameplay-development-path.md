@@ -64,7 +64,7 @@ flowchart TD
             FORGE["FORGE-17 · kulcsszektor<br/>ostromplatform megsemmisítése<br/>ENERGY_NODE + CIVIL_HABITAT védelme"]
             OUTCOME["Szerződés 50/25/25<br/>1,5 egység játékos-kárkeret<br/>újrapróbálás: pont gyűlik · jutalom egyszer, lezáráskor<br/>ENERGY_NODE → következő kulcscsata pajzsa"]
             VANGUARD["VANGUARD-12<br/>kulcsszektor után"]
-            PRIME["PRIME-00<br/>későbbi kampánylépés"]
+            PRIME["PRIME-00 · kötelező kampányzárás<br/>ENERGY_NODE + CIVIL_HABITAT felszabadítása"]
             SIEGE_ALPHA --> RECON
             SIEGE_ALPHA --> DELTA
             SIEGE_ALPHA --> FORGE
@@ -114,9 +114,11 @@ tréningből, opcionális felderítésből és két megszállt célágból áll:
 `DELTA-08` helyi eredményt ad; a `FORGE-17` a felderítéssel felfedhető
 kulcsszektor, amelynek felszabadítása nyitja meg a `VANGUARD-12`-t. A
 felderítés kihagyható, és egyik célág teljesítése sem zárja el a másikat.
-Ez a próbához választott kampánygráf módosítja a jelenlegi C3 hozzáférési
-szabályát: jelenleg a `VANGUARD-12` a `DELTA-08` **vagy** `FORGE-17`
-teljesítése után nyílik meg; a próbában csak `FORGE-17` nyitja meg.
+A módosított feloldás már működik: csak `FORGE-17` nyitja meg
+`VANGUARD-12`-t, majd `PRIME-00` harci győzelme zárja a kampányt.
+`FORGE-17` és `PRIME-00` egyaránt kötelező, védendő létesítményes szektor.
+A régi C3 OR-útvonalon már teljesített szektorok megmaradnak a migráció során;
+korábbi épületkárt nem állítunk elő ezekből.
 
 `FORGE-17`-ben az ostromplatform a fő cél, az `ENERGY_NODE` és
 `CIVIL_HABITAT` védendő szerződéses objektum; a 50/25/25 súlyok csak erre a
@@ -132,6 +134,17 @@ csak előzetes szerződéspont látszik; az újrapróbálások kárai összeadó
 szerződéses jutalom pedig csak a küldetés végleges lezárásakor, egyszer jár.
 A kampányreset törli az új kampányadatokat, az XP-profilt és a fejlesztéseket
 viszont megtartja.
+**Fejlesztési állapot (2026-11-07):** az objektumállapot, a robbanási
+sebzés, a játékoskár-követés és a pajzshatás tesztelt logikai alapja elkészült.
+A jóváhagyott reaktor és civil kupolatelep már megjelenik a `FORGE-17` és `PRIME-00`
+Campaign csatában, robbanásból sebződik, HP-ja és állapota a HUD-on is
+látszik. A romok többé nem sebződnek; az épületek esési sebzés nélkül követik
+a terepfelszínt. A kampánykár-mentés, szerződéselszámolás és pajzshatás
+bekötése még hátravan; új csata jelenleg visszaállítja az objektumok HP-ját.
+A pozíciókat új csatánként a meccs seedjéből, külön véletlenszámsorral
+választjuk szektoronként öt, egymással és az induló tankokkal nem átfedő
+helyből. Azonos seed azonos elrendezést ad; különböző seednél az elrendezés
+ismétlődhet. A térkép fejléce alatt külön blokk magyarázza a kampány célját.
 Előbb az ostromhelyzetet és a kampánykövetkezményt kell igazolni játékpróbával.
 Részletes terv: [11. fejezet](./gameplay-progression.md#11-következményes-ostromhadjárat);
 végrehajtás: [TODO, 6A](./gameplay-progression-todo.md#6a-következményes-ostromhadjárat--első-játszható-próba).

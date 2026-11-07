@@ -13,6 +13,7 @@ import { RepeatButton } from "./RepeatButton";
 import { CommandConsole } from "./CommandConsole";
 import { WindIndicator } from "./WindIndicator";
 import { BattleExitDialog } from "./BattleExitDialog";
+import { structureState } from "@/game/systems/strategicObjectives";
 
 const toCss = (color?: number) => (color === undefined ? "#ffffff" : `#${color.toString(16).padStart(6, "0")}`);
 
@@ -39,6 +40,7 @@ export function Hud() {
     matchMode,
     aiActive,
     sector,
+    strategicObjectives,
   } = useGameStore();
   const online = useMultiplayerStore((state) => state.credentials !== null);
   const multiplayerError = useMultiplayerStore((state) => state.error);
@@ -156,6 +158,19 @@ export function Hud() {
             <strong>{sector.name}</strong>
           </div>
           <WindIndicator wind={wind} />
+          {matchMode === "campaign" && strategicObjectives.length > 0 && (
+            <section className="hud-objectives" aria-label={t("strategic.protected")}>
+              {strategicObjectives.map((objective) => (
+                <div key={objective.id}>
+                  <span>{t(`strategic.${objective.type}`)}</span>
+                  {" · "}
+                  {t(`strategic.${structureState(objective.hp, objective.maxHp)}`)}
+                  {" · "}
+                  {objective.hp}/{objective.maxHp} HP
+                </div>
+              ))}
+            </section>
+          )}
           <div className="hud-readout">
             {t("hud.turn")} <strong style={{ color: toCss(me?.color) }}>{name(currentId)}</strong>
             <span aria-hidden="true">·</span>

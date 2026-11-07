@@ -78,3 +78,53 @@ describe("AudioManager volume", () => {
     expect(cancel).toHaveBeenCalledOnce();
   });
 });
+
+describe("AudioManager user activation", () => {
+  const activation = { isActive: false, hasBeenActive: false };
+  const created = vi.fn();
+  let manager: AudioManager;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Object.assign(activation, { isActive: false, hasBeenActive: false });
+    Object.defineProperty(navigator, "userActivation", { value: activation, configurable: true });
+    vi.stubGlobal(
+      "Audio",
+      class {
+        volume = 0;
+        play = vi.fn().mockResolvedValue(undefined);
+        pause = vi.fn();
+      },
+    );
+    vi.stubGlobal(
+      "AudioContext",
+      class {
+        state = "running";
+        destination = {};
+        constructor() {
+          created();
+        }
+        createGain = () => ({ gain: { value: 0 }, connect: vi.fn() });
+        resume = vi.fn().mockResolvedValue(undefined);
+        close = vi.fn().mockResolvedValue(undefined);
+        decodeAudioData = vi.fn().mockResolvedValue({});
+      },
+    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ arrayBuffer: async () => new ArrayBuffer(0) }));
+    manager = new AudioManager();
+  });
+
+  afterEach(() => {
+    manager.destroy();
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, "userActivation");
+  });
+
+  it("waits for a gesture the browser accepts as activation before creating the audio context", () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(created).not.toHaveBeenCalled();
+    Object.assign(activation, { isActive: true, hasBeenActive: true });
+    window.dispatchEvent(new Event("click"));
+    expect(created).toHaveBeenCalledOnce();
+  });
+});

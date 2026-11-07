@@ -23,14 +23,33 @@ fordítást kapnak. Az alap pálya fizikája, terepgenerálása és assetjei nem
 
 - [x] Az alap szektor kódja és neve közös adatdefinícióból érkezik.
 - [x] Főmenü: a játékcím alatt az aktuális harctér kódja és neve.
-- [x] Meccsindítás: 2,5 másodperces **SECTOR BRIEFING** panel rövid eligazítással.
+- [x] Meccsindítás: **SECTOR BRIEFING** panel rövid eligazítással,
+  automatikus eltűnés helyett „Értettem” bezárógombbal.
+  „Legközelebb ne mutasd ezen a pályán” checkbox: a választás bezáráskor
+  szektor-ID-nként helyileg mentődik, újratöltés és játékmódváltás után is.
+  Más pálya eligazítását nem rejti el, a kampányhaladást nem módosítja.
 - [x] A felső középső HUD-ban a szektorkód és név folyamatosan látható.
 - [x] A briefing offline, AI és online indítás/visszavágó közös meccséletciklusához kötött;
   körváltás és HUD-frissítés nem indítja újra.
-- [x] A briefing prezentáció: nem blokkolja a bevitelt, fizikát, AI-t vagy replay-t,
+- [x] A briefing prezentáció: nem állítja meg a fizikát, AI-t vagy replay-t,
   nem küld online eseményt és nem fogyaszt seedelt véletlent.
-- [x] Responsive panel, reduced-motion animációkikapcsolás és időzítő-cleanup.
-- [x] Célzott tesztek: menüpozíció, időtartam, nyelvváltás, új meccs és körváltás.
+  A panel kezelőszerveinek billentyűeseményei nem indítanak harci műveletet.
+- [x] Responsive, görgethető panel és reduced-motion animációkikapcsolás.
+  Hibás vagy nem menthető preferencia explicit hibajelzést ad.
+- [x] A kampánycél és a szektor-eligazítás külön felolvasógombot kapott:
+  kizárólag gombnyomásra, az aktuális HU/EN/DE nyelven olvas fel.
+  Megnyitás, új meccs és nyelvváltás nem indít felolvasást. A globális
+  némítás, beszédcsatorna és hangerő érvényes; nem támogatott böngészőben
+  a gomb tiltott, magyarázó szöveggel. A harci bemondások változatlanok.
+- [x] Felolvasás közben a teljes szöveg látható marad; Web Speech `word`
+  szóhatár-eseménynél az aktuális szó világosabb színnel, finom statikus
+  glow-val jelölődik. Befejezés, megszakítás, bezárás és nyelvváltás törli
+  a kiemelést. Szóhatárjelzés nélküli hangnál nincs időzítős utánzás.
+- [x] Felolvasás alatt ugyanaz a gomb „Leállítás”-ra vált, szóhatárjelzés
+  nélkül is. Leállítás törli a kiemelést; új gombnyomás az elejéről olvas.
+  Befejezés vagy megszakítás visszaállítja a „Felolvasás” feliratot.
+- [x] Célzott tesztek: kézi bezárás, szektoronkénti mentés/visszatöltés,
+  nyelvváltás, új meccs, körváltás, billentyűkezelés és tárolási hibák.
 - [ ] Valós iOS/Android ellenőrzés: név, briefing, tájolási tipp és HUD együtt.
 
 Ez még nem többpályás rendszer és nem oldja meg az XP-plafont.
@@ -368,7 +387,8 @@ Részletes alapelvek és hatókör:
   felderítő művelet és a `DELTA-08`/`FORGE-17` megszállt célágai választhatók.
   A `FORGE-17` a rejtett kulcsszektor; felszabadítása továbbviszi a fő célt
   és megnyitja a `VANGUARD-12`-t. A `DELTA-08` felszabadítása helyi eredmény,
-  de a `FORGE-17` később is elérhető. A `PRIME-00` későbbi kampánylépés marad.
+  de a `FORGE-17` később is elérhető. A `PRIME-00` második kötelező,
+  védendő létesítményes szektor, győzelme a kampányzárás.
 - [x] Felderítés nélkül is választhatók a megszállt szektorok; csak a
   kulcsszektor halad a fő céllal, más szektor helyi eredményt ad, és a
   kulcscél később sem záródik el.
@@ -456,26 +476,62 @@ Részletes alapelvek és hatókör:
   állapotát, objektumkimeneteit és kárkeretét, de megtartja az XP-profilt és
   fejlesztéseket; a teljes mentéstörlés külön marad.
 
-### Döntési kapuk – implementáció előtt
+### Döntési kapuk – az érintett implementációs lépés előtt
 
 - [ ] Meghatározni a `FORGE-17` szerződésének alap kredit- és XP-jutalmát.
+  Ez a jutalmazás bekötésének kapuja, nem az alapozásé.
   Más kampányküldetések saját elsődleges célt és súlyokat kaphatnak.
-- [ ] Kiválasztani a két objektum pontos helyét és méretét, valamint
+- [x] Kiválasztani a két objektum pontos helyét és méretét, valamint
   rögzíteni a terepfelszínre illesztés szabályát a kampánytartalomban.
+  A konkrét épületmegjelenés és az esetleges további civil/ipari típusok
+  az érintett lépésnél döntendők el; nincs szükség előzetes teljes épületkatalógusra.
+- [x] Az első épületmegjelenés egyszerű rajzolt prototípus: kék reaktor és
+  fehér kupolás civil telep, HP-csíkkal.
+- [x] A fix első elhelyezést seedelt elrendezés váltotta fel `FORGE-17` és
+  `PRIME-00` szektorban: reaktor 48×44, civil telep 64×32 világpixel.
+  FORGE X-helyei 380/540/720/900/1020, PRIME X-helyei 340/500/680/860/1000;
+  új csatánként két külön helyet választunk, újrapróbáláskor is.
+  Azonos seed azonos elrendezést ad, ismétlődés lehetséges.
+  A talppont a középső X terepfelszíne (`surfaceY`), a rövid alapzat a
+  lábnyom alatti egyenetlenséget követi, terepátalakítás nélkül. Robbanáskor
+  a sebzés a rombolás előtti épületközéppont távolságából számolódik;
+  utána az épület a megváltozott felszínhez igazodik, esési sebzés nélkül.
+- [x] A megsemmisült objektum többé nem sebezhető, a maradék HP-t és
+  játékoskárt a további robbanás nem módosítja.
 
 ### Végrehajtás és függőségek
 
-- [ ] **O1 – Stratégiai objektumok:** `ENERGY_NODE` és `CIVIL_HABITAT` adatok,
+- [x] **O1 logikai alap (2026-11-07):** `strategicObjectives.ts` tartalmazza
+  a két objektumtípust, a 100 HP-s kezdőállapotot, a háromállapotú besorolást,
+  a robbanás harmadolt sebzési zónáit, a tényleges HP-vesztésre korlátozott
+  játékoskár-követést és a fejlesztett maximumból számolt pajzshatást.
+  Az AI-sebzés csak a fizikai HP-t csökkenti.
+- [x] **O1 – Stratégiai objektumok:** `ENERGY_NODE` és `CIVIL_HABITAT` adatok,
   háromállapotú HP-modell (70–100% ép, 20–69% sérült, 0–19% megsemmisült),
   terepfelszínhez illesztés, felismerhető pályabeli jelölés és HP-/állapotjelzés.
-- [ ] O1: csak a meglévő robbanás sebzi az objektumot; közvetlen lövedéktalálat
+- [x] O1: csak a meglévő robbanás sebzi az objektumot; közvetlen lövedéktalálat
   nem. A 100/50/25% az alap-sebzés aránya, az ismételt robbanás összeadódik.
   A zónák egyenlő harmadokra osztják az effektív sebzési sugarat.
   A robbanáskezelés legyen determinisztikus; a szerződéshez csak a
   játékosnak tulajdonítható sebzést kell követni. AI-forrású kár ne adjon
   küldetésteljesítési levonást; külön AI-sebzésnapló Phase 1-ben nem cél.
-- [ ] O1: a sérült állapot szikrával/villódzással/füsttel, a megsemmisült
+- [x] O1: a sérült állapot szikrával/villódzással/füsttel, a megsemmisült
   roncsállapottal különbözzön; az animáció ne módosítsa a logikai állapotot.
+  Reduced-motion mellett a repedés és füst statikus.
+- [x] **O1 pályabeli próba:** a két épület a `FORGE-17` és `PRIME-00` Campaign
+  csatában jelenik meg; a HUD hu/en/de névvel, állapottal és HP-val jelzi.
+  A hadműveleti konzol külön naplózza a tényleges HP-vesztést és a
+  megsemmisülést, az okozóval (játékos vagy AI); romokra nem ismétel
+  káreseményt. A szöveges épületjelentés nem szakítja meg a harci bemondást.
+  A térképi kártya és briefing egyértelművé teszi, hogy a kampánykár-mentés
+  és szerződéses jutalmazás még nincs bekötve. Új csatában az objektumok
+  jelenleg újra 100 HP-val indulnak; ez átmeneti, nem az O2 célviselkedése.
+  Böngészőben asztali és mobil fekvő nézet ellenőrizve.
+- [x] Kampánycél a térkép fejléce alatt: szektoronkénti felszabadítás,
+  a létesítmények lehető legkisebb sérülése. FORGE nyitja VANGUARD-ot,
+  PRIME győzelme zárja a kampányt, DELTA kihagyható. Mentési tartalomverzió
+  1→2 migráció megőrzi a régi OR-útvonal teljesítéseit, nem talál ki épületkárt;
+  újonnan VANGUARD csak FORGE után érhető el.
 - [ ] O1: hu/en/de briefing és jelölés közölje a védendő objektumokat,
   a szerződést és a kockáztatott jutalmat; mobilon is olvasható legyen,
   ne csak színnel különböztessen meg.
@@ -492,8 +548,9 @@ Részletes alapelvek és hatókör:
 - [ ] O2: C3 mentésmigráció és validáció mellett a korábbi teljesítés és XP-profil
   maradjon érintetlen; az új következményadat a meglévő Campaign rendszerhez
   adódjon hozzá, pixelterepet ne mentsünk. Gyorscsatában ne fusson.
-- [ ] O2: a szerződés/jutalom/kampányhatás elszámolása legyen meccsazonosítóhoz
-  kötött és idempotens reload, remount, ismételt esemény vagy újrapróbálás esetén.
+- [ ] O2: a csatánkénti állapotmentés meccsazonosítóhoz, a végleges
+  szerződésjutalom kampányküldetés-/szerződésazonosítóhoz kötött és idempotens
+  legyen reload, remount, ismételt esemény vagy újrapróbálás esetén.
 - [ ] **O3 – Érthető elszámolás:** ResultScreen-jelentés mutassa külön a
   Victory/Defeat eredményt, szerződésszázalékot, védett objektumállapotokat,
   játékosnak tulajdonítható objektumkárt, kredit-/XP-jutalmat és a következő

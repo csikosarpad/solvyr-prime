@@ -38,8 +38,10 @@ A jelenlegi és tervezett fejlesztési ágak áttekintő ábrája:
   fanfár és a győztes bemondása. Offline a játékosnevek a Beállításokban állíthatók.
 - Offline AI és érintésbarát célzás működik; valódi telefonos ellenőrzés még hátravan.
 - Öt seedelt terepprofil, két tank és hét összeadódó statfejlesztés van. A kampány
-  aktuális művelete a főmenüben, a tényleges csataszektor a HUD-ban és 2,5 másodperces
-  briefingben látható. Modifikátor, orbitális képesség, osztályválasztás és stratégiai hadjárat még nincs.
+  aktuális művelete a főmenüben, a tényleges csataszektor a HUD-ban és kézzel
+  bezárható briefingben látható. Az eligazítás minden játékmódban pályánként
+  elrejthető, helyileg mentett checkbox-választással.
+  Modifikátor, orbitális képesség, osztályválasztás és stratégiai hadjárat még nincs.
 - Campaign Map C3 működik: öt szektoros elágazó térkép, P1 vs AI, OR feloldás,
   eredmény utáni visszatérés, helyileg mentett 0/5 → 5/5 teljesítés és v1→v2 migráció.
   Külön kampányreset és teljes mentéstörlés; extra kampányjutalom nincs.
@@ -144,6 +146,12 @@ A részletes feladatok a [progressziós TODO](./gameplay-progression-todo.md) 2.
 ## Gameplay-identitás – következményes ostromhadjárat (2026-11-07)
 
 **Elfogadott Phase 1 MVP-specifikáció, még nem megvalósított funkció.**
+Az O1 pályabeli objektumpróba elkészült a meglévő `FORGE-17` és `PRIME-00` szektorban:
+reaktor és civil kupolatelep, robbanási sebzés, állapotjelzés és HU/EN/DE HUD.
+A teljes feature még nincs kész: kampánykár-mentés, szerződéses jutalom,
+következő csata pajzshatása hátravan. FORGE már megnyitja VANGUARD-ot,
+PRIME győzelme a kampányzárás; DELTA kihagyható. A két szektor épületei
+új csatánként seedelt, tankokkal és egymással nem átfedő helyeket kapnak.
 Alapígéret: a csata megnyerhető úgy is, hogy a játékos részben vagy teljesen
 elbukja a küldetés szerződéses célját. A harci győzelem továbbra is az ellenfél
 megsemmisítésétől függ; az objektumok állapota a jutalmat és a kampány következő
@@ -174,7 +182,7 @@ küldetését befolyásolja.
   felderítés, illetve a `DELTA-08` és `FORGE-17` megszállt célágai jelennek
   meg. A `FORGE-17` a rejtett kulcsszektor; felszabadítása nyitja meg a
   `VANGUARD-12`-t. A `DELTA-08` helyi eredményt ad, de a `FORGE-17` később
-  is elérhető; a `PRIME-00` későbbi kampánylépés marad.
+  is elérhető; a `PRIME-00` második kötelező, létesítményes kampányzáró szektor.
 - Az első kulcsküldetésben az energiaellátó és a civil létesítmény egyaránt
   védett szerződéses objektum, a saját szerződéssúlyával. Az első próbában
   mindkettő maximális HP-ja 100; a stratégiai fontosságot a súly fejezi ki.

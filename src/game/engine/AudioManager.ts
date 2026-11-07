@@ -17,6 +17,14 @@ const MUSIC_VOLUME = 0.25;
 const MOVE_HOLD_MS = 250;
 const GESTURES = ["pointerup", "touchend", "click", "keydown"] as const;
 
+/** Escape, böngésző-gyorsbillentyű vagy egérfelengedés nem mindig aktivál; ilyenkor a böngésző figyelmeztet. */
+function userActivated(sticky = false): boolean {
+  const activation = (navigator as Navigator & { userActivation?: { isActive: boolean; hasBeenActive: boolean } })
+    .userActivation;
+  if (!activation) return true;
+  return sticky ? activation.hasBeenActive : activation.isActive;
+}
+
 /** Web Audio alapú hangkezelő; a böngésző szabálya miatt az első kattintásra/billentyűre éled fel. */
 export class AudioManager {
   private ctx: AudioContext | null = null;
@@ -29,7 +37,9 @@ export class AudioManager {
   private unsubscribeSettings: () => void;
   private onGesture = () => this.unlock();
   private onVisible = () => {
-    if (!document.hidden && this.ctx && this.ctx.state !== "running") void this.ctx.resume().catch(() => {});
+    if (!document.hidden && this.ctx && this.ctx.state !== "running" && userActivated(true)) {
+      void this.ctx.resume().catch(() => {});
+    }
   };
 
   constructor() {
@@ -70,6 +80,7 @@ export class AudioManager {
   }
 
   private unlock(): void {
+    if (!userActivated()) return;
     if (this.ctx) {
       // Felfüggesztett (pl. háttérbe került) kontextus újraélesztése; a resume() függőben maradhat, ezért nem várjuk meg.
       if (this.ctx.state !== "running") void this.ctx.resume().catch(() => {});
@@ -109,7 +120,7 @@ export class AudioManager {
   play(name: SoundName, { rate = 1, volume = 1 }: { rate?: number; volume?: number } = {}): void {
     const buffer = this.buffers[name];
     if (!this.ctx || !this.master || !buffer || !useAudioSettings.getState().channels.effects) return;
-    if (this.ctx.state !== "running") void this.ctx.resume().catch(() => {});
+    if (this.ctx.state !== "running" && userActivated(true)) void this.ctx.resume().catch(() => {});
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
     source.playbackRate.value = rate;
@@ -124,7 +135,7 @@ export class AudioManager {
    */
   playFanfare(): void {
     if (!this.ctx || !this.master || !useAudioSettings.getState().channels.effects) return;
-    if (this.ctx.state !== "running") void this.ctx.resume().catch(() => {});
+    if (this.ctx.state !== "running" && userActivated(true)) void this.ctx.resume().catch(() => {});
     const start = this.ctx.currentTime + 0.05;
     // C-dúr felfelé futó hármashangzat, a végén hosszan kitartott akkord.
     const notes: Array<[freq: number, at: number, length: number]> = [

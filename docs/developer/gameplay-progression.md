@@ -947,7 +947,9 @@ tréning marad; utána opcionális felderítő művelet, valamint a `DELTA-08` �
 felszabadítása továbbviszi a fő célt és megnyitja a `VANGUARD-12`-t.
 A `DELTA-08` felszabadítása helyi eredményt ad, de nem zárja el a `FORGE-17`
 későbbi elérését. Felderítés nélkül is választható mindkét ág; a felderítés
-felfedi a kulcscélt és az alternatívát. A `PRIME-00` későbbi kampánylépés marad.
+felfedi a kulcscélt és az alternatívát. A `PRIME-00` a második kötelező,
+védendő létesítményes szektor; győzelme zárja a kampányt. A tényleges
+feloldás `ALPHA-01 → FORGE-17 → VANGUARD-12 → PRIME-00`, `DELTA-08` kihagyható.
 
 1. A sima offline gyorscsata maradjon változatlan. A specifikációban szereplő
    három küldetés csak lehetséges bemutató-sorozat, nem MVP-korlát vagy
@@ -974,7 +976,16 @@ felfedi a kulcscélt és az alternatívát. A `PRIME-00` későbbi kampánylép�
    70–100% ép, 20–69% sérült, 0–19% megsemmisült. Az objektum a generált
    terep felszínére illeszkedik, nem lebeg. Az első próba mindkét
    objektumtípusánál a maximális HP 100; a különbséget a küldetés fontossági
-   súlyai fejezik ki, nem az alap-HP.
+   súlyai fejezik ki, nem az alap-HP. A `FORGE-17` és `PRIME-00` mindegyike
+   48×44 világpixeles energiareaktort és 64×32 világpixeles civil kupolatelepet
+   tartalmaz. A korábbi fix elhelyezést seedelt választás váltja fel:
+   FORGE X-helyei 380/540/720/900/1020, PRIME X-helyei 340/500/680/860/1000.
+   Új csatánként, újrapróbáláskor is új seed alapján választunk két külön
+   helyet, a meccs időjárásának véletlenszámsorától függetlenül.
+   Azonos seed azonos elrendezést ad; ismétlődő elrendezés lehetséges.
+   Mindkettő rövid alapzata követi a lábnyom alatti
+   egyenetlenséget, terepátalakítás nélkül. Robbanás után az aktuális
+   terepfelszínhez igazodnak, külön esési sebzés nélkül.
 5. Az objektumot csak a meglévő robbanás sebzi, közvetlen lövedéktalálat nem.
    A specifikáció kiinduló sebzési lépcsői a robbanás közepén az alap-sebzés
    100%-a, közel 50%, távol 25%, a hatósugáron kívül 0%; a százalék közvetlenül
@@ -982,6 +993,12 @@ felfedi a kulcscélt és az alternatívát. A `PRIME-00` későbbi kampánylép�
    A zónák az adott robbanás effektív sebzési sugarához (`R`) viszonyulnak:
    közép `0 ≤ d < R/3`, közeli `R/3 ≤ d < 2R/3`, távoli
    `2R/3 ≤ d ≤ R`, hatósugáron kívül `d > R`.
+   A távolság a rombolás előtti épületközépponttól számolódik. A jelenlegi
+   motorban `R = 2 × blastRadius`, az alap-sebzés `60 × damage`, a tankok
+   meglévő effektív sebzési sugarával és középponti nyers sebzésével összhangban.
+   A megsemmisült (`HP < 20%`) objektum többé nem sebezhető: a megmaradt
+   HP és játékoskár nem változik további robbanásoktól, de a rom is követi
+   a terepfelszínt.
 6. A szerződés elsődleges célját és a védendő objektumokat a kampányküldetés
    határozza meg. Az első kulcsküldetésben, a `FORGE-17` felszabadításakor
    az ellenséges ostromplatform megsemmisítése a fő cél, az `ENERGY_NODE_01`

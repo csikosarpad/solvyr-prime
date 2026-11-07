@@ -9,6 +9,8 @@ import { requestLandscape } from "./orientation";
 import { CampaignStarfieldCanvas } from "./CampaignStarfieldCanvas";
 import { CampaignSectorCard } from "./CampaignSectorCard";
 import "./CampaignMap.css";
+import { ReadAloudButton } from "./ReadAloudButton";
+import { ReadAloudText, useReadAloud } from "./ReadAloudText";
 
 export function CampaignMap() {
   const t = useT();
@@ -19,6 +21,10 @@ export function CampaignMap() {
   const [startError, setStartError] = useState(false);
   const [warpSequence, setWarpSequence] = useState(0);
   const [departingId, setDepartingId] = useState<SectorId | null>(null);
+  const goalTitle = t("campaign.goalTitle");
+  const goalDescription = t("campaign.goalDescription");
+  const goalText = `${goalTitle}. ${goalDescription}`;
+  const goalSpeech = useReadAloud(goalText);
   const start = () => {
     if (!gameRef.current) {
       setStartError(true);
@@ -47,6 +53,15 @@ export function CampaignMap() {
             {t("campaign.progress", { value: completedIds.length, total: SECTORS.length })}
           </span>
         </header>
+        <section className="campaign-goal" aria-label={t("campaign.goalTitle")}>
+          <h2>
+            <ReadAloudText text={goalTitle} range={goalSpeech.range} />
+          </h2>
+          <p>
+            <ReadAloudText text={goalDescription} offset={goalTitle.length + 2} range={goalSpeech.range} />
+          </p>
+          <ReadAloudButton text={goalText} playback={goalSpeech} />
+        </section>
         {completedIds.includes("prime-00") && (
           <p className="campaign-result" role="status">
             {t("campaign.operationComplete")}

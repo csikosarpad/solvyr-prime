@@ -3,6 +3,7 @@ import { TRAINING_SECTOR, type Sector, type SectorId } from "../data/sectors";
 import type { MatchStats } from "../systems/matchStats";
 import type { Phase } from "../systems/turnManager";
 import type { Profile } from "../systems/upgrades";
+import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
 
 export type Screen = "menu" | "playing" | "campaignMap";
 export type MatchMode = "skirmish" | "campaign";
@@ -44,6 +45,7 @@ export interface GameState {
   canControl: boolean;
   winner: string | null;
   tanks: TankView[];
+  strategicObjectives: readonly PlacedStrategicObjective[];
   profiles: Record<string, Profile>;
   matchStats: MatchStats;
   /** A soron lévő játékos még kérhet röppálya-előnézetet. */
@@ -83,6 +85,7 @@ export const useGameStore = create<GameState>((set) => ({
   canControl: true,
   winner: null,
   tanks: [],
+  strategicObjectives: [],
   profiles: {},
   matchStats: {},
   previewAvailable: false,

@@ -648,6 +648,12 @@
   font: 600 13px var(--bf-font-data);
 }
 
+.hud-objectives {
+  color: var(--bf-text);
+  font: 600 12px var(--bf-font-data);
+  overflow-wrap: anywhere;
+}
+
 .sector-briefing {
   position: absolute;
   inset: 0;
@@ -658,7 +664,18 @@
   pointer-events: none;
 }
 
+.read-aloud-word {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--bf-highlight) 22%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bf-highlight) 22%, transparent);
+  color: var(--bf-highlight);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--bf-highlight) 85%, transparent);
+}
+
 .sector-briefing-panel {
+  pointer-events: auto;
+  max-height: 100%;
+  overflow-y: auto;
   width: min(460px, 100%);
   box-sizing: border-box;
   padding: clamp(16px, 4vw, 28px);
@@ -687,6 +704,32 @@
   margin: 0;
   color: var(--bf-muted);
   font: 500 16px var(--bf-font-data);
+}
+
+.sector-briefing-preference {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0;
+  color: var(--bf-text);
+  font: 500 14px var(--bf-font-data);
+  cursor: pointer;
+}
+
+.sector-briefing-preference input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sector-briefing-panel > .btn {
+  margin: 4px;
+}
+
+.sector-briefing-panel [role="alert"] {
+  margin-bottom: 12px;
+  color: var(--bf-danger, #ff6464);
 }
 
 @keyframes sector-briefing-reveal {

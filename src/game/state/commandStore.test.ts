@@ -41,6 +41,13 @@ describe("commandStore", () => {
       expect(speak).toHaveBeenCalledWith(expect.objectContaining({ volume: 0.35 }));
     });
 
+    it("logs a structure event without interrupting spoken combat announcements", () => {
+      useCommandStore
+        .getState()
+        .log("command.ENERGY_NODEDamaged", { source: "P1", damage: 60, hp: 40, maxHp: 100 }, "warning");
+      expect(speak).not.toHaveBeenCalled();
+      expect(useCommandStore.getState().messages.at(-1)?.key).toBe("command.ENERGY_NODEDamaged");
+    });
     it("keeps console messages without speech at zero volume or when muted or voice-disabled", () => {
       useAudioSettings.setState({ volume: 0 });
       useCommandStore.getState().announce("command.fire");
