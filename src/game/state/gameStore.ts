@@ -4,9 +4,10 @@ import type { MatchStats } from "../systems/matchStats";
 import type { Phase } from "../systems/turnManager";
 import type { Profile } from "../systems/upgrades";
 import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
+import type { CampaignMission } from "../data/campaignContent";
 
-export type Screen = "menu" | "playing" | "campaignMap";
-export type MatchMode = "skirmish" | "campaign";
+export type Screen = "menu" | "playing" | "campaignMap" | "veylora";
+export type MatchMode = "skirmish" | "campaign" | "operation";
 export const MIN_POWER = 100;
 export const MIN_ANGLE = 0;
 export const MAX_ANGLE = 180;
@@ -57,6 +58,9 @@ export interface GameState {
   matchId: string | null;
   sector: Sector;
   campaignNewRoutes: SectorId[];
+  campaignMission: CampaignMission | null;
+  missionSuccess: boolean | null;
+  opponentSkill: number | null;
   aiActive: boolean;
   /** Helyi prezentációs sorszám; új csatánál változik, nem online protokollmező. */
   matchSequence: number;
@@ -96,6 +100,9 @@ export const useGameStore = create<GameState>((set) => ({
   matchId: null,
   sector: TRAINING_SECTOR,
   campaignNewRoutes: [],
+  campaignMission: null,
+  missionSuccess: null,
+  opponentSkill: null,
   aiActive: false,
   matchSequence: 0,
   muted: readMuted(),

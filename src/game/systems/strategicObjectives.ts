@@ -1,6 +1,6 @@
 import { createSeededRandom } from "./seededRandom";
 
-export type StrategicObjectiveType = "ENERGY_NODE" | "CIVIL_HABITAT";
+export type StrategicObjectiveType = "ENERGY_NODE" | "CIVIL_HABITAT" | "RESEARCH_LAB";
 export type StructureState = "INTACT" | "DAMAGED" | "DESTROYED";
 export type StrategicDamageSource = "PLAYER" | "AI";
 
@@ -64,7 +64,8 @@ function validateHp(hp: number, maxHp: number): void {
 
 export function createStrategicObjective(id: string, type: StrategicObjectiveType): StrategicObjective {
   if (!id.trim()) throw new Error("Missing strategic objective ID");
-  if (type !== "ENERGY_NODE" && type !== "CIVIL_HABITAT") throw new Error("Unknown strategic objective type");
+  if (type !== "ENERGY_NODE" && type !== "CIVIL_HABITAT" && type !== "RESEARCH_LAB")
+    throw new Error("Unknown strategic objective type");
   return { id, type, maxHp: 100, hp: 100, playerCausedDamage: 0 };
 }
 

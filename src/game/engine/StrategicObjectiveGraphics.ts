@@ -57,6 +57,14 @@ export class StrategicObjectiveGraphics extends Graphics {
           x + 2,
           top + 21,
         ]).fill({ color, alpha });
+      } else if (objective.type === "RESEARCH_LAB") {
+        this.roundRect(left, top + 8, width, height - 12, 3)
+          .fill({ color: 0xc3d3de, alpha })
+          .stroke({ color: 0x62efff, width: 2 });
+        this.rect(left + 8, top, width - 16, 8).fill(0xf1f4fa);
+        for (let offset = 10; offset < width - 8; offset += 14)
+          this.rect(left + offset, top + 16, 8, 10).fill({ color: 0x62efff, alpha });
+        this.rect(x - 6, y - 16, 12, 12).fill(0x24465c);
       } else {
         this.moveTo(left + 2, y - 4)
           .bezierCurveTo(left + 2, top + 7, x - width / 4, top, x, top)

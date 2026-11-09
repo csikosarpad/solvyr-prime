@@ -23,6 +23,11 @@ A jelenlegi és tervezett fejlesztési ágak áttekintő ábrája:
 
 ## Aktuális állapot (2026-11)
 
+- VEYLORA-03 első játszható prototípusa külön főmenübelépéssel elkészült:
+  két konfigurált, aszimmetrikus harctér, rögzített P1–AI ellenfelek,
+  kutatóépület-védelem és külön mentett küldetéshaladás. Állomáskártya már van,
+  de gazdaság, kampányfejlesztés és build nélküli tartalomfrissítés még nincs.
+  Részletes hatókör és hátralévő lépések: [VEYLORA fejlesztési alap](./gameplay-progression-todo.md#6c-veylora-03--elfogadott-fejlesztési-alap).
 - A ResultScreen, a HUD és a játéktér sci-fi katonai vizuális rendszere működik.
 - A játéktér rétegezett hátteret használ: csillagos ég, hegyek, atmoszféra, terrain és visszafogott szikla-dekorációk.
 - A terrain fizikája, a ballisztika, a szél és a multiplayer determinisztikus működése megmaradt.

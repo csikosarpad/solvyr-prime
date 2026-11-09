@@ -8,13 +8,17 @@ import { Shop } from "./Shop";
 import { ResultDecorCanvas } from "./result/ResultDecorCanvas";
 import { getUnitPresentation } from "./result/unitPresentation";
 import { sectorById } from "@/game/data/sectors";
+import { useVeyloraStore } from "@/game/state/veyloraStore";
 
 /** Meccs végén: győztes, statisztika, bolt és továbblépés. */
 export function ResultScreen() {
   const t = useT();
   const name = usePlayerName();
-  const { winner, matchStats, setScreen, matchMode, aiActive, sector, campaignNewRoutes } = useGameStore();
+  const { winner, matchStats, setScreen, matchMode, aiActive, sector, campaignNewRoutes, missionSuccess,
+    campaignMission } = useGameStore();
   const campaign = matchMode === "campaign";
+  const operation = matchMode === "operation";
+  const operationError = useVeyloraStore((s) => s.error);
   const campaignError = useCampaignStore((s) => s.error);
   const completedIds = useCampaignStore((s) => s.completedIds);
   const credentials = useMultiplayerStore((state) => state.credentials);
@@ -39,6 +43,22 @@ export function ResultScreen() {
           <p className="campaign-result" role="status">
             {winner === "P1" ? t("campaign.secured", { code: sector.code }) : t("campaign.notSecured")}
           </p>
+        )}
+        {operation && (
+          <section className="campaign-result" role="status">
+            <p>{t(missionSuccess ? "veylora.missionSuccess" : "veylora.missionFailure")}</p>
+            <p>{t("veylora.prototype")}</p>
+          </section>
+        )}
+        {operation && operationError && (
+          <div className="lobby-error" role="alert">
+            <p>{t(operationError)}</p>
+            {missionSuccess && campaignMission && operationError === "veylora.saveError" && (
+              <button className="btn secondary" onClick={() => useVeyloraStore.getState().complete(campaignMission.id)}>
+                {t("veylora.retrySave")}
+              </button>
+            )}
+          </div>
         )}
         {campaign && winner === "P1" && campaignNewRoutes.length > 0 && (
           <p className="campaign-result" role="status">
@@ -93,6 +113,14 @@ export function ResultScreen() {
           </p>
         )}
         <div className="result-actions">
+          {operation && (
+            <button className="btn hud-button hud-button-primary" onClick={() => {
+              gameRef.current?.leaveBattle();
+              setScreen("veylora");
+            }}>
+              {t("veylora.title")}
+            </button>
+          )}
           {campaign && (
             <button
               className="btn hud-button hud-button-primary"

@@ -14,8 +14,10 @@ export function SectorBriefing() {
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const objectivesText =
-    matchMode === "campaign" && sector.strategicObjectives
-      ? `${t("strategic.protected")}: ${sector.strategicObjectives.map((objective) => t(`strategic.${objective.type}`)).join(", ")}. ${t("strategic.trial")}`
+    matchMode !== "skirmish" && sector.strategicObjectives?.length
+      ? matchMode === "operation"
+        ? t("veylora.protection")
+        : `${t("strategic.protected")}: ${sector.strategicObjectives.map((objective) => t(`strategic.${objective.type}`)).join(", ")}. ${t("strategic.trial")}`
       : "";
   const briefingText = t(sector.briefing);
   const nameOffset = sector.code.length + 2;
@@ -43,7 +45,7 @@ export function SectorBriefing() {
         <p>
           <ReadAloudText text={briefingText} offset={briefingOffset} range={speech.range} />
         </p>
-        {matchMode === "campaign" && sector.strategicObjectives && (
+        {objectivesText && (
           <p>
             <ReadAloudText
               text={objectivesText}

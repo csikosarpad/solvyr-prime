@@ -8,7 +8,7 @@ vi.hoisted(() => {
 });
 
 describe("strategic objective graphics", () => {
-  it.each(["ENERGY_NODE", "CIVIL_HABITAT"] as const)("draws distinct %s states without changing logic", (type) => {
+  it.each(["ENERGY_NODE", "CIVIL_HABITAT", "RESEARCH_LAB"] as const)("draws distinct %s states without changing logic", (type) => {
     const graphics = new StrategicObjectiveGraphics();
     const terrain = TerrainMask.fromHeightmap(new Array(1280).fill(550), 720);
     const objective: PlacedStrategicObjective = {

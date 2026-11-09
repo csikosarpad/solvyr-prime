@@ -627,6 +627,9 @@ explicit döntést igényel.
 
 ### Későbbi tervezési feladatok
 
+Az alábbiak a teljes későbbi rendszer feladatai. A VEYLORA első szeletére
+elfogadott konkrét szabályokat a 6C rögzíti; azokat nem kell újra eldönteni.
+
 - [ ] Megalkotni a nyersanyag–technológia lépcsőket/mátrixot, és megadni,
   mely fejlesztésekhez milyen nyersanyag és technológia szükséges.
 - [ ] Eldönteni, mit jelent a nyersanyag megszerzése: egyszeri készlet,
@@ -635,13 +638,18 @@ explicit döntést igényel.
   az előfeltételek esetleges kivételeit.
 - [ ] Megtervezni a szektoronkénti jutalmakat, az ismételt teljesítés
   elszámolását és a kampány-/tartós profilállapot határát.
-- [ ] Megtervezni a szektorfüggőségek kivezetését, a kampányzárást és a
-  meglévő C3/6A haladás migrációját az új modell bevezetése előtt.
+- [ ] A régi C3/6A későbbi átállítása előtt megtervezni a szektorfüggőségek
+  kivezetését, a kampányzárást és a haladás migrációját. A VEYLORA első
+  szelete a régi tartalom mellett, annak átállítása nélkül készül.
 
-## 6C. Továbblépési ajánlás – második, konfigurálható kampányszektor
+## 6C. VEYLORA-03 – elfogadott fejlesztési alap
 
-**Státusz:** 2026-11-09-i megvalósíthatósági és végrehajtási javaslat,
-nem jóváhagyott implementációs specifikáció. Cél: a meglévő tartalom mellett
+**Státusz:** 2026-11-09-én egyeztetett, elfogadott játékszabályok és
+fejlesztési alap. Az első K1–K2 játszható prototípus elkészült az alább
+rögzített hatókörrel; a gazdaság és a távoli frissítés még nincs bekötve.
+A nyitott technikai és balanszfeladatok az
+alábbi külön listában szerepelnek, nem további eldöntetlen alapszabályok.
+Cél: a meglévő tartalom mellett
 egy önállóan választható új szektorral kipróbálni a 6B irányát, teljes
 gazdaság, technológiafa vagy új harci motor nélkül.
 
@@ -650,10 +658,9 @@ gazdaság, technológiafa vagy új harci motor nélkül.
 A kód jelenlegi `Sector` fogalma egyetlen csatát/harcteret ír le, nem
 bolygók és állomások gyűjteményét. **2026-11-09: elfogadott tartalmi hierarchia:**
 **szektor → helyszín (bolygó/állomás) → küldetés → harctér**.
-A kampány ezeket szervezi össze; az elfogadás nem jelenti automatikusan
-a VEYLORA tartalmának és gazdasági szabályainak jóváhagyását.
-Elsőre nem szükséges minden szinthez külön képernyő: szektorválasztó és
-a szektor helyszín-/küldetéskártyái elegendők.
+A kampány ezeket szervezi össze. Az elfogadott első navigáció szektorválasztó,
+helyszín-/küldetéskártyák és állomási készlet-/fejlesztésnézet;
+nem szükséges minden szinthez külön képernyő.
 
 | Meglévő alap | Újrahasználat és szükséges változás |
 | --- | --- |
@@ -669,31 +676,34 @@ a több helyszínes szektor, gazdaság és biztonságos jutalmazás közepes
 megtartható. Űrcsata, űrhajómozgás vagy állomásbelső-harc már külön fejlesztés,
 nem oldható meg pusztán konfigurációval.
 
-### Ajánlott első tartalom: VEYLORA-03 / Mining Colony
+### Elfogadott első tartalom: VEYLORA-03 / Mining Colony
 
-Az alábbi tartalom és számok javaslatok, nem rögzített balanszértékek.
+A játékszabályok elfogadottak; a terep és az ellenfelek kezdőértékei
+játékpróbával igazolandók. A részletes döntések alább szerepelnek.
 
 | Helyszín | Szerep | Első próbában |
 | --- | --- | --- |
-| VEYLORA-A bolygó | Bányatelep biztosítása | Egy új, a meglévő motorral játszható felszíni csata; első győzelemért például 20 egység ipari érc. |
-| VEYLORA-B bolygó | Kutatótelep felszabadítása | Második felszíni csata; első győzelemért egy anyagtechnológiai tervrajz. |
+| VEYLORA-A bolygó | Bányatelep biztosítása | Felszíni csata; az első sikeres teljesítésért 20 egység ipari érc. |
+| VEYLORA-B bolygó | Kutatótelep felszabadítása | Felszíni csata; tankgyőzelem és legalább 20/100 kutatóépület-HP szükséges. Az első sikeres teljesítésért egy anyagtechnológiai tervrajz. |
 | VEYLORA állomás | Logisztikai/kutatási központ | Kezdetben nem harci helyszín: készlet, megszerzett technológia és egy fejlesztési recept megjelenítése. |
 
 - Az új szektor és mindkét felszíni küldetés a jelenlegi tartalom
   teljesítésétől és egymástól függetlenül választható.
-- A harci és győzelmi XP marad a meglévő szabály szerint; az első próbába
-  nem szükséges új kampány-XP-bónusz vagy kreditgazdaság.
-- Egyetlen kísérleti recept elegendő: **ipari érc + anyagtechnológiai
-  tervrajz → egy új kampányfejlesztés**. Így a két küldetés sorrendje szabad,
+- A harci és győzelmi XP marad a meglévő szabály szerint, újrajátszáskor is;
+  nincs külön kampány-XP-bónusz. Kreditgazdaság nem része az első szeletnek.
+- Az első recept: **20 ipari érc + anyagtechnológiai
+  tervrajz megléte → Megerősített pajzs**. Így a két küldetés sorrendje szabad,
   de a fejlesztéshez mindkét eredmény kell. Ez még nem a teljes mátrix.
-- Javasolt első gazdasági szabály: az érc fogyó készlet, a tervrajz tartós
-  feloldás; küldetésenként csak az első győzelem ad új gazdasági jutalmat.
-  Újrajátszáskor a meglévő harci XP továbbra is járhat.
-- Az első fejlesztés legyen egyszer megvehető, és csak az új kampánytartalomban
-  hasson; például kis pajzskapacitás-bónusz. A pontos hatás és költség
-  döntési kapu, a meglévő XP-fejlesztések nem kapnak visszamenőleg új árat.
-- Elsőre ne legyen kötelező az összes helyszín teljesítése: a szektor maradjon
-  visszalátogatható, a megszerzett jutalom és a küldetésállapot külön látszódjon.
+- Az érc fogyó készlet, a tervrajz tartós, nem fogyó feloldás; küldetésenként
+  csak az első sikeres teljesítés ad gazdasági jutalmat. Nincs termelési,
+  kutatási vagy gyártási időzítő.
+- A Megerősített pajzs egyszer megvehető, +10% maximális energiapajzsot ad
+  P1 XP-fejlesztésekkel számolt alapjához képest. VEYLORA és minden későbbi,
+  új rendszerű kampányszektor új csatáiban hat; a régi kampány, gyorscsata
+  és PvP változatlan. A meglévő XP-fejlesztések nem kapnak új árat.
+- Mindkét küldetés sikere biztosítja a szektort; a vásárlás nem feltétel.
+  A szektor visszalátogatható, a jutalom és a küldetésállapot külön látszik.
+  Az utazás és küldetésindítás ingyenes.
 
 ### Konfigurációs határ – mi szerkeszthető kódváltoztatás nélkül?
 
@@ -745,13 +755,13 @@ Az alábbi részlet a formátumot szemlélteti, nem kész séma vagy betölthet�
     {
       "id": "secure-mine",
       "battlefieldId": "veylora-mine",
-      "rewardPolicy": "first-victory",
+      "rewardPolicy": "first-success",
       "rewards": { "resources": { "industrial-ore": 20 } }
     },
     {
       "id": "secure-lab",
       "battlefieldId": "veylora-lab",
-      "rewardPolicy": "first-victory",
+      "rewardPolicy": "first-success",
       "rewards": { "technologies": ["materials-blueprint"] }
     }
   ]
@@ -768,41 +778,77 @@ Az alábbi részlet a formátumot szemlélteti, nem kész séma vagy betölthet�
   terepprofilok paraméterei, paletta, objektumok és meglévő hatások értékei.
   Új helyszín hozzáadásához ne kelljen komponensenként külön elágazás.
 - Új mechanika, objektumtípus vagy fejlesztési hatás továbbra is kódot,
-  tesztet és szükség esetén új assetet igényel. A lokalizált szövegek a
-  meglévő hu/en/de katalógusokba kerüljenek, nem szabadon futtatható configba.
+  tesztet és szükség esetén új assetet igényel. A lokalizáció megtartja a
+  hu/en/de nyelveket és a kulcsalapú feloldást; új tartalmi fordítások
+  build nélküli terítésének módja még technikai feladat. A konfiguráció
+  adat, nem szabadon futtatható kód.
 - Validálni kell a sémaverziót, egyedi ID-ket, minden hivatkozást,
   jutalom-/költségértékeket, terep-/elhelyezési korlátokat és fordítási kulcsokat.
   A későbbi technológiai gráf legyen körmentes; ez nem szektorbelépési gráf.
   Hibás tartalom látható hibával blokkoljon, ne adjon alapértelmezett jutalmat.
-- Változó helyszínszámnál elsőre reszponzív kártyarács ajánlott; a jelenlegi
+- Változó helyszínszámnál elsőre reszponzív helyszínkártyák készülnek; a jelenlegi
   százalékos térképpozíciók automatikus, átfedésmentes kiosztása külön feladat.
 
-### Javasolt végrehajtási sorrend és elfogadás
+### Végrehajtási sorrend és elfogadás
+
+Az alábbiak a teljes csomag implementációs lépései. Az elfogadott döntéseknél
+szereplő `[x]` a döntés lezárását jelöli, nem a funkció elkészültét.
+
+**Első stabilitási szelet – 2026-11-09:**
+
+- [x] K1: csomagolt [`veylora.json`](../../src/game/data/veylora.json),
+  típusos adatmodell, verzió-/hivatkozás-/paramétervalidálás és harctér-adapter.
+  Ez még buildelt alapkonfiguráció; a build nélküli terítés a K6 feladata.
+- [x] K2: külön főmenübelépés, konfigurációból rajzolt helyszínkártyák,
+  két aszimmetrikus harctér és rögzített ellenfélprofil, újrakezdhető csaták.
+- [x] K2: 100 HP-s kutatóépület három seedelt jelölt helyen,
+  harci eredménytől külön kezelt, legalább 20 HP-s küldetéssiker.
+  A kutatóépület önálló objektumtípus, nincs 6A pajzs-/kárkeretkövetkezmény.
+- [x] K2: külön, verziózott helyi küldetéshaladás és biztosított státusz;
+  hibás mentés blokkol, mentési hiba nem frissíti sikeresként a haladást,
+  eredménynél a sikertelen mentés újrapróbálható. Külön megerősített
+  haladásreset, a régi kampány és profiladatok megőrzésével.
+- [x] HU/EN/DE felület, briefing, kutatóépület-HUD és harci napló;
+  a prototípus egyértelműen jelzi a még nem elérhető gazdasági funkciókat.
+- [x] Automatikus ellenőrzés: konfigurációhibák, mentés/visszatöltés,
+  tárolási hibák, 20 HP-s küszöb, győzelem melletti küldetésbukás,
+  újrapróbálás, P2-profil-/AI-memória elkülönítés és régi módok regressziója.
+  A két terep 100 seeden determinisztikus és aszimmetrikus; alap/max
+  tankmozgás és tényleges alapfizikájú találó lövések külön tesztelve.
+- [x] Böngészős indulás és kutatótelepi AI-kör; helyszínkártyák 1280×720,
+  390×844 és 844×390 nézetben túlcsordulás nélkül, legalább 44 px gombokkal.
+- [ ] Hosszabb emberi balanszpróba és valódi telefonos ellenőrzés.
+- [ ] K3–K4: érc-/tervrajzjóváírás, tartós gazdasági mentés, külön gazdasági
+  reset és megvehető kampánypajzs. A prototípus még nem ad gazdasági jutalmat.
+- [ ] K5–K6: bővítési elfogadási próba és teljes távoli tartalomfrissítési folyamat.
 
 | Lépés | Eredmény | Ellenőrzés |
 | --- | --- | --- |
-| K1 – Tartalmi alap | Szektor/helyszín/küldetés külön adatai, validátor és harctér-adapter; a régi tartalom változatlan belépéssel. | Duplikált/hiányzó ID, ismeretlen típus, hibás számérték és verzió tesztje; a jelenlegi kampány és mentés regressziója. |
-| K2 – Második szektor | VEYLORA külön választható, két valódi felszíni csata és egy nem harci állomáskártya. A jutalom ekkor még csak tervezettként jelölhető. | Új mentésből mindkét csata indítható; eltérő terep, teljes navigációs kör, frissítés utáni helyes kijelölés és haladás. |
-| K3 – Jutalom és készlet | Egy nyersanyag, egy tervrajz, első győzelmes elszámolás és állomási készletnézet. | Vereség/döntetlen/elhagyás nem fizet; replay/remount/reload/ismételt eredmény nem dupláz; tárolási hiba nem jelenik meg sikeres kifizetésként. |
-| K4 – Egy fejlesztési recept | Egy valóban megvehető és az új kampánycsatában működő fejlesztés, érthető hiányzó előfeltételekkel. | Mindkét küldetéssorrend működik; hiányzó érc/tervrajz tilt; vásárlás csak egyszer fogyaszt, mentés után is hat; gyorscsata és PvP változatlan. |
+| K1 – Tartalmi alap | Szektor/helyszín/küldetés külön adatai, validátor, csomagolt alapkonfiguráció és harctér-adapter; a régi tartalom változatlan belépéssel. | Duplikált/hiányzó ID, ismeretlen típus, hibás számérték és verzió tesztje; a jelenlegi kampány és mentés regressziója. |
+| K2 – Második szektor | VEYLORA külön választható, két aszimmetrikus felszíni csata, rögzített ellenfélprofilok, kutatóépület és külön küldetéssiker, valamint nem harci állomáskártya. A jutalom ekkor még nem elérhetőként jelölendő. | Mindkét csata indítható; seedelt épülethelyek, 20 HP-s határérték, tankgyőzelem melletti küldetésbukás, teljes navigáció, mentett haladás és biztosított státusz tesztje. |
+| K3 – Jutalom és készlet | Tartós P1-gazdaság, egyszeri 20 érc és egyszeri tervrajz sikeres küldetésért, készletnézet és a két resetművelet. | Sikertelen küldetés nem fizet; replay/remount/reload/ismételt eredmény nem dupláz; szektorreset nem fizet újra, teljes gazdasági törlés XP-t nem töröl; tárolási hiba nem jelenik meg sikeres kifizetésként. |
+| K4 – Egy fejlesztési recept | Megerősített pajzs: 20 érc, nem fogyó tervrajz, +10%, új rendszerű kampányszektorokban, nullapajzs-figyelmeztetéssel. | Mindkét küldetéssorrend működik; hiányzó érc/tervrajz tilt; vásárlás egyszer fogyaszt, mentés után is hat; nulla alappajzsnál és későbbi XP-fejlesztésnél helyes; régi kampány, gyorscsata és PvP változatlan. |
 | K5 – Konfigurálhatósági próba | Egy további bolygó/állomás és ismert szabályú küldetés hozzáadása kizárólag tartalommal és fordítással. | Nincs engine/UI-elágazás vagy kézzel módosított darabszám; mobilon is használható; érvénytelen config egyértelműen elutasított. |
+| K6 – Tartalomfrissítés | Build nélküli publikálás, induláskori/kézi ellenőrzés, jóváhagyásos aktiválás és ellenőrzött offline tartalom megőrzése. | Hiányos/hibás/inkompatibilis csomag nem aktiválható; aktív csata és jutalma változatlan; régi szerzemények megmaradnak, nincs újrakifizetés vagy átárazás. |
 
 K1 → K2 → K3 → K4; K5 a K4 utáni elfogadási próba.
 A K2 már játszható köztes eredmény, de az új fejlődési kör csak K4-nél teljes.
+A K6 a K1 tartalommodelljére és a K3–K4 mentési szabályaira épül;
+a teljes, build nélkül frissíthető csomag elfogadásához is szükséges.
 
 **Mentési minimum:** kampány-/szektor-/küldetés-ID azonosítsa a haladást;
-a jutalomjogosultság a kampány megfelelő példányához és stabil küldetés-ID-hoz
+a jutalomjogosultság a tartós gazdasági mentés azonosítójához és stabil küldetés-ID-hoz
 kötődjön, ne új csata-ID-hoz. A tartalomverzió-váltás önmagában ne fizessen
 újra. Készlet, technológiák és elszámolt jutalmak egy verziózott
 mentési egységben frissüljenek; a receptfogyasztás és a megszerzett fejlesztés
 szintén egy mentésben történjen. Sikertelen írásnál ne legyen sikerjelzés
 vagy félig alkalmazott állapot. A meglévő profil-XP-hez elsőre ne adjunk új
-kampánybónuszt, így nem kell két tároló közti XP-tranzakciót bevezetni.
+kampánybónuszt, így nem kell új bónusz-XP-tranzakciót bevezetni két tároló között.
 Több megnyitott lap írásütközését is kezelni kell, nem elég az egy lapon
 futó idempotencia. Mentésmigrációkor a régi teljesítés és XP megmarad,
 visszamenőleges nyersanyag-/technológiajutalom csak külön döntés alapján jár.
 
-### Döntési feladatok – mikorra kell válasz?
+### Elfogadott döntések – implementációs kapuk
 
 - [x] Többhelyszínes szektor: szektor → bolygó/állomás → küldetés → harctér.
 
@@ -824,7 +870,7 @@ visszamenőleges nyersanyag-/technológiajutalom csak külön döntés alapján 
 - [x] D4: helyszínkártyás navigáció: bolygó → küldetés;
   állomás → készlet/fejlesztés. Elsőre nincs külön szerkesztőfelület.
 - [x] D5: a bányaküldetés célja a bányát megszálló ellenséges tank
-  megsemmisítése; könnyű csata, széles medencés tereppel.
+  megsemmisítése; könnyű csata, lépcsőzetes külszíni fejtéssel.
 - [x] D5: a kutatótelep célja az ellenséges tank megsemmisítése és a
   kutatóépület megóvása; közepes csata, tagoltabb tereppel.
 - [x] D5: küldetésenként rögzített ellenfélprofil és AI-tudásszint,
@@ -841,10 +887,9 @@ visszamenőleges nyersanyag-/technológiajutalom csak külön döntés alapján 
 - [x] Minden új kutatótelepi próbálkozás teljes HP-s épülettel indul;
   nincs próbálkozások között átvitt pályakár vagy javítási kötelezettség.
 
-Ezek a D5 döntések felülírják a korábbi egyszerű ellenfél-megsemmisítési
-kutatótelep-javaslatot. A labor jutalmazásánál az „első győzelem” helyett
-az első sikeres, épületvédelmet is teljesítő küldetés a jogosultsági feltétel;
-a jutalom gyakorisága és a teljes D7 gazdasági szabály még külön döntés.
+A labor jutalmának jogosultsági feltétele az első sikeres, épületvédelmet
+is teljesítő küldetés. A jutalom egyszeri, a részletes gazdasági és
+XP-szabályokat a D7 rögzíti.
 Az új objektum kutatóépületként azonosítandó; a meglévő objektumsebzési
 és állapotkezelés újrahasználható, de nem kap automatikusan `ENERGY_NODE`
 pajzskövetkezményt vagy 6A kárkeret-/szerződéselszámolást.
@@ -863,14 +908,14 @@ kezdőprofillal, az új kampányfejlesztés nélkül is nyerhető legyen.
 - [x] D6: nincs kutatási vagy gyártási várakozás. Megfelelő készlet és
   technológia mellett a játékos az állomáson azonnal megveheti a fejlesztést;
   az előfeltételek megszerzése önmagában nem vásárol automatikusan.
-- [x] D7 részleges döntés: ebből a bányaküldetésből csak egyszer lehet
+- [x] D7: ebből a bányaküldetésből csak egyszer lehet
   ércet szerezni, az első sikeres teljesítéskor. Újrajátszott győzelem és
   szektorhaladás-reset nem ad újabb ércet; a korábban elfogadott teljes
   gazdasági törlés a készlettel együtt a jutalomnyilvántartást is nullázza.
   Az elfogadott egyszeri jutalom 20 egység érc.
   A későbbi recepteket a véges készlethez és további forrásokhoz kell igazítani,
   hogy kötelező fejlesztés ne váljon végleg elérhetetlenné.
-- [x] D7 részleges döntés: a kutatótelepi tervrajz egyszer szerezhető meg,
+- [x] D7: a kutatótelepi tervrajz egyszer szerezhető meg,
   az első sikeres, épületvédelmet is teljesítő küldetéskor. Ismételt
   sikerért nincs új tervrajz vagy más gazdasági jutalom. A szektorhaladás
   resetje nem adja újra; a teljes gazdasági törlés a jogosultságát is nullázza.
@@ -878,7 +923,7 @@ kezdőprofillal, az új kampányfejlesztés nélkül is nyerhető legyen.
   külön VEYLORA-/kampánybónusz nélkül. A kutatóépület-védelem bukása nem
   vonja vissza a tankgyőzelem és harc XP-jét, bár nincs tervrajz vagy
   küldetésteljesítés. A meglévő vereség-/döntetlen-/elhagyáskezelés változatlan.
-- [x] D8 részleges döntés: az első kampányfejlesztés az egyszer megvehető
+- [x] D8: az első kampányfejlesztés az egyszer megvehető
   „Megerősített pajzs”, amely a meglévő XP-fejlesztésekkel számolt maximális
   energiapajzsot 10%-kal növeli. A tank ezen a maximumon indul és eddig
   regenerálódik. Nem helyettesíti vagy árazza át az XP-fejlesztéseket.
@@ -891,7 +936,6 @@ kezdőprofillal, az új kampányfejlesztés nélkül is nyerhető legyen.
 - [x] D8: a Megerősített pajzs VEYLORA és minden későbbi, új rendszerű
   kampányszektor csatáiban hat. A jelenlegi régi kampány, gyorscsata és
   online PvP változatlan. A fejlesztés tartós, nem csatánként elfogyó felszerelés.
-  Ez felülírja a korábbi, kizárólag VEYLORA-ra korlátozó javaslatot.
 - [x] D9: VEYLORA mindkét küldetés sikeres teljesítésekor biztosított;
   a kutatótelepnél az épületvédelmi feltétel is szükséges. A pajzs megvétele
   külön fejlesztési eredmény, nem feltétel. A küldetések sorrendje szabad,
@@ -972,30 +1016,48 @@ nincs hatása, és legalább egy XP-s pajzsfejlesztés szükséges a hasznosulá
 A megvett bónusz a később megszerzett XP-s pajzskapacitásra is érvényes;
 nem a vásárláskori nulla kapacitást rögzítjük, hanem a +10%-os hatásértéket.
 
-A táblázat további részletei ajánlások, nem automatikusan elfogadott szabályok.
+A táblázat az elfogadott döntések rövid összefoglalója; a részletes
+szabályokat a fenti döntéslisták tartalmazzák.
 VEYLORA első szeletének épületvédelmi és újrapróbálási szabályait a D5
 döntések rögzítik; a régi 6A kárkeret-/szerződéslánc nem következik belőlük.
 Nem kell a teljes jövőbeli gazdaságot előre
 megtervezni, de az első játszható szelet határait igen.
 
-| ID / kapu | Eldöntendő kérdés | Ajánlott első válasz |
+| ID / kapu | Téma | Elfogadott szabály |
 | --- | --- | --- |
 | D1 / K1 előtt | Mi fér bele az első VEYLORA-csomagba? | Két bolygó, bolygónként egy felszíni küldetés/harctér, egy nem harci állomás; offline P1–AI. Nincs űrcsata, utazási költség vagy multiplayer-gazdaság. |
 | D2 / K1 előtt | Hogyan él együtt a régi tartalommal? | Külön választható új szektor, előzetes teljesítés nélkül. A jelenlegi kampány működése és mentése megmarad; a 6A következménylánc nem kerül automatikusan VEYLORA-ba. |
 | D3 / K1 előtt | Kié a készlet, a technológia és a fejlesztés, és mit töröl a reset? | Egy helyi P1-kampányparancsnok tartós, szektorok között közös vagyona, elkülönítve a P2/AI-tól. A szektorhaladás resetje ne törölje a vagyont vagy a kifizetési nyilvántartást; csak explicit teljes gazdasági törlés indítsa újra mindkettőt. A resethez tartozó jogosultságok együtt változzanak. |
 | D4 / K1 előtt | Hogyan szerkesztjük és jelenítjük meg a tartalmat? | Elfogadva: külön betölthető, validált JSON kézi szerkesztéssel és publikálással, új build nélkül; helyszínkártyák és állomási készlet-/fejlesztésnézet, szerkesztőfelület nélkül. |
-| D5 / K2 előtt | Mi a két küldetés célja és nehézsége? | Elfogadva: bánya – ellenfél-megsemmisítés, könnyű, széles medence; kutatótelep – tankgyőzelem és legalább 20% kutatóépület-HP, közepes, tagoltabb terep. Minden sebzés számít, minden új próba teljes épület-HP-val indul. Rögzített ellenfélprofil és AI-tudásszint, AI-memóriától függetlenül. Nevek, briefingek és konkrét terep-/AI-paraméterek még kidolgozandók. |
+| D5 / K2 előtt | Mi a két küldetés célja és nehézsége? | Bánya – ellenfél-megsemmisítés, könnyű, aszimmetrikus lépcsőzetes fejtés; kutatótelep – tankgyőzelem és legalább 20/100 épület-HP, közepes, aszimmetrikus központi fennsík és oldalsó völgyek. Minden sebzés számít, új próba teljes épület-HP-val indul. Rögzített ellenfélprofilok: bánya AI 0,35, labor AI 0,55; a teljes statlista fent szerepel. |
 | D6 / K3 előtt | Mit jelent a nyersanyag és a technológia megszerzése? | Elfogadva: az érc azonnal jóváírt, fogyasztható készlet; a tervrajz nem fogyó, tartós technológiai jogosultság. Nincs termelési, kutatási vagy gyártási várakozás; a fejlesztést a játékos külön veszi meg az állomáson. |
 | D7 / K3 előtt | Mikor és hányszor jár jutalom? | Elfogadva: a bánya első sikeres teljesítése 20 ércet ad; a labor első sikeres, épületvédelmet is teljesítő küldetése ad egyszeri tervrajzot, ismétléskor nincs más gazdasági jutalom. A meglévő harci és győzelmi XP újrajátszáskor is marad, külön kampánybónusz nélkül. |
 | D8 / K4 előtt | Mit lehet megvenni, mennyiért, és hol hat? | Elfogadva: egyszer megvehető „Megerősített pajzs”, +10% maximális energiapajzs az XP-fejlesztésekkel számolt alaphoz képest; ezen indul és eddig regenerálódik. Ár: 20 érc + a nem fogyó kutatótelepi tervrajz megléte. P1-re hat VEYLORA és minden későbbi, új rendszerű kampányszektor újonnan indított csatáiban; a régi kampány, gyorscsata és PvP változatlan. |
 | D9 / K2 előtt | Mit jelent a szektor teljesítése, és vissza lehet-e térni? | Elfogadva: mindkét küldetés sikeres teljesítése ad „biztosított” jelzést, a labor épületvédelmi feltételével együtt. A pajzsvásárlás nem feltétel. Szabad sorrend, visszalátogatás és újrajátszás megmarad. Az utazás és küldetésindítás ingyenes. |
 
-A D3 meghatározza a mentési modellt, ezért nem halasztható a jutalom UI-jáig.
-Ha a tartós gazdaságot választjuk, a fent említett kampánypéldány helyett
-a tartós gazdasági mentés azonosítója és a stabil küldetés-ID együtt adja
-a jutalomjogosultság kulcsát. Szektorreset vagy új csata-ID nem fizethet újra.
+A D3 meghatározza a mentési modellt, ezért már az alapozásnál figyelembe
+kell venni. A tartós gazdasági mentés azonosítója és a stabil küldetés-ID
+együtt adja a jutalomjogosultság kulcsát. Szektorreset vagy új csata-ID nem fizethet újra.
 A D7–D8 számértékei később konfigurációból balanszolhatók; már kifizetett
 jutalom vagy megvett fejlesztés módosításához viszont kompatibilitási szabály kell.
+
+### Nyitott technikai és tartalmi feladatok
+
+Ezek nem módosítják az elfogadott játékszabályokat. Az alapozás elkezdhető;
+az érintett lépés elkészülte előtt a hozzá tartozó részleteket véglegesíteni kell.
+
+- [ ] K3: gazdasági sémabővítés, jutalomledger, migráció és több megnyitott
+  lap tranzakciós írásütközésének kezelése. A K2 külön küldetéshaladás-mentése
+  nem kész gazdasági tranzakciókezelő.
+- [ ] K2 finomhangolás: a prototípus teljes szélességű kontrollpontjai,
+  lejtői, 0,002-es zajamplitúdója és 64×40-es épülete (510/640/770 X-helyek)
+  játékpróbás ellenőrzése, szükség szerinti balanszkorrekcióval.
+- [ ] Végleges helyszínnevek; az elkészült hu/en/de briefingek és az elfogadott
+  ellenfél-kezdőértékek hosszabb játékpróbás ellenőrzése.
+- [ ] K6: tartalomcsomag és publikálási formátum, verzióellenőrzés,
+  helyi tárolás, gyorsítótárazás és a fordítások/assetek build nélküli terítése.
+- [ ] K5/K6: konfigurációból bővítés, offline tartalom, kompatibilitás,
+  hibás frissítés és megszakított letöltés végponttól végpontig tartó próbája.
 
 **Későbbre hagyható:** teljes nyersanyag–technológia mátrix, urán/nukleáris ág,
 passzív kitermelés, kereskedelem, több fejlesztési szint, további bolygók,
@@ -1006,8 +1068,10 @@ nem opcionális termékdöntés, hanem a megvalósítás része.
 **Becslés:** egy fejlesztővel K1–K2 körülbelül 4–7 munkanap,
 K3–K4 további 5–9 munkanap, K5 és készülékes/regressziós ellenőrzés
 2–4 munkanap. Összesen nagyjából 2–4 hét, új egyedi látványvilág,
-űrcsata és teljes technológiafa nélkül. Ez kódolvasásból adott
-nagyságrendi becslés; a mentési hatókör és tartalmi döntések pontosítják.
+űrcsata és teljes technológiafa nélkül. Ez az eredeti K1–K5 javaslat
+kódolvasásból adott nagyságrendi becslése, nem frissített teljes vállalás:
+a build nélküli terítés (K6) és az aszimmetrikus terepbővítés részletes
+technikai terve alapján újra kell becsülni.
 
 ## Szektornév-jelöltek
 

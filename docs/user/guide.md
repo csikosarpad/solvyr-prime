@@ -16,8 +16,12 @@ Csökkentett mozgás beállítás mellett nem animálódik. Kis kijelzőn a men�
 - **Online:** két ember külön böngészőből, szobakódos lobbyval.
 - **Műveleti térkép:** külön menügomb, mindig P1 ember vs P2 AI, a gyorscsata
   ellenfélbeállításától függetlenül. Öt szektor, elágazó útvonal és helyi haladás.
+- **VEYLORA-03 prototípus:** külön menügomb, két kezdettől elérhető bolygó
+  és egy nem harci állomáskártya. Mindig P1 ember vs rögzített AI-ellenfél;
+  a régi kampány teljesítése nem előfeltétel.
 
-Jelenleg öt seed alapján változó, tükrözött terepprofil és egy tanktípus van.
+A régi kampányban öt seed alapján változó, tükrözött terepprofil van;
+VEYLORA két új terepe aszimmetrikus. Egy tanktípus használható.
 A gyorscsata/online alap harctere **SECTOR ALPHA-01 / Training Grounds**.
 A főmenü az aktuális kampányműveletet mutatja, a felső középső HUD a tényleges csataszektort.
 Új csata és visszavágó elején 2,5 másodperces
@@ -62,6 +66,31 @@ Tárolási hibánál figyelmeztetés jelenik meg; sikertelen mentés után a kij
 haladás csak az aktuális munkamenetben érvényes. Hibás/nem támogatott kampánymentés
 esetén az indítás tiltott; a kampányreset új mentést hozhat létre, a régi XP megtartásával.
 Félbehagyott offline csata refresh után nem folytatható, a művelet újra indítható.
+
+### VEYLORA-03 – első játszható prototípus
+
+Főmenü → VEYLORA-03 → bolygó küldetésének indítása → csata → eredmény.
+A két bolygó sorrendje szabad, az utazás és az újrapróbálás ingyenes.
+
+- **Bányabolygó:** rozsdavörös, lépcsőzetes külszíni fejtés. A könnyű
+  küldetéshez az ellenséges tankot kell megsemmisíteni.
+- **Kutatóbolygó:** kékesszürke völgyek és központi fennsík. A közepes
+  küldetéshez tankgyőzelem és legalább 20/100 kutatóépület-HP szükséges.
+  Mindkét fél épületsebzése számít. Minden új próbálkozás teljes épület-HP-val indul.
+- **Orbitális dokk:** jelenleg tájékoztató állomáskártya, nem harctér.
+
+Tankgyőzelem mellett is elbukhat a kutatótelepi küldetés. Ilyenkor a harci
+eredmény és annak XP-je megmarad, de nem jár küldetésteljesítés.
+Mindkét küldetés sikerével VEYLORA biztosított, de továbbra is újrajátszható.
+A haladás külön, helyileg mentődik; a VEYLORA-haladás törlése megerősítést kér,
+és nem törli a régi kampányt vagy az XP-profilt. Mentési hibánál figyelmeztetés
+látszik; az eredményképernyőn a sikertelen teljesítésmentés újrapróbálható.
+Hibás mentésnél az indítás tiltott, amíg a mentés javítása vagy kifejezett resetje meg nem történik.
+
+**Érc, tervrajz, kampánypajzs és tartalomfrissítés még nem érhető el.**
+A prototípus csak a meglévő XP-t adja, újrajátszáskor is. Az új ellenfelek
+nem öröklik és nem fejlesztik a gyorscsata P2-profilját vagy az AI-memóriát.
+A jelenlegi cél a stabil működés; a nehézség és a látvány még finomhangolható.
 
 ## A csata menete
 

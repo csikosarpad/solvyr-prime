@@ -61,6 +61,16 @@ export function MainMenuHome({ onShowLobby, onShowSettings }: MainMenuHomeProps)
         >
           {t("campaign.title")}
         </button>
+        <button
+          className="btn main-menu-start"
+          onClick={() => {
+            gameRef.current?.leaveBattle();
+            useMultiplayerStore.getState().leave();
+            setScreen("veylora");
+          }}
+        >
+          {t("veylora.title")}
+        </button>
         <button className="btn main-menu-start" onClick={start}>
           {t("menu.start")}
         </button>

@@ -1,13 +1,17 @@
 import { create } from "zustand";
 import type { MessageKey } from "@/i18n";
-import { isSectorId, type SectorId } from "../data/sectors";
+import { isSectorId } from "../data/sectors";
+import { VEYLORA } from "../data/campaignContent";
+
+const isBriefingId = (id: unknown): id is string =>
+  isSectorId(id) || (typeof id === "string" && VEYLORA.battlefields.some((field) => field.id === id));
 
 export const BRIEFING_STORAGE_KEY = "ballistic-front:briefing-preferences";
 
 interface BriefingPreferences {
-  hiddenSectorIds: SectorId[];
+  hiddenSectorIds: string[];
   error: MessageKey | null;
-  hide: (id: SectorId) => boolean;
+  hide: (id: string) => boolean;
 }
 
 function load(): Pick<BriefingPreferences, "hiddenSectorIds" | "error"> {
@@ -22,7 +26,7 @@ function load(): Pick<BriefingPreferences, "hiddenSectorIds" | "error"> {
       raw.version !== 1 ||
       !("hiddenSectorIds" in raw) ||
       !Array.isArray(raw.hiddenSectorIds) ||
-      !raw.hiddenSectorIds.every(isSectorId) ||
+      !raw.hiddenSectorIds.every(isBriefingId) ||
       new Set(raw.hiddenSectorIds).size !== raw.hiddenSectorIds.length
     ) {
       throw new Error("Invalid briefing preferences");
@@ -37,7 +41,7 @@ function load(): Pick<BriefingPreferences, "hiddenSectorIds" | "error"> {
 export const useBriefingPreferences = create<BriefingPreferences>((set, get) => ({
   ...load(),
   hide: (id) => {
-    if (!isSectorId(id)) throw new Error(`Unknown briefing sector: ${id}`);
+    if (!isBriefingId(id)) throw new Error(`Unknown briefing sector: ${id}`);
     const { hiddenSectorIds } = get();
     const next = hiddenSectorIds.includes(id) ? hiddenSectorIds : [...hiddenSectorIds, id];
     try {

@@ -60,6 +60,10 @@ import {
   type PlacedStrategicObjective,
 } from "../systems/strategicObjectives";
 import { StrategicObjectiveGraphics } from "./StrategicObjectiveGraphics";
+import { missionById, missionBattlefield, type CampaignMission } from "../data/campaignContent";
+import { useVeyloraStore } from "../state/veyloraStore";
+import { missionSucceeded } from "../systems/campaignMission";
+import { BASE_STATS } from "../data/upgrades";
 
 /** Ennyi HP-arány alatt kritikus a tank állapota. */
 const CRITICAL_HP_FRACTION = 0.3;
@@ -137,6 +141,7 @@ export class Game {
   private matchRandom = Math.random;
   private multiplayer = false;
   private matchMode: MatchMode = "skirmish";
+  private campaignMission: CampaignMission | null = null;
   private sector: Sector = TRAINING_SECTOR;
   private matchActive = true;
   private matchProfiles: Record<string, Profile> | null = null;
@@ -296,8 +301,10 @@ export class Game {
     this.clearAiTimers();
     const aiSettings = useAiSettings.getState();
     this.matchActive = true;
-    this.aiActive = !this.multiplayer && (this.matchMode === "campaign" || aiSettings.enabled);
-    this.aiBrain = this.aiActive ? new AiBrain({ skill: skillFromMemory(aiSettings.memory) }) : null;
+    this.aiActive = !this.multiplayer && (this.matchMode !== "skirmish" || aiSettings.enabled);
+    this.aiBrain = this.aiActive
+      ? new AiBrain({ skill: this.campaignMission?.opponent.skill ?? skillFromMemory(aiSettings.memory) })
+      : null;
     this.aiHits = 0;
     const width = WORLD_WIDTH;
     const matchSetup = setup ?? { seed: Math.floor(Math.random() * 1_000_000), starterIndex: this.nextStarter };
@@ -305,7 +312,7 @@ export class Game {
     this.battlefieldLayers.draw(WORLD_WIDTH, WORLD_HEIGHT, matchSetup.seed, this.sector.atmosphere);
     this.terrain.build(WORLD_WIDTH, WORLD_HEIGHT, matchSetup.seed, this.sector);
     this.strategicObjectives =
-      this.matchMode === "campaign"
+      this.matchMode !== "skirmish"
         ? randomizeObjectivePlacements(
             this.sector.strategicObjectives ?? [],
             this.sector.strategicObjectiveSlots ?? [],
@@ -337,11 +344,15 @@ export class Game {
       matchId: crypto.randomUUID(),
       sector: this.sector,
       campaignNewRoutes: [],
+      campaignMission: this.campaignMission,
+      missionSuccess: null,
+      opponentSkill: this.campaignMission?.opponent.skill ?? null,
     });
     this.beginTurn();
   }
 
   startMultiplayer(setup: MatchSetup, profiles: Record<string, Profile>, revision: number): void {
+    this.campaignMission = null;
     this.matchMode = "skirmish";
     this.sector = TRAINING_SECTOR;
     if (!this.terrain) {
@@ -365,6 +376,8 @@ export class Game {
   }
 
   startOffline(mode: MatchMode = "skirmish"): void {
+    if (mode === "operation" && !this.campaignMission) throw new Error("Missing campaign mission context");
+    if (mode !== "operation") this.campaignMission = null;
     this.matchMode = mode;
     if (mode === "skirmish") this.sector = TRAINING_SECTOR;
     this.pendingMultiplayerStart = null;
@@ -378,6 +391,9 @@ export class Game {
       matchMode: mode,
       sector: this.sector,
       campaignNewRoutes: [],
+      campaignMission: this.campaignMission,
+      missionSuccess: null,
+      opponentSkill: this.campaignMission?.opponent.skill ?? null,
       phase: "aiming",
       winner: null,
     });
@@ -389,6 +405,19 @@ export class Game {
     if (!useCampaignStore.getState().select(id)) return false;
     this.sector = sector;
     this.startOffline("campaign");
+    return true;
+  }
+
+  startOperation(id: string): boolean {
+    const mission = missionById(id);
+    if (!this.terrain) {
+      console.error("Cannot start VEYLORA before the battlefield is ready");
+      return false;
+    }
+    if (!useVeyloraStore.getState().select(id)) return false;
+    this.campaignMission = mission;
+    this.sector = missionBattlefield(mission);
+    this.startOffline("operation");
     return true;
   }
 
@@ -416,6 +445,8 @@ export class Game {
   }
 
   private statsFor(id: string) {
+    if (id === "P2" && this.campaignMission)
+      return { ...BASE_STATS, maxArmor: this.campaignMission.opponent.armor };
     return computeStats((this.matchProfiles?.[id] ?? this.profiles[id]!).levels);
   }
 
@@ -453,7 +484,8 @@ export class Game {
   }
 
   private award(id: string, xp: number): void {
-    this.profiles[id] = awardXp(this.profiles[id]!, xp);
+    if (!this.campaignMission || id !== "P2")
+      this.profiles[id] = awardXp(this.profiles[id]!, xp);
     this.matchStats = recordXp(this.matchStats, id, xp);
     if (this.multiplayer) saveProfiles(this.profiles);
   }
@@ -464,6 +496,7 @@ export class Game {
     this.profiles = Object.fromEntries(Object.keys(this.profiles).map((id) => [id, newProfile()]));
     saveProfiles(this.profiles);
     useCampaignStore.getState().reset();
+    useVeyloraStore.getState().reset();
     this.syncStore();
   }
 
@@ -620,7 +653,7 @@ export class Game {
 
   /** Meccs végén a gép rögzíti a tapasztalatot, és maga választja ki a fejlesztéseit. */
   private finishAiMatch(): void {
-    if (!this.aiActive || !this.aiBrain) return;
+    if (!this.aiActive || !this.aiBrain || this.campaignMission) return;
     const own = this.matchStats["P2"];
     const other = this.matchStats["P1"];
     if (!own || !other) return;
@@ -915,8 +948,13 @@ export class Game {
     if (this.turns.phase === "aiming") this.beginTurn();
     else {
       if (this.matchMode === "campaign" && this.turns.winner === "P1") {
-        const routes = useCampaignStore.getState().complete(this.sector.id);
+        const routes = useCampaignStore.getState().complete(sectorById(this.sector.id).id);
         useGameStore.getState().sync({ campaignNewRoutes: routes });
+      }
+      if (this.campaignMission) {
+        const success = missionSucceeded(this.campaignMission, this.turns.winner, this.strategicObjectives);
+        useGameStore.getState().sync({ missionSuccess: success });
+        if (success) useVeyloraStore.getState().complete(this.campaignMission.id);
       }
       if (this.turns.winner) {
         this.award(this.turns.winner, WIN_BONUS_XP);

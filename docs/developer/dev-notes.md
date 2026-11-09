@@ -11,8 +11,17 @@ A dokumentumok szerepeit a [fejlesztői index](./README.md) rögzíti.
 - A [játékmag](../../src/game/) koordinálja a loopot, fizikát, terepet és entitásokat;
   a [React UI](../../src/ui/) a HUD-ot, menüt, lobbyt, boltot és eredményképernyőt kezeli.
 - A fizikai állapot és pozíciók az engine-ben élnek; a gameStore a HUD számára ad nézetet.
+- VEYLORA első prototípusa külön `veylora` képernyő és `operation` meccsmód.
+  A `campaignContent.ts` a csomagolt `veylora.json` adatokat validálja;
+  szektor/helyszín/küldetés külön adat, a harctér a meglévő `Sector` adaptert használja.
+  A régi `SectorId` és C3 katalógus változatlan. Az új terep `layout: "full"`
+  kontrollpontokat használ tükrözés nélkül; a régi profilok továbbra is tükrözöttek.
+  A `veyloraStore` külön helyi, verziózott küldetéshaladást ment; nem gazdasági ledger.
+  A labor sikeréhez P1 győzelem és legalább 20/100 `RESEARCH_LAB` HP kell.
+  Az ellenfél statjai és tudásszintje konfiguráltak, P2 profilja és AI-memóriája
+  nem változik. Érc, tervrajz, kampányfejlesztés és távoli frissítés még nincs.
 - Fix 1280×720 világ, aránytartó megjelenítési skálázás; resize nem új meccs.
-- Fix időlépésű ballisztika, seedelt, tükrözött value-noise terep.
+- Fix időlépésű ballisztika, seedelt, profiltól függően tükrözött vagy teljes szélességű value-noise terep.
   Ütközés: pixelmaszk; látvány: RenderTexture; rombolás mindkettőt módosítja.
 - Robbanás után a talajmaszk az alsó pályaszélről négy szomszédos pixel mentén
   kapcsolatvizsgálatot végez. A levált darabok azonnal törlődnek a maszkból és a

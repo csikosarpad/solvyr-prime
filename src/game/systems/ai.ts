@@ -35,7 +35,12 @@ export function experienceStrength(memory: AiMemory): number {
 
 /** Rendfokozat csillagokban (0–5), a tapasztalati erőből. */
 export function rankStars(memory: AiMemory): number {
-  return Math.min(MAX_RANK, Math.floor(experienceStrength(memory) * MAX_RANK + 1e-9));
+  return rankFromSkill(skillFromMemory(memory));
+}
+
+export function rankFromSkill(skill: number): number {
+  const strength = Math.min(1, Math.max(0, (skill - MIN_SKILL) / (MAX_SKILL - MIN_SKILL)));
+  return Math.min(MAX_RANK, Math.floor(strength * MAX_RANK + 1e-9));
 }
 
 /** Standard normál eloszlás (Box–Muller). */

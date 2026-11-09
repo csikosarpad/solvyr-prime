@@ -12,6 +12,7 @@ import { Texture } from "pixi.js";
 import { GlowFilter } from "pixi-filters";
 import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
 import { useCommandStore } from "../state/commandStore";
+import { useVeyloraStore } from "../state/veyloraStore";
 
 vi.hoisted(() => {
   HTMLCanvasElement.prototype.getContext = () => null;
@@ -24,8 +25,10 @@ describe("Game campaign lifecycle", () => {
     vi.useFakeTimers();
     useMultiplayerStore.getState().leave();
     useCampaignStore.getState().reset();
+    useVeyloraStore.getState().reset();
     useAiSettings.getState().setEnabled(false);
-    useGameStore.setState({ screen: "playing", muted: true, sector: TRAINING_SECTOR, campaignNewRoutes: [] });
+    useGameStore.setState({ screen: "playing", muted: true, sector: TRAINING_SECTOR, campaignNewRoutes: [],
+      matchMode: "skirmish", campaignMission: null, missionSuccess: null, opponentSkill: null });
     game = new Game();
     Reflect.set(game, "terrain", {
       mask: TerrainMask.fromHeightmap(new Array(1280).fill(550), 720),
@@ -55,6 +58,68 @@ describe("Game campaign lifecycle", () => {
     expect(game.startCampaign("forge-17")).toBe(true);
     game.restart({ seed: 42, starterIndex });
   };
+
+  it("starts fixed VEYLORA opponents independently of P2 profile and AI memory", () => {
+    Reflect.get(game, "profiles").P2.levels = { armor: 5, shield: 5, warhead: 5 };
+    useAiSettings.setState({ memory: { matches: 999, wins: 999, shots: 999, hits: 999 } });
+    expect(game.startOperation("secure-mine")).toBe(true);
+    expect(useGameStore.getState()).toMatchObject({ matchMode: "operation", aiActive: true, opponentSkill: 0.35 });
+    expect(Reflect.get(game, "tanks")[1].stats).toMatchObject({ maxArmor: 0, maxEnergyShield: 0, damage: 1 });
+    expect(game.startOperation("secure-lab")).toBe(true);
+    expect(Reflect.get(game, "tanks")[1].stats.maxArmor).toBe(20);
+    expect(useGameStore.getState().opponentSkill).toBe(0.55);
+    expect(useGameStore.getState().strategicObjectives[0]?.type).toBe("RESEARCH_LAB");
+    game.startOffline();
+    expect(useGameStore.getState()).toMatchObject({ matchMode: "skirmish", campaignMission: null, opponentSkill: null });
+  });
+
+  it.each([
+    ["P1", 100, true], ["P1", 20, true], ["P1", 19.99, false],
+    ["P2", 100, false], [null, 100, false],
+  ] as const)("separates research mission success from battle result: %s / %s HP", (winner, hp, success) => {
+    expect(game.startOperation("secure-lab")).toBe(true);
+    game.restart({ seed: 42, starterIndex: 0 });
+    const memory = structuredClone(useAiSettings.getState().memory);
+    const p2 = structuredClone(Reflect.get(game, "profiles").P2);
+    const objectives: PlacedStrategicObjective[] = Reflect.get(game, "strategicObjectives");
+    objectives[0] = { ...objectives[0]!, hp };
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    tanks[0]!.hp = winner === "P1" ? 100 : 0;
+    tanks[1]!.hp = winner === "P2" ? 100 : 0;
+    game.fire();
+    Reflect.get(game, "explode").call(game, 640, 100);
+    expect(useGameStore.getState()).toMatchObject({ winner, missionSuccess: success });
+    expect(useVeyloraStore.getState().completedMissionIds).toEqual(success ? ["secure-lab"] : []);
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    expect(useAiSettings.getState().memory).toEqual(memory);
+    expect(Reflect.get(game, "profiles").P2).toEqual(p2);
+    if (winner === "P1") expect(useGameStore.getState().matchStats.P1?.xp).toBeGreaterThanOrEqual(50);
+    game.restart({ seed: 42, starterIndex: 0 });
+    expect(useGameStore.getState().strategicObjectives[0]?.hp).toBe(100);
+    expect(useGameStore.getState().missionSuccess).toBeNull();
+  });
+
+  it("completes only the mine after a VEYLORA mine victory and leaves legacy progress untouched", () => {
+    game.startOperation("secure-mine");
+    endBattle("P1");
+    expect(useGameStore.getState().missionSuccess).toBe(true);
+    expect(useVeyloraStore.getState().completedMissionIds).toEqual(["secure-mine"]);
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+  });
+
+  it("blocks VEYLORA start before terrain readiness", () => {
+    Reflect.set(game, "terrain", null);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(game.startOperation("secure-mine")).toBe(false);
+    expect(useGameStore.getState().matchMode).not.toBe("operation");
+  });
+
+  it("does not start a match if mission selection cannot be saved", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => { throw new Error("quota"); });
+    expect(game.startOperation("secure-mine")).toBe(false);
+    expect(useGameStore.getState().matchMode).toBe("skirmish");
+  });
 
   it("places the two Forge objectives on the terrain and exposes their HP", () => {
     startForge();
