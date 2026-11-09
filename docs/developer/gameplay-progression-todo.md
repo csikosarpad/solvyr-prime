@@ -703,8 +703,29 @@ nem igényel új alkalmazásbuildet. Közös TypeScript-típusok és futásidej�
 validálás szükséges. Elsőre nincs szerkesztőfelület vagy általános scriptszabály-motor.
 Publikáláskor konzisztens tartalomverziót kell betölteni és a gyorsítótárazást
 kezelni; az aktív csata és jutalmai a kezdéskor rögzített verziót használják.
-Az offline elérhetőség (csomagolt vagy korábban ellenőrzött tartalom), valamint
-az új fordítások és assetek build nélküli terítésének módja még technikai
+**Elfogadott offline szabály:** legyen az alkalmazással szállított alap
+VEYLORA-tartalom. Sikeres frissítés után a legutóbbi teljesen letöltött,
+kompatibilis és ellenőrzött tartalomverzió maradjon internet nélkül is
+használható. Ez a konfiguráció elérhetősége, nem automatikusan a teljes
+böngészős alkalmazás offline indíthatósága: a program, képek és hangok
+offline elérhetővé tétele külön technikai feladat. A böngésző tárhelytörlése
+vagy tárhelykorlátja miatt a tartalom megőrzése nem garantálható korlátlanul.
+**Elfogadott frissítési szabály:** induláskor és külön „Frissítések keresése”
+gombbal ellenőrzünk. A teljesen letöltött és ellenőrzött új verzió a menüben
+vagy szektorválasztón, játékosi jóváhagyással aktiválható; aktív csata közben
+nem váltunk. Az elindított csata és jutalmai a kezdéskor rögzített verzión
+maradnak, az új verzió csak később indított csatákra érvényes. Aktiváláskor
+a függő vásárlásokat és kiválasztásokat újra ellenőrizni kell.
+Letöltési, kompatibilitási vagy validálási hibánál látható jelzés mellett
+a már használható verzió marad aktív; új programverziót igénylő tartalom
+nem aktiválható.
+**Elfogadott mentéskompatibilitás:** a megszerzett jutalmak és fejlesztések
+megmaradnak; konfigurációfrissítés nem fizet újra, nem ad utólagos
+különbözetet és nem árazza át a korábbi vásárlást. A megvett fejlesztés
+hatása a megszerzéskor rögzített érték marad. Használt tartalom eltávolítása
+vagy inkompatibilis módosítása az érintett mentéshez explicit migráció
+nélkül nem aktiválható. A kompatibilitási ellenőrzés a jóváhagyás előtt fusson.
+Az új fordítások és assetek build nélküli terítésének módja még technikai
 tervezési feladat. A jelenlegi, buildelt fordítási kulcsokra hivatkozás önmagában
 nem teszi lehetővé teljesen új szövegek build nélküli bevezetését.
 Az alábbi részlet a formátumot szemlélteti, nem kész séma vagy betölthető tartalom:
@@ -878,6 +899,78 @@ kezdőprofillal, az új kampányfejlesztés nélkül is nyerhető legyen.
 - [x] VEYLORA-n az utazás és a küldetésindítás ingyenes, nincs üzemanyag-
   vagy belépési költség. Az újrapróbálás nem fogyasztja az egyszeri
   érckészletet; a pajzsfejlesztés elfogadott ára változatlan.
+
+### Elfogadott helyszínarculat
+
+- [x] VEYLORA-A: rozsdavörös, száraz bányavilág, széles külszíni fejtéssel
+  és borostyán ipari fényekkel.
+- [x] VEYLORA-B: hideg, kékesszürke kutatóvilág, tagolt sziklákkal
+  és fehér-cián kutatóépülettel. A védendő épület a háttértől felismerhetően
+  különüljön el, HP-/állapotjelzéssel.
+- [x] VEYLORA állomás: ipari orbitális dokk, sötét acélburkolatokkal
+  és borostyán-cián jelzésekkel; nem bejárható helyszín vagy új harctér.
+
+Az arculat nem vezet be új fizikát (például csúszást).
+A Ferrum, Nivalis és VEYLORA Relay felvetett nevek egyelőre munkanevek,
+nem külön jóváhagyott végleges elnevezések.
+
+### Kutatóépület és terepek – döntések
+
+- [x] A kutatóépület maximális életereje 100 HP; tankgyőzelemkor
+  legalább 20 HP szükséges a küldetéssikerhez. Minden új próbálkozás
+  teljes, 100 HP-s épülettel indul.
+- [x] A kutatóépület több előre ellenőrzött hely közül seed alapján kap
+  pozíciót. Azonos seed és tartalomverzió azonos elhelyezést ad;
+  ismétlődés lehetséges. A konkrét helylistát és méretet a terephez kell
+  megadni, minden jelölt helyen ellenőrizve a kezdőtankoktól való távolságot,
+  olvashatóságot és az épületvédelem teljesíthetőségét.
+- [x] Bányaharctér: lépcsőzetes külszíni fejtés, több alacsony, járható
+  padkával. A padkákat járható lejtők kapcsolják össze, nem függőleges
+  falak; megmarad a könnyű, áttekinthető harctéri cél.
+- [x] Kutatótelepi harctér: széles központi fennsík, két oldalán
+  alacsonyabb sziklás völgyekkel. Az épület helylistája a fennsík
+  ellenőrzött teraszaihoz igazítandó.
+- [x] Mindkét pálya aszimmetrikus domborzatú, külön balanszolt
+  kezdőoldalakkal. Nem követelmény az egyenlő kezdőmagasság vagy tükrözés.
+  A meglévő 1280×720-as világméretet és alapfizikát megtartjuk.
+
+**Technikai következmény:** a jelenlegi
+[`generateSectorHeightmap`](../../src/game/terrain/heightmap.ts) félpályás
+kontrollpontokat vár és mindig tükröz. Az új profilhoz explicit
+aszimmetrikus, teljes szélességű kontrollpontkezelés kell; a régi profilok
+és ALPHA generálása változatlan maradjon. Ez ismert terepmechanika
+egyszeri kódbővítése; utána az aszimmetrikus profilok konfigurálhatók.
+
+**Még kidolgozandó, játékpróbával igazolandó paraméterek:** teljes pályás
+kontrollpontok és magasságok, lejtőhosszak, zajamplitúdó, kutatóépület-méret
+és helylista, kezdőtankok biztonságos felszíne. A külön oldali balanszt
+mindkét kezdőjátékossal, kezdő és fejlesztett P1-profillal ellenőrizni kell.
+Minden engedett épülethelyen vizsgálandó a legalább 20 HP-s megóvás
+teljesíthetősége. A nehézséget nem az aszimmetria vagy egy újabb
+nehézségcímke bizonyítja, hanem a lövési/mozgási próbák és játékpróbák.
+
+### Elfogadott ellenfélértékek – első balanszpróba
+
+| Küldetés | HP | Energiapajzs | Páncél | AI-tudásszint |
+| --- | --- | --- | --- | --- |
+| Bánya | 100 | 0 | 0 | 0,35 |
+| Kutatótelep | 100 | 0 | 20 | 0,55 |
+
+Minden további ellenfélstat a meglévő alapérték: sebzésszorzó 1,
+robbanási sugár 30, maximális lövési erő 600, mozgáskeret 60,
+Smart Aim 1 töltet; a pajzsregeneráció alaparánya 0,2, ami nulla
+maximális pajzsnál nem ad pajzsot. Az AI-tudásszint nem találati százalék.
+Ezek konfigurálható, játékpróbával igazolandó kezdőértékek, nem mért balanszeredmények.
+Az ellenfél nem örökli a korábbi P2-profilt és AI-memóriát, és nem erősödik
+újrapróbáláskor. P1 a saját XP-fejlesztéseit megtartja; mindkét küldetés
+kezdőprofillal, az új kampányfejlesztés nélkül is nyerhető legyen.
+
+**Elfogadott nullapajzs-szabály:** a Megerősített pajzs tisztán +10%-os
+szorzó marad; nem ad külön alap pajzspontot. Nulla XP-s alappajzsnál is
+megvásárolható, de vásárlás előtt egyértelműen jelezni kell, hogy jelenleg
+nincs hatása, és legalább egy XP-s pajzsfejlesztés szükséges a hasznosulásához.
+A megvett bónusz a később megszerzett XP-s pajzskapacitásra is érvényes;
+nem a vásárláskori nulla kapacitást rögzítjük, hanem a +10%-os hatásértéket.
 
 A táblázat további részletei ajánlások, nem automatikusan elfogadott szabályok.
 VEYLORA első szeletének épületvédelmi és újrapróbálási szabályait a D5
