@@ -13,6 +13,7 @@ import { GlowFilter } from "pixi-filters";
 import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
 import { useCommandStore } from "../state/commandStore";
 import { useVeyloraStore } from "../state/veyloraStore";
+import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
 
 vi.hoisted(() => {
   HTMLCanvasElement.prototype.getContext = () => null;
@@ -21,11 +22,14 @@ vi.hoisted(() => {
 describe("Game campaign lifecycle", () => {
   let game: Game;
 
-  beforeEach(() => {
-    vi.useFakeTimers();
+  beforeEach(async () => {
+    vi.stubGlobal("indexedDB", new IDBFactory());
+    localStorage.removeItem("ballistic-front:profiles");
+    localStorage.removeItem("ballistic-front:profiles:v1");
+    await useVeyloraStore.getState().resetEconomy();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
     useMultiplayerStore.getState().leave();
     useCampaignStore.getState().reset();
-    useVeyloraStore.getState().reset();
     useAiSettings.getState().setEnabled(false);
     useGameStore.setState({ screen: "playing", muted: true, sector: TRAINING_SECTOR, campaignNewRoutes: [],
       matchMode: "skirmish", campaignMission: null, missionSuccess: null, opponentSkill: null });
@@ -59,13 +63,13 @@ describe("Game campaign lifecycle", () => {
     game.restart({ seed: 42, starterIndex });
   };
 
-  it("starts fixed VEYLORA opponents independently of P2 profile and AI memory", () => {
+  it("starts fixed VEYLORA opponents independently of P2 profile and AI memory", async () => {
     Reflect.get(game, "profiles").P2.levels = { armor: 5, shield: 5, warhead: 5 };
     useAiSettings.setState({ memory: { matches: 999, wins: 999, shots: 999, hits: 999 } });
-    expect(game.startOperation("secure-mine")).toBe(true);
+    expect(await game.startOperation("secure-mine")).toBe(true);
     expect(useGameStore.getState()).toMatchObject({ matchMode: "operation", aiActive: true, opponentSkill: 0.35 });
     expect(Reflect.get(game, "tanks")[1].stats).toMatchObject({ maxArmor: 0, maxEnergyShield: 0, damage: 1 });
-    expect(game.startOperation("secure-lab")).toBe(true);
+    expect(await game.startOperation("secure-lab")).toBe(true);
     expect(Reflect.get(game, "tanks")[1].stats.maxArmor).toBe(20);
     expect(useGameStore.getState().opponentSkill).toBe(0.55);
     expect(useGameStore.getState().strategicObjectives[0]?.type).toBe("RESEARCH_LAB");
@@ -76,8 +80,8 @@ describe("Game campaign lifecycle", () => {
   it.each([
     ["P1", 100, true], ["P1", 20, true], ["P1", 19.99, false],
     ["P2", 100, false], [null, 100, false],
-  ] as const)("separates research mission success from battle result: %s / %s HP", (winner, hp, success) => {
-    expect(game.startOperation("secure-lab")).toBe(true);
+  ] as const)("separates research mission success from battle result: %s / %s HP", async (winner, hp, success) => {
+    expect(await game.startOperation("secure-lab")).toBe(true);
     game.restart({ seed: 42, starterIndex: 0 });
     const memory = structuredClone(useAiSettings.getState().memory);
     const p2 = structuredClone(Reflect.get(game, "profiles").P2);
@@ -88,8 +92,10 @@ describe("Game campaign lifecycle", () => {
     tanks[1]!.hp = winner === "P2" ? 100 : 0;
     game.fire();
     Reflect.get(game, "explode").call(game, 640, 100);
+    await useVeyloraStore.getState().refresh();
     expect(useGameStore.getState()).toMatchObject({ winner, missionSuccess: success });
     expect(useVeyloraStore.getState().completedMissionIds).toEqual(success ? ["secure-lab"] : []);
+    expect(useVeyloraStore.getState().economy.technologies).toEqual(success ? ["materials-blueprint"] : []);
     expect(useCampaignStore.getState().completedIds).toEqual([]);
     expect(useAiSettings.getState().memory).toEqual(memory);
     expect(Reflect.get(game, "profiles").P2).toEqual(p2);
@@ -99,26 +105,66 @@ describe("Game campaign lifecycle", () => {
     expect(useGameStore.getState().missionSuccess).toBeNull();
   });
 
-  it("completes only the mine after a VEYLORA mine victory and leaves legacy progress untouched", () => {
-    game.startOperation("secure-mine");
+  it("completes only the mine after a VEYLORA mine victory and leaves legacy progress untouched", async () => {
+    await game.startOperation("secure-mine");
     endBattle("P1");
+    await useVeyloraStore.getState().refresh();
     expect(useGameStore.getState().missionSuccess).toBe(true);
     expect(useVeyloraStore.getState().completedMissionIds).toEqual(["secure-mine"]);
+    expect(useVeyloraStore.getState().economy.resources["industrial-ore"]).toBe(20);
     expect(useCampaignStore.getState().completedIds).toEqual([]);
   });
 
-  it("blocks VEYLORA start before terrain readiness", () => {
+  it("blocks VEYLORA start before terrain readiness", async () => {
     Reflect.set(game, "terrain", null);
     vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(game.startOperation("secure-mine")).toBe(false);
+    expect(await game.startOperation("secure-mine")).toBe(false);
     expect(useGameStore.getState().matchMode).not.toBe("operation");
   });
 
-  it("does not start a match if mission selection cannot be saved", () => {
+  it("does not start a match if mission selection cannot be saved", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => { throw new Error("quota"); });
-    expect(game.startOperation("secure-mine")).toBe(false);
+    vi.spyOn(IDBObjectStore.prototype, "put").mockImplementationOnce(() => { throw new Error("quota"); });
+    expect(await game.startOperation("secure-mine")).toBe(false);
     expect(useGameStore.getState().matchMode).toBe("skirmish");
+  });
+
+  it("applies the purchased shield only to P1 operations and follows later XP upgrades without altering old modes", async () => {
+    Reflect.get(game, "profiles").P1.levels = {};
+    const state = useVeyloraStore.getState;
+    await state().complete("secure-mine", state().economy.generation);
+    await state().complete("secure-lab", state().economy.generation);
+    await state().buy("reinforced-shield");
+    expect(await game.startOperation("secure-mine")).toBe(true);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(0);
+    game.leaveBattle();
+    Reflect.get(game, "profiles").P1.levels.shield = 1;
+    await game.startOperation("secure-mine");
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(22);
+    expect(Reflect.get(game, "tanks")[1].stats.maxEnergyShield).toBe(0);
+    game.leaveBattle();
+    Reflect.get(game, "profiles").P1.levels.shield = 5;
+    await game.startOperation("secure-lab");
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(110);
+    game.startOffline();
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(100);
+    game.startCampaign();
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(100);
+    game.startMultiplayer({ seed: 42, starterIndex: 0 }, useGameStore.getState().profiles, 0);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(100);
+  });
+
+  it("keeps an active battle shield snapshot when economy is reset elsewhere, but removes it next deployment", async () => {
+    const state = useVeyloraStore.getState;
+    await state().complete("secure-mine", state().economy.generation);
+    await state().complete("secure-lab", state().economy.generation);
+    await state().buy("reinforced-shield");
+    Reflect.get(game, "profiles").P1.levels.shield = 1;
+    await game.startOperation("secure-mine");
+    await state().resetEconomy();
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(22);
+    await game.startOperation("secure-mine");
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(20);
   });
 
   it("places the two Forge objectives on the terrain and exposes their HP", () => {
@@ -440,14 +486,17 @@ describe("Game campaign lifecycle", () => {
     expect(useCampaignStore.getState().completedIds).toEqual([]);
   });
 
-  it("full progress reset clears campaign, XP and upgrade levels", () => {
+  it("XP reset clears legacy campaign and XP upgrades but preserves the separate campaign economy", async () => {
     useCampaignStore.getState().complete("alpha-01");
+    await useVeyloraStore.getState().complete("secure-mine", useVeyloraStore.getState().economy.generation);
+    const economy = structuredClone(useVeyloraStore.getState().economy);
     game.resetProgress();
     expect(useCampaignStore.getState().completedIds).toEqual([]);
     expect(useGameStore.getState().profiles).toEqual({
       P1: { xp: 0, levels: {} },
       P2: { xp: 0, levels: {} },
     });
+    expect(useVeyloraStore.getState().economy).toEqual(economy);
   });
 
   it("builds the selected real sector, retains it on rematch and resets it for quick battles", () => {

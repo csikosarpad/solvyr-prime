@@ -56,3 +56,15 @@
 .veylora-panel button {
   min-height: 44px;
 }
+
+.campaign-recipe {
+  border-top: 1px solid #607c92;
+  margin-top: 16px;
+  padding-top: 8px;
+}
+
+.campaign-station ul,
+.campaign-reward ul {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}

@@ -5,18 +5,41 @@
     "id": "veylora-03",
     "name": "veylora.title",
     "locations": [
-      { "id": "veylora-a", "kind": "planet", "name": "veylora.mine", "missionIds": ["secure-mine"] },
-      { "id": "veylora-b", "kind": "planet", "name": "veylora.lab", "missionIds": ["secure-lab"] },
-      { "id": "veylora-station", "kind": "station", "name": "veylora.station", "missionIds": [] }
+      { "id": "veylora-a", "kind": "planet", "name": "veylora.mine", "missionIds": ["secure-mine"], "recipeIds": [] },
+      { "id": "veylora-b", "kind": "planet", "name": "veylora.lab", "missionIds": ["secure-lab"], "recipeIds": [] },
+      {
+        "id": "veylora-station",
+        "kind": "station",
+        "name": "veylora.station",
+        "missionIds": [],
+        "recipeIds": ["reinforced-shield"]
+      }
     ]
   },
   "missions": [
-    { "id": "secure-mine", "battlefieldId": "veylora-mine", "opponent": { "armor": 0, "skill": 0.35 } },
+    {
+      "id": "secure-mine",
+      "battlefieldId": "veylora-mine",
+      "opponent": { "armor": 0, "skill": 0.35 },
+      "rewards": { "resources": { "industrial-ore": 20 }, "technologies": [] }
+    },
     {
       "id": "secure-lab",
       "battlefieldId": "veylora-lab",
       "opponent": { "armor": 20, "skill": 0.55 },
-      "protection": { "objectiveId": "research-lab-01", "minimumHpRatio": 0.2 }
+      "protection": { "objectiveId": "research-lab-01", "minimumHpRatio": 0.2 },
+      "rewards": { "resources": {}, "technologies": ["materials-blueprint"] }
+    }
+  ],
+  "resources": [{ "id": "industrial-ore", "name": "economy.ore" }],
+  "technologies": [{ "id": "materials-blueprint", "name": "economy.blueprint" }],
+  "recipes": [
+    {
+      "id": "reinforced-shield",
+      "name": "economy.shield",
+      "cost": { "industrial-ore": 20 },
+      "technologies": ["materials-blueprint"],
+      "effect": { "maxEnergyShieldMultiplier": 1.1 }
     }
   ],
   "battlefields": [

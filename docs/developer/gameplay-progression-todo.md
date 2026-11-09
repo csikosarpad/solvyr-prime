@@ -645,8 +645,8 @@ elfogadott konkrét szabályokat a 6C rögzíti; azokat nem kell újra eldönten
 ## 6C. VEYLORA-03 – elfogadott fejlesztési alap
 
 **Státusz:** 2026-11-09-én egyeztetett, elfogadott játékszabályok és
-fejlesztési alap. Az első K1–K2 játszható prototípus elkészült az alább
-rögzített hatókörrel; a gazdaság és a távoli frissítés még nincs bekötve.
+fejlesztési alap. A K1–K2 játszható alap és a K3–K4 gazdasági kör elkészült
+az alább rögzített hatókörrel; távoli tartalomfrissítés még nincs.
 A nyitott technikai és balanszfeladatok az
 alábbi külön listában szerepelnek, nem további eldöntetlen alapszabályok.
 Cél: a meglévő tartalom mellett
@@ -809,7 +809,7 @@ szereplő `[x]` a döntés lezárását jelöli, nem a funkció elkészültét.
   eredménynél a sikertelen mentés újrapróbálható. Külön megerősített
   haladásreset, a régi kampány és profiladatok megőrzésével.
 - [x] HU/EN/DE felület, briefing, kutatóépület-HUD és harci napló;
-  a prototípus egyértelműen jelzi a még nem elérhető gazdasági funkciókat.
+  az állomási gazdaság is lokalizált, a még hiányzó távoli frissítés jelölve.
 - [x] Automatikus ellenőrzés: konfigurációhibák, mentés/visszatöltés,
   tárolási hibák, 20 HP-s küszöb, győzelem melletti küldetésbukás,
   újrapróbálás, P2-profil-/AI-memória elkülönítés és régi módok regressziója.
@@ -818,8 +818,24 @@ szereplő `[x]` a döntés lezárását jelöli, nem a funkció elkészültét.
 - [x] Böngészős indulás és kutatótelepi AI-kör; helyszínkártyák 1280×720,
   390×844 és 844×390 nézetben túlcsordulás nélkül, legalább 44 px gombokkal.
 - [ ] Hosszabb emberi balanszpróba és valódi telefonos ellenőrzés.
-- [ ] K3–K4: érc-/tervrajzjóváírás, tartós gazdasági mentés, külön gazdasági
-  reset és megvehető kampánypajzs. A prototípus még nem ad gazdasági jutalmat.
+- [x] Első felhasználói játékpróba: a bánya és a kutatótelep működött.
+- [x] K3–K4: konfigurált érc-/tervrajzjóváírás, állomási készlet és
+  megvehető kampánypajzs. A jutalom, haladás, készlet és ledger egy
+  IndexedDB readwrite tranzakcióban; a vásárlás ára és hatása is együtt mentődik.
+  Több lap párhuzamos jutalmazása/vásárlása nem dupláz és nem veszít írást.
+- [x] K3–K4: külön megerősített gazdasági reset, az XP és XP-fejlesztések
+  megtartásával. A szektorreset vagy főmenü XP-reset nem nyitja újra a jutalmat.
+  Az új gazdasági generációt régi csata és annak mentésismétlése nem módosíthatja.
+- [x] K3–K4: a megvett +10%-os szorzó a vásárláskor rögzül; P1 új
+  operation-csatáiban az aktuális XP-alappajzsot növeli. Nulla alapnál
+  figyelmeztetés mellett megvehető. Régi kampány, gyorscsata és PvP változatlan.
+- [x] Migráció: a gazdaság nélküli K2 haladása megmarad; nincs visszamenőleges
+  jutalom, de az első sikeres újrajátszás gazdasági jutalmat adhat.
+  Az eredeti localStorage-mentést megtartjuk; a gazdaság IndexedDB-ben él.
+- [x] Böngészős gazdasági próba külön origin alatt: bánya, bányaismétlés,
+  labor, pajzsvásárlás nulla alapnál, későbbi XP-pajzs után 20 → 22,
+  újratöltött vásárlás, külön szektor- és gazdasági reset.
+  1280×720, 390×844 és 844×390 helyszínnézet túlcsordulás nélkül.
 - [ ] K5–K6: bővítési elfogadási próba és teljes távoli tartalomfrissítési folyamat.
 
 | Lépés | Eredmény | Ellenőrzés |
@@ -1046,9 +1062,8 @@ jutalom vagy megvett fejlesztés módosításához viszont kompatibilitási szab
 Ezek nem módosítják az elfogadott játékszabályokat. Az alapozás elkezdhető;
 az érintett lépés elkészülte előtt a hozzá tartozó részleteket véglegesíteni kell.
 
-- [ ] K3: gazdasági sémabővítés, jutalomledger, migráció és több megnyitott
-  lap tranzakciós írásütközésének kezelése. A K2 külön küldetéshaladás-mentése
-  nem kész gazdasági tranzakciókezelő.
+- [x] K3: gazdasági sémabővítés, jutalomledger, prototípusmigráció és
+  több megnyitott lap írásütközéseinek sorosítása IndexedDB-tranzakciókkal.
 - [ ] K2 finomhangolás: a prototípus teljes szélességű kontrollpontjai,
   lejtői, 0,002-es zajamplitúdója és 64×40-es épülete (510/640/770 X-helyek)
   játékpróbás ellenőrzése, szükség szerinti balanszkorrekcióval.

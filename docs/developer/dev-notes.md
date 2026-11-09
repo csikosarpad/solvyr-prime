@@ -16,10 +16,23 @@ A dokumentumok szerepeit a [fejlesztői index](./README.md) rögzíti.
   szektor/helyszín/küldetés külön adat, a harctér a meglévő `Sector` adaptert használja.
   A régi `SectorId` és C3 katalógus változatlan. Az új terep `layout: "full"`
   kontrollpontokat használ tükrözés nélkül; a régi profilok továbbra is tükrözöttek.
-  A `veyloraStore` külön helyi, verziózott küldetéshaladást ment; nem gazdasági ledger.
+  A `veyloraStore` a `campaignDatabase` egyetlen IndexedDB P1-rekordjában
+  ment haladást, közös készletet, technológiát, jutalomledgert és vásárlást.
+  A readwrite tranzakciók a több lapról érkező írásokat is sorosítják;
+  az állapot csak commit után frissül. A jutalom kulcsa szektor+küldetés,
+  nem tartalomverzió vagy csata-ID. A teljes gazdasági reset új generációt ad,
+  a régi generációjú csaták elszámolását elutasítjuk.
+  A prototípus localStorage-haladása egyszer átemelődik, visszamenőleges
+  jutalom nélkül, az eredeti másolat megőrzésével.
   A labor sikeréhez P1 győzelem és legalább 20/100 `RESEARCH_LAB` HP kell.
   Az ellenfél statjai és tudásszintje konfiguráltak, P2 profilja és AI-memóriája
-  nem változik. Érc, tervrajz, kampányfejlesztés és távoli frissítés még nincs.
+  nem változik. A JSON külön nyersanyag-/technológia-/receptkatalógust és
+  küldetésjutalmakat tartalmaz. A vásárlás eltárolja a hatás szorzóját;
+  a motor új operation-indításkor pillanatképet vesz, csak P1 XP-alapjára
+  alkalmazza. A meccsvégi visszavágó új, mentésellenőrzött indítás.
+  A főmenü XP-resetje nem törli az új kampánygazdaságot/haladást;
+  a szektor- és gazdasági reset külön, megerősített műveletek.
+  Távoli tartalomfrissítés még nincs.
 - Fix 1280×720 világ, aránytartó megjelenítési skálázás; resize nem új meccs.
 - Fix időlépésű ballisztika, seedelt, profiltól függően tükrözött vagy teljes szélességű value-noise terep.
   Ütközés: pixelmaszk; látvány: RenderTexture; rombolás mindkettőt módosítja.

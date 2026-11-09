@@ -64,6 +64,7 @@ import { missionById, missionBattlefield, type CampaignMission } from "../data/c
 import { useVeyloraStore } from "../state/veyloraStore";
 import { missionSucceeded } from "../systems/campaignMission";
 import { BASE_STATS } from "../data/upgrades";
+import { applyCampaignUpgrades, type CampaignSave } from "../systems/campaignEconomy";
 
 /** Ennyi HP-arány alatt kritikus a tank állapota. */
 const CRITICAL_HP_FRACTION = 0.3;
@@ -142,6 +143,7 @@ export class Game {
   private multiplayer = false;
   private matchMode: MatchMode = "skirmish";
   private campaignMission: CampaignMission | null = null;
+  private campaignEconomy: CampaignSave | null = null;
   private sector: Sector = TRAINING_SECTOR;
   private matchActive = true;
   private matchProfiles: Record<string, Profile> | null = null;
@@ -347,12 +349,14 @@ export class Game {
       campaignMission: this.campaignMission,
       missionSuccess: null,
       opponentSkill: this.campaignMission?.opponent.skill ?? null,
+      missionGeneration: this.campaignEconomy?.generation ?? null,
     });
     this.beginTurn();
   }
 
   startMultiplayer(setup: MatchSetup, profiles: Record<string, Profile>, revision: number): void {
     this.campaignMission = null;
+    this.campaignEconomy = null;
     this.matchMode = "skirmish";
     this.sector = TRAINING_SECTOR;
     if (!this.terrain) {
@@ -377,7 +381,10 @@ export class Game {
 
   startOffline(mode: MatchMode = "skirmish"): void {
     if (mode === "operation" && !this.campaignMission) throw new Error("Missing campaign mission context");
-    if (mode !== "operation") this.campaignMission = null;
+    if (mode !== "operation") {
+      this.campaignMission = null;
+      this.campaignEconomy = null;
+    }
     this.matchMode = mode;
     if (mode === "skirmish") this.sector = TRAINING_SECTOR;
     this.pendingMultiplayerStart = null;
@@ -408,14 +415,15 @@ export class Game {
     return true;
   }
 
-  startOperation(id: string): boolean {
+  async startOperation(id: string): Promise<boolean> {
     const mission = missionById(id);
     if (!this.terrain) {
       console.error("Cannot start VEYLORA before the battlefield is ready");
       return false;
     }
-    if (!useVeyloraStore.getState().select(id)) return false;
+    if (!await useVeyloraStore.getState().select(id)) return false;
     this.campaignMission = mission;
+    this.campaignEconomy = structuredClone(useVeyloraStore.getState().economy);
     this.sector = missionBattlefield(mission);
     this.startOffline("operation");
     return true;
@@ -447,7 +455,9 @@ export class Game {
   private statsFor(id: string) {
     if (id === "P2" && this.campaignMission)
       return { ...BASE_STATS, maxArmor: this.campaignMission.opponent.armor };
-    return computeStats((this.matchProfiles?.[id] ?? this.profiles[id]!).levels);
+    const stats = computeStats((this.matchProfiles?.[id] ?? this.profiles[id]!).levels);
+    return id === "P1" && this.campaignMission && this.campaignEconomy
+      ? applyCampaignUpgrades(stats, this.campaignEconomy) : stats;
   }
 
   /** Tankonként egy sprite-pár: a cső a test mögött forog a saját forgáspontja körü. */
@@ -496,7 +506,6 @@ export class Game {
     this.profiles = Object.fromEntries(Object.keys(this.profiles).map((id) => [id, newProfile()]));
     saveProfiles(this.profiles);
     useCampaignStore.getState().reset();
-    useVeyloraStore.getState().reset();
     this.syncStore();
   }
 
@@ -954,7 +963,8 @@ export class Game {
       if (this.campaignMission) {
         const success = missionSucceeded(this.campaignMission, this.turns.winner, this.strategicObjectives);
         useGameStore.getState().sync({ missionSuccess: success });
-        if (success) useVeyloraStore.getState().complete(this.campaignMission.id);
+        if (success && this.campaignEconomy)
+          void useVeyloraStore.getState().complete(this.campaignMission.id, this.campaignEconomy.generation);
       }
       if (this.turns.winner) {
         this.award(this.turns.winner, WIN_BONUS_XP);

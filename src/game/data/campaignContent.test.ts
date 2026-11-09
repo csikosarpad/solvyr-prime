@@ -52,8 +52,28 @@ describe("campaign content", () => {
       kind: "planet",
       name: "veylora.mine",
       missionIds: ["additional-mine"],
+      recipeIds: [],
     });
     expect(parseCampaignContent(extended).sector.locations).toHaveLength(4);
     expect(() => missionById("missing")).toThrow("Unknown");
+  });
+
+  it("validates reward amounts, economic references and station recipes", () => {
+    expect(VEYLORA.missions[0]!.rewards.resources["industrial-ore"]).toBe(20);
+    expect(VEYLORA.recipes[0]!.effect.maxEnergyShieldMultiplier).toBe(1.1);
+    for (const amount of [-1, 0, 0.5, Infinity, NaN]) {
+      const content = structuredClone(VEYLORA);
+      content.missions[0]!.rewards.resources["industrial-ore"] = amount;
+      expect(() => parseCampaignContent(content)).toThrow();
+    }
+    const missing = structuredClone(VEYLORA);
+    missing.recipes[0]!.technologies = ["missing"];
+    expect(() => parseCampaignContent(missing)).toThrow("economic");
+    const station = structuredClone(VEYLORA);
+    station.sector.locations[0]!.recipeIds = ["reinforced-shield"];
+    expect(() => parseCampaignContent(station)).toThrow("station");
+    const effect = structuredClone(VEYLORA);
+    effect.recipes[0]!.effect.maxEnergyShieldMultiplier = 10;
+    expect(() => parseCampaignContent(effect)).toThrow("number");
   });
 });

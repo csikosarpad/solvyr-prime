@@ -10,6 +10,20 @@ export interface CampaignMission {
   battlefieldId: string;
   opponent: { armor: number; skill: number };
   protection?: { objectiveId: string; minimumHpRatio: number };
+  rewards: CampaignRewards;
+}
+
+export interface CampaignRewards {
+  resources: Record<string, number>;
+  technologies: string[];
+}
+
+export interface CampaignRecipe {
+  id: string;
+  name: MessageKey;
+  cost: Record<string, number>;
+  technologies: string[];
+  effect: { maxEnergyShieldMultiplier: number };
 }
 
 export interface CampaignLocation {
@@ -17,6 +31,7 @@ export interface CampaignLocation {
   kind: "planet" | "station";
   name: MessageKey;
   missionIds: string[];
+  recipeIds: string[];
 }
 
 export interface CampaignContent {
@@ -25,6 +40,9 @@ export interface CampaignContent {
   sector: { id: string; name: MessageKey; locations: CampaignLocation[] };
   missions: CampaignMission[];
   battlefields: Sector[];
+  resources: { id: string; name: MessageKey }[];
+  technologies: { id: string; name: MessageKey }[];
+  recipes: CampaignRecipe[];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -46,6 +64,13 @@ function text(value: unknown): string {
   return value;
 }
 
+function identifier(value: unknown): string {
+  const id = text(value);
+  if (!/^[a-z][a-z0-9-]*$/.test(id) || id === "constructor" || id === "prototype")
+    throw new Error("Invalid content ID");
+  return id;
+}
+
 function number(value: unknown, min: number, max: number): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max)
     throw new Error("Invalid content number");
@@ -59,6 +84,17 @@ function message(value: unknown): MessageKey {
 
 function unique(ids: readonly string[]): void {
   if (new Set(ids).size !== ids.length) throw new Error("Duplicate content ID");
+}
+
+function quantities(value: unknown): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(record(value)).map(([id, value]) => {
+      text(id);
+      const amount = number(value, 1, Number.MAX_SAFE_INTEGER);
+      if (!Number.isSafeInteger(amount)) throw new Error("Invalid resource quantity");
+      return [id, amount];
+    }),
+  );
 }
 
 function color(value: unknown): number {
@@ -134,21 +170,63 @@ export function parseCampaignContent(value: unknown): CampaignContent {
   const contentVersion = number(raw.contentVersion, 1, Number.MAX_SAFE_INTEGER);
   if (!Number.isInteger(contentVersion)) throw new Error("Invalid campaign content version");
   const sector = record(raw.sector);
+  const catalog = (value: unknown) =>
+    list(value).map((value) => {
+      const entry = record(value);
+      return { id: identifier(entry.id), name: message(entry.name) };
+    });
+  const resources = catalog(raw.resources);
+  const technologies = catalog(raw.technologies);
+  const recipes = list(raw.recipes).map((value): CampaignRecipe => {
+    const entry = record(value);
+    const effect = record(entry.effect);
+    if (Object.keys(effect).length !== 1) throw new Error("Unsupported campaign upgrade effect");
+    return {
+      id: identifier(entry.id),
+      name: message(entry.name),
+      cost: quantities(entry.cost),
+      technologies: list(entry.technologies).map(text),
+      effect: { maxEnergyShieldMultiplier: number(effect.maxEnergyShieldMultiplier, 1.01, 2) },
+    };
+  });
+  const checkReferences = (amounts: Record<string, number>, techIds: string[]) => {
+    unique(techIds);
+    if (
+      Object.keys(amounts).some((id) => !resources.some((entry) => entry.id === id)) ||
+      techIds.some((id) => !technologies.some((entry) => entry.id === id))
+    )
+      throw new Error("Unknown economic reference");
+  };
+  unique(resources.map((entry) => entry.id));
+  unique(technologies.map((entry) => entry.id));
+  unique(recipes.map((entry) => entry.id));
+  recipes.forEach((entry) => checkReferences(entry.cost, entry.technologies));
   const locations = list(sector.locations).map((value): CampaignLocation => {
     const entry = record(value);
     if (entry.kind !== "planet" && entry.kind !== "station") throw new Error("Unknown campaign location kind");
     const missionIds = list(entry.missionIds).map(text);
+    const recipeIds = list(entry.recipeIds).map(text);
     unique(missionIds);
-    return { id: text(entry.id), kind: entry.kind, name: message(entry.name), missionIds };
+    unique(recipeIds);
+    if (
+      (entry.kind !== "station" && recipeIds.length) ||
+      recipeIds.some((id) => !recipes.some((recipe) => recipe.id === id))
+    )
+      throw new Error("Invalid station recipe reference");
+    return { id: text(entry.id), kind: entry.kind, name: message(entry.name), missionIds, recipeIds };
   });
   const missions = list(raw.missions).map((value): CampaignMission => {
     const entry = record(value);
     const opponent = record(entry.opponent);
     const armor = number(opponent.armor, 0, 100);
+    const reward = record(entry.rewards);
+    const rewards = { resources: quantities(reward.resources), technologies: list(reward.technologies).map(text) };
+    checkReferences(rewards.resources, rewards.technologies);
     const mission: CampaignMission = {
       id: text(entry.id),
       battlefieldId: text(entry.battlefieldId),
       opponent: { armor, skill: number(opponent.skill, 0, 0.9) },
+      rewards,
     };
     if (entry.protection !== undefined) {
       const protection = record(entry.protection);
@@ -181,9 +259,12 @@ export function parseCampaignContent(value: unknown): CampaignContent {
   return {
     schemaVersion: 1,
     contentVersion,
-    sector: { id: text(sector.id), name: message(sector.name), locations },
+    sector: { id: identifier(sector.id), name: message(sector.name), locations },
     missions,
     battlefields,
+    resources,
+    technologies,
+    recipes,
   };
 }
 

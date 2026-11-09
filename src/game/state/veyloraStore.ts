@@ -1,103 +1,122 @@
 import { create } from "zustand";
 import type { MessageKey } from "@/i18n";
 import { VEYLORA, missionById } from "../data/campaignContent";
+import { campaignTransaction, CampaignDataError, LEGACY_VEYLORA_KEY } from "./campaignDatabase";
+import {
+  initialSectorProgress,
+  newCampaignSave,
+  purchaseBlock,
+  rewardKey,
+  type CampaignSave,
+  type SectorProgress,
+} from "../systems/campaignEconomy";
 
-export const VEYLORA_STORAGE_KEY = "ballistic-front:veylora-progress";
+export const VEYLORA_STORAGE_KEY = LEGACY_VEYLORA_KEY;
 
-interface Progress {
-  selectedMissionId: string;
-  completedMissionIds: string[];
-}
-
-interface VeyloraState extends Progress {
+interface VeyloraState extends SectorProgress {
+  economy: CampaignSave;
+  ready: boolean;
+  pending: number;
   error: MessageKey | null;
-  select: (id: string) => boolean;
-  complete: (id: string) => boolean;
-  reset: () => boolean;
+  refresh: () => Promise<boolean>;
+  select: (id: string) => Promise<boolean>;
+  complete: (id: string, generation: string) => Promise<boolean>;
+  buy: (id: string) => Promise<boolean>;
+  reset: () => Promise<boolean>;
+  resetEconomy: () => Promise<boolean>;
 }
 
-const initial = (): Progress => ({ selectedMissionId: VEYLORA.missions[0]!.id, completedMissionIds: [] });
-
-export function readVeyloraProgress(storage: Pick<Storage, "getItem"> = localStorage): Progress {
-  const text = storage.getItem(VEYLORA_STORAGE_KEY);
-  if (text === null) return initial();
-  const raw: unknown = JSON.parse(text);
-  if (
-    !raw ||
-    typeof raw !== "object" ||
-    !("version" in raw) ||
-    raw.version !== 1 ||
-    !("contentVersion" in raw) ||
-    raw.contentVersion !== VEYLORA.contentVersion ||
-    !("sectorId" in raw) ||
-    raw.sectorId !== VEYLORA.sector.id ||
-    !("selectedMissionId" in raw) ||
-    typeof raw.selectedMissionId !== "string" ||
-    !("completedMissionIds" in raw) ||
-    !Array.isArray(raw.completedMissionIds) ||
-    !raw.completedMissionIds.every((id): id is string => typeof id === "string") ||
-    new Set(raw.completedMissionIds).size !== raw.completedMissionIds.length
-  )
-    throw new Error("Invalid VEYLORA progression");
-  missionById(raw.selectedMissionId);
-  raw.completedMissionIds.forEach(missionById);
-  return { selectedMissionId: raw.selectedMissionId, completedMissionIds: raw.completedMissionIds };
-}
-
-function load(): Progress & { error: MessageKey | null } {
-  try {
-    return { ...readVeyloraProgress(), error: null };
-  } catch (error) {
-    console.error("VEYLORA progress could not be loaded", error);
-    return { ...initial(), error: "veylora.loadError" };
+class EconomyRuleError extends Error {
+  constructor(
+    readonly key: MessageKey,
+    readonly economy: CampaignSave,
+  ) {
+    super(key);
   }
 }
 
-export const useVeyloraStore = create<VeyloraState>((set, get) => {
-  const write = (change: (progress: Progress) => Progress, reset = false): boolean => {
-    if (!reset && get().error === "veylora.loadError") return false;
-    let progress: Progress;
+export const useVeyloraStore = create<VeyloraState>((set) => {
+  const write = async (change?: (save: CampaignSave) => CampaignSave, reset = false): Promise<boolean> => {
+    set((state) => ({ pending: state.pending + 1 }));
     try {
-      progress = reset ? initial() : readVeyloraProgress();
-    } catch (error) {
-      console.error("VEYLORA progress could not be loaded before saving", error);
-      set({ error: "veylora.loadError" });
-      return false;
-    }
-    try {
-      const next = change(progress);
-      localStorage.setItem(
-        VEYLORA_STORAGE_KEY,
-        JSON.stringify({
-          version: 1,
-          contentVersion: VEYLORA.contentVersion,
-          sectorId: VEYLORA.sector.id,
-          ...next,
-        }),
-      );
-      set({ ...next, error: null });
+      const economy = await campaignTransaction(change, reset);
+      set({ economy, ...economy.progress[VEYLORA.sector.id]!, ready: true, error: null });
       return true;
     } catch (error) {
-      console.error("VEYLORA progress could not be saved", error);
-      set({ error: "veylora.saveError" });
+      console.error("Campaign economy transaction failed", error);
+      if (error instanceof EconomyRuleError)
+        set({ economy: error.economy, ...error.economy.progress[VEYLORA.sector.id]!, ready: true });
+      set({
+        error:
+          error instanceof EconomyRuleError
+            ? error.key
+            : error instanceof CampaignDataError
+              ? "veylora.loadError"
+              : "veylora.saveError",
+      });
       return false;
+    } finally {
+      set((state) => ({ pending: state.pending - 1 }));
     }
   };
   return {
-    ...load(),
+    ...initialSectorProgress(),
+    economy: newCampaignSave(),
+    ready: false,
+    pending: 0,
+    error: null,
+    refresh: () => write(),
     select: (id) => {
       missionById(id);
-      return write((progress) => ({ ...progress, selectedMissionId: id }));
+      return write((save) => {
+        save.progress[VEYLORA.sector.id]!.selectedMissionId = id;
+        return save;
+      });
     },
-    complete: (id) => {
-      missionById(id);
-      return write((progress) => ({
-        ...progress,
-        completedMissionIds: progress.completedMissionIds.includes(id)
-          ? progress.completedMissionIds
-          : [...progress.completedMissionIds, id],
-      }));
+    complete: (id, generation) => {
+      const mission = missionById(id);
+      return write((save) => {
+        if (save.generation !== generation) throw new EconomyRuleError("economy.resetDuringBattle", save);
+        const progress = save.progress[VEYLORA.sector.id]!;
+        if (!progress.completedMissionIds.includes(id)) progress.completedMissionIds.push(id);
+        const key = rewardKey(id);
+        if (!Object.hasOwn(save.claims, key)) {
+          for (const [resource, amount] of Object.entries(mission.rewards.resources)) {
+            const total = (save.resources[resource] ?? 0) + amount;
+            if (!Number.isSafeInteger(total)) throw new Error("Campaign resource overflow");
+            save.resources[resource] = total;
+          }
+          save.technologies = [...new Set([...save.technologies, ...mission.rewards.technologies])];
+          save.claims[key] = { contentVersion: VEYLORA.contentVersion, rewards: structuredClone(mission.rewards) };
+        }
+        return save;
+      });
     },
-    reset: () => write(initial, true),
+    buy: (id) => {
+      const recipe = VEYLORA.recipes.find((recipe) => recipe.id === id);
+      if (!recipe) throw new Error(`Unknown campaign recipe: ${id}`);
+      return write((save) => {
+        const block = purchaseBlock(save, recipe);
+        if (block)
+          throw new EconomyRuleError(
+            block === "owned"
+              ? "economy.owned"
+              : block === "technology"
+                ? "economy.missingTechnology"
+                : "economy.missingResources",
+            save,
+          );
+        for (const [resource, amount] of Object.entries(recipe.cost))
+          save.resources[resource] = save.resources[resource]! - amount;
+        save.purchases[id] = { contentVersion: VEYLORA.contentVersion, ...recipe.effect };
+        return save;
+      });
+    },
+    reset: () =>
+      write((save) => {
+        save.progress[VEYLORA.sector.id] = initialSectorProgress();
+        return save;
+      }),
+    resetEconomy: () => write(undefined, true),
   };
 });

@@ -61,7 +61,8 @@ csak P1 fejleszthető; P2 AI maga vásárol. A profilok és az AI-tapasztalat a
 gyorscsatával közösek, külön kampánynehézség még nincs.
 
 A térképen a „Kampányhaladás törlése” csak a teljesítést törli.
-A főmenü „Mentés törlése” az XP-t, fejlesztéseket és kampányhaladást is törli.
+A főmenü „Mentés törlése” az XP-t, XP-fejlesztéseket és a régi kampány
+haladását törli; az új kampánygazdaságot és VEYLORA-haladást nem.
 Tárolási hibánál figyelmeztetés jelenik meg; sikertelen mentés után a kijelzett
 haladás csak az aktuális munkamenetben érvényes. Hibás/nem támogatott kampánymentés
 esetén az indítás tiltott; a kampányreset új mentést hozhat létre, a régi XP megtartásával.
@@ -77,18 +78,41 @@ A két bolygó sorrendje szabad, az utazás és az újrapróbálás ingyenes.
 - **Kutatóbolygó:** kékesszürke völgyek és központi fennsík. A közepes
   küldetéshez tankgyőzelem és legalább 20/100 kutatóépület-HP szükséges.
   Mindkét fél épületsebzése számít. Minden új próbálkozás teljes épület-HP-val indul.
-- **Orbitális dokk:** jelenleg tájékoztató állomáskártya, nem harctér.
+- **Orbitális dokk:** közös P1-kampánykészlet, tervrajz és
+  kampányfejlesztés-vásárlás; nem harctér.
 
 Tankgyőzelem mellett is elbukhat a kutatótelepi küldetés. Ilyenkor a harci
 eredmény és annak XP-je megmarad, de nem jár küldetésteljesítés.
 Mindkét küldetés sikerével VEYLORA biztosított, de továbbra is újrajátszható.
-A haladás külön, helyileg mentődik; a VEYLORA-haladás törlése megerősítést kér,
-és nem törli a régi kampányt vagy az XP-profilt. Mentési hibánál figyelmeztetés
-látszik; az eredményképernyőn a sikertelen teljesítésmentés újrapróbálható.
-Hibás mentésnél az indítás tiltott, amíg a mentés javítása vagy kifejezett resetje meg nem történik.
+A küldetéshaladás és a gazdaság helyileg, IndexedDB-ben mentődik. Mentési
+hibánál figyelmeztetés látszik; az eredményképernyőn a sikertelen
+teljesítés-/jutalommentés újrapróbálható. Hibás mentésnél az indítás tiltott;
+a szektorhaladás törlése nem kerülheti meg a sérült gazdasági mentést.
 
-**Érc, tervrajz, kampánypajzs és tartalomfrissítés még nem érhető el.**
-A prototípus csak a meglévő XP-t adja, újrajátszáskor is. Az új ellenfelek
+- A bánya első sikeres teljesítése **20 ipari ércet** ad.
+- A kutatótelep első sikeres, épületvédelmet is teljesítő küldetése
+  **anyagtechnológiai tervrajzot** ad. A két jutalom azonnal használható.
+- Az állomáson **20 érc és a tervrajz megléte** ellenében egyszer
+  megvehető a **Megerősített pajzs**. Csak az érc fogy el.
+- A fejlesztés az XP-ből számolt maximális energiapajzsot **10%-kal növeli**,
+  kizárólag P1 következő, új rendszerű kampánycsatáiban. A régi kampány,
+  gyorscsata és PvP változatlan. Nulla alap-pajzsnál megvehető, de még nincs
+  hatása; későbbi XP-pajzsfejlesztés után automatikusan érvényesül.
+- Az újrajátszás nem ad újabb gazdasági jutalmat, a megszokott XP viszont jár.
+  A küldetés teljesítése és a jutalom elszámolása külön látszik.
+- **VEYLORA-haladás törlése:** csak a küldetésállapot törlődik. A készlet,
+  tervrajz, vásárlás és korábbi jutalomfelvétel megmarad, nincs újrakifizetés.
+- **Teljes kampánygazdaság törlése:** külön megerősítés után az új kampányok
+  haladása, vagyona, fejlesztései és jutalomnyilvántartása együtt törlődik.
+  A jutalmak újra megszerezhetők; az XP, XP-fejlesztések és a régi kampány
+  megmaradnak. Másik lapon korábban indult csata nem írhat az új gazdaságba.
+
+A korábbi, gazdaság nélküli prototípus haladása átemelődik, de nem ad
+visszamenőleges jutalmat. Az első gazdasági jutalomhoz újra sikeresen teljesítsd
+az érintett küldetést. Az eredeti prototípusmentés biztonsági másolatként megmarad.
+Az IndexedDB elérhetősége szükséges; böngészőadat-törlés a készletet is törli.
+
+**Build nélküli tartalomfrissítés még nem érhető el.** Az új ellenfelek
 nem öröklik és nem fejlesztik a gyorscsata P2-profilját vagy az AI-memóriát.
 A jelenlegi cél a stabil működés; a nehézség és a látvány még finomhangolható.
 

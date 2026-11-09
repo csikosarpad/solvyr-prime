@@ -60,6 +60,7 @@ export interface GameState {
   campaignNewRoutes: SectorId[];
   campaignMission: CampaignMission | null;
   missionSuccess: boolean | null;
+  missionGeneration: string | null;
   opponentSkill: number | null;
   aiActive: boolean;
   /** Helyi prezentációs sorszám; új csatánál változik, nem online protokollmező. */
@@ -102,6 +103,7 @@ export const useGameStore = create<GameState>((set) => ({
   campaignNewRoutes: [],
   campaignMission: null,
   missionSuccess: null,
+  missionGeneration: null,
   opponentSkill: null,
   aiActive: false,
   matchSequence: 0,
