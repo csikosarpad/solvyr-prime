@@ -6,6 +6,8 @@ Technikai működés, fejlesztési tervek és projektelőzmények. Játékosokna
 | Dokumentum | Szerep |
 | --- | --- |
 | [Getting started](./getting-started.md) | Környezet, parancsok, forrásstruktúra, fordítások, skinek és assetforrások |
+| [Projektáttekintés és státusz](./project-status.md) | Kód- és dokumentációs áttekintés, aktuális ellenőrzések és kockázatok |
+| [Refaktorálási terv](./refactoring-plan.md) | Fokozatos kódrefaktorálás és dokumentáció-rendezés, elfogadási feltételekkel |
 | [Fejlesztői kontextus](./dev-notes.md) | Jelenlegi architektúra és bővítési korlátok |
 | [Roadmap](./roadmap.md) | Központi fejlesztési státuszok, milestone-ok és nyitott döntések |
 | [Gameplay és fejlődés](./gameplay-progression.md) | Térképközpontú fejlesztési irány, megvalósíthatóság és még nyitott mechanikai döntések |
