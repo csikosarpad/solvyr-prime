@@ -51,6 +51,20 @@ import type { MatchMode } from "../state/gameStore";
 import { AiBrain, chooseUpgrades, simulateImpact, skillFromMemory } from "../systems/ai";
 import type { RoomEvent } from "../multiplayer/protocol";
 import { TRAINING_SECTOR, sectorById, type Sector, type SectorId } from "../data/sectors";
+import {
+  applyStrategicDamage,
+  createStrategicObjective,
+  randomizeObjectivePlacements,
+  strategicExplosionDamage,
+  structureState,
+  type PlacedStrategicObjective,
+} from "../systems/strategicObjectives";
+import { StrategicObjectiveGraphics } from "./StrategicObjectiveGraphics";
+import { missionById, missionBattlefield, type CampaignMission } from "../data/campaignContent";
+import { useVeyloraStore } from "../state/veyloraStore";
+import { missionSucceeded } from "../systems/campaignMission";
+import { BASE_STATS } from "../data/upgrades";
+import { applyCampaignUpgrades, type CampaignSave } from "../systems/campaignEconomy";
 
 /** Ennyi HP-arány alatt kritikus a tank állapota. */
 const CRITICAL_HP_FRACTION = 0.3;
@@ -97,6 +111,8 @@ export class Game {
   private app = new Application();
   private terrain: Terrain | null = null;
   private tanksGfx = new Graphics();
+  private strategicObjectives: PlacedStrategicObjective[] = [];
+  private objectiveGraphics = new StrategicObjectiveGraphics();
   private tankLayer = new Container();
   private battlefieldLayers = new BattlefieldLayers();
   private tankViews = new Map<string, TankView>();
@@ -126,6 +142,8 @@ export class Game {
   private matchRandom = Math.random;
   private multiplayer = false;
   private matchMode: MatchMode = "skirmish";
+  private campaignMission: CampaignMission | null = null;
+  private campaignEconomy: CampaignSave | null = null;
   private sector: Sector = TRAINING_SECTOR;
   private matchActive = true;
   private matchProfiles: Record<string, Profile> | null = null;
@@ -194,6 +212,7 @@ export class Game {
       backdrop,
       this.battlefieldLayers,
       this.terrain.sprite,
+      this.objectiveGraphics,
       this.previewGfx,
       this.tankLayer,
       this.tanksGfx,
@@ -284,14 +303,28 @@ export class Game {
     this.clearAiTimers();
     const aiSettings = useAiSettings.getState();
     this.matchActive = true;
-    this.aiActive = !this.multiplayer && (this.matchMode === "campaign" || aiSettings.enabled);
-    this.aiBrain = this.aiActive ? new AiBrain({ skill: skillFromMemory(aiSettings.memory) }) : null;
+    this.aiActive = !this.multiplayer && (this.matchMode !== "skirmish" || aiSettings.enabled);
+    this.aiBrain = this.aiActive
+      ? new AiBrain({ skill: this.campaignMission?.opponent.skill ?? skillFromMemory(aiSettings.memory) })
+      : null;
     this.aiHits = 0;
     const width = WORLD_WIDTH;
     const matchSetup = setup ?? { seed: Math.floor(Math.random() * 1_000_000), starterIndex: this.nextStarter };
     this.matchRandom = createSeededRandom(matchSetup.seed);
     this.battlefieldLayers.draw(WORLD_WIDTH, WORLD_HEIGHT, matchSetup.seed, this.sector.atmosphere);
     this.terrain.build(WORLD_WIDTH, WORLD_HEIGHT, matchSetup.seed, this.sector);
+    this.strategicObjectives =
+      this.matchMode !== "skirmish"
+        ? randomizeObjectivePlacements(
+            this.sector.strategicObjectives ?? [],
+            this.sector.strategicObjectiveSlots ?? [],
+            matchSetup.seed,
+          ).map((placement) => ({
+            ...createStrategicObjective(placement.id, placement.type),
+            ...placement,
+            worldY: this.terrain!.mask.surfaceY(placement.worldX),
+          }))
+        : [];
     this.tanks = [
       createTank("P1", width * 0.12, this.playerColor(0), 45, this.statsFor("P1")),
       createTank("P2", width * 0.88, this.playerColor(1), 135, this.statsFor("P2")),
@@ -313,11 +346,17 @@ export class Game {
       matchId: crypto.randomUUID(),
       sector: this.sector,
       campaignNewRoutes: [],
+      campaignMission: this.campaignMission,
+      missionSuccess: null,
+      opponentSkill: this.campaignMission?.opponent.skill ?? null,
+      missionGeneration: this.campaignEconomy?.generation ?? null,
     });
     this.beginTurn();
   }
 
   startMultiplayer(setup: MatchSetup, profiles: Record<string, Profile>, revision: number): void {
+    this.campaignMission = null;
+    this.campaignEconomy = null;
     this.matchMode = "skirmish";
     this.sector = TRAINING_SECTOR;
     if (!this.terrain) {
@@ -341,6 +380,11 @@ export class Game {
   }
 
   startOffline(mode: MatchMode = "skirmish"): void {
+    if (mode === "operation" && !this.campaignMission) throw new Error("Missing campaign mission context");
+    if (mode !== "operation") {
+      this.campaignMission = null;
+      this.campaignEconomy = null;
+    }
     this.matchMode = mode;
     if (mode === "skirmish") this.sector = TRAINING_SECTOR;
     this.pendingMultiplayerStart = null;
@@ -354,6 +398,9 @@ export class Game {
       matchMode: mode,
       sector: this.sector,
       campaignNewRoutes: [],
+      campaignMission: this.campaignMission,
+      missionSuccess: null,
+      opponentSkill: this.campaignMission?.opponent.skill ?? null,
       phase: "aiming",
       winner: null,
     });
@@ -365,6 +412,20 @@ export class Game {
     if (!useCampaignStore.getState().select(id)) return false;
     this.sector = sector;
     this.startOffline("campaign");
+    return true;
+  }
+
+  async startOperation(id: string): Promise<boolean> {
+    const mission = missionById(id);
+    if (!this.terrain) {
+      console.error("Cannot start VEYLORA before the battlefield is ready");
+      return false;
+    }
+    if (!await useVeyloraStore.getState().select(id)) return false;
+    this.campaignMission = mission;
+    this.campaignEconomy = structuredClone(useVeyloraStore.getState().economy);
+    this.sector = missionBattlefield(mission);
+    this.startOffline("operation");
     return true;
   }
 
@@ -392,7 +453,11 @@ export class Game {
   }
 
   private statsFor(id: string) {
-    return computeStats((this.matchProfiles?.[id] ?? this.profiles[id]!).levels);
+    if (id === "P2" && this.campaignMission)
+      return { ...BASE_STATS, maxArmor: this.campaignMission.opponent.armor };
+    const stats = computeStats((this.matchProfiles?.[id] ?? this.profiles[id]!).levels);
+    return id === "P1" && this.campaignMission && this.campaignEconomy
+      ? applyCampaignUpgrades(stats, this.campaignEconomy) : stats;
   }
 
   /** Tankonként egy sprite-pár: a cső a test mögött forog a saját forgáspontja körü. */
@@ -429,7 +494,8 @@ export class Game {
   }
 
   private award(id: string, xp: number): void {
-    this.profiles[id] = awardXp(this.profiles[id]!, xp);
+    if (!this.campaignMission || id !== "P2")
+      this.profiles[id] = awardXp(this.profiles[id]!, xp);
     this.matchStats = recordXp(this.matchStats, id, xp);
     if (this.multiplayer) saveProfiles(this.profiles);
   }
@@ -596,7 +662,7 @@ export class Game {
 
   /** Meccs végén a gép rögzíti a tapasztalatot, és maga választja ki a fejlesztéseit. */
   private finishAiMatch(): void {
-    if (!this.aiActive || !this.aiBrain) return;
+    if (!this.aiActive || !this.aiBrain || this.campaignMission) return;
     const own = this.matchStats["P2"];
     const other = this.matchStats["P1"];
     if (!own || !other) return;
@@ -615,6 +681,7 @@ export class Game {
   private syncStore(): void {
     useGameStore.getState().sync({
       matchMode: this.matchMode,
+      strategicObjectives: this.strategicObjectives,
       aiActive: this.aiActive,
       phase: this.turns.phase,
       currentId: this.turns.current,
@@ -822,8 +889,28 @@ export class Game {
   private explode(x: number, y: number): void {
     const shooter = this.current;
     const radius = shooter.stats.blastRadius;
+    const objectivesBefore = this.strategicObjectives;
     this.battlefieldLayers.reactToImpact(Math.min(1, radius / 80));
+    this.strategicObjectives = this.strategicObjectives.map((objective) => ({
+      ...objective,
+      ...applyStrategicDamage(
+        objective,
+        strategicExplosionDamage(
+          Math.hypot(objective.worldX - x, objective.worldY - objective.height / 2 - y),
+          radius * 2,
+          60 * shooter.stats.damage,
+        ),
+        shooter.id === "P1" ? "PLAYER" : "AI",
+      ),
+    }));
     this.terrain?.carve(x, y, radius);
+    if (this.terrain) {
+      const mask = this.terrain.mask;
+      this.strategicObjectives = this.strategicObjectives.map((objective) => ({
+        ...objective,
+        worldY: mask.surfaceY(objective.worldX),
+      }));
+    }
     this.particles.spawnExplosion(x, y, radius);
     this.audio?.play("explosion", { rate: 0.9 + Math.random() * 0.2 });
     // XP: az ellenfélnek okozott sérülés (1 HP, pajzs- vagy páncélpont = 1 XP).
@@ -845,6 +932,21 @@ export class Game {
       });
     }
     this.announceImpact(shooter, hurt);
+    for (const objective of this.strategicObjectives) {
+      const before = objectivesBefore.find((entry) => entry.id === objective.id);
+      if (!before || before.hp === objective.hp) continue;
+      const destroyed = structureState(objective.hp, objective.maxHp) === "DESTROYED";
+      useCommandStore.getState().log(
+        `command.${objective.type}${destroyed ? "Destroyed" : "Damaged"}`,
+        {
+          source: shooter.id === "P1" ? playerName(shooter.id) : `AI (${playerName(shooter.id)})`,
+          damage: Number((before.hp - objective.hp).toFixed(2)),
+          hp: Number(objective.hp.toFixed(2)),
+          maxHp: objective.maxHp,
+        },
+        destroyed ? "critical" : "warning",
+      );
+    }
     this.aiObserveImpact(shooter.id, x, dealt);
     this.award(shooter.id, dealt);
     this.matchStats = recordDamage(this.matchStats, shooter.id, dealt);
@@ -855,8 +957,14 @@ export class Game {
     if (this.turns.phase === "aiming") this.beginTurn();
     else {
       if (this.matchMode === "campaign" && this.turns.winner === "P1") {
-        const routes = useCampaignStore.getState().complete(this.sector.id);
+        const routes = useCampaignStore.getState().complete(sectorById(this.sector.id).id);
         useGameStore.getState().sync({ campaignNewRoutes: routes });
+      }
+      if (this.campaignMission) {
+        const success = missionSucceeded(this.campaignMission, this.turns.winner, this.strategicObjectives);
+        useGameStore.getState().sync({ missionSuccess: success });
+        if (success && this.campaignEconomy)
+          void useVeyloraStore.getState().complete(this.campaignMission.id, this.campaignEconomy.generation);
       }
       if (this.turns.winner) {
         this.award(this.turns.winner, WIN_BONUS_XP);
@@ -986,6 +1094,7 @@ export class Game {
   }
 
   private draw(dt: number): void {
+    if (this.terrain) this.objectiveGraphics.draw(this.strategicObjectives, this.terrain.mask, dt, this.shakeEnabled);
     const aiming = this.turns.phase === "aiming";
     const aimAngle = useGameStore.getState().angle;
     for (const t of this.tanks) {
@@ -1052,6 +1161,7 @@ export class Game {
     this.pendingMultiplayerEvents = [];
     this.audio?.destroy();
     this.destroyTankViews();
+    this.objectiveGraphics.destroy();
     if (this.app.renderer) this.app.destroy({ removeView: true }, { children: true });
   }
 }

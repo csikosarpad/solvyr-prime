@@ -38,6 +38,13 @@ export function CampaignSectorCard({
             <div className="sector-code">{sector.code}</div>
             <h2 id={departing ? undefined : `campaign-sector-name-${sector.id}`}>{sector.name}</h2>
             <p>{t(sector.briefing)}</p>
+            {sector.strategicObjectives && (
+              <p>
+                {t("strategic.protected")}:{" "}
+                {sector.strategicObjectives.map((objective) => t(`strategic.${objective.type}`)).join(", ")}.{" "}
+                {t("strategic.trial")}
+              </p>
+            )}
             <dl>
               <div>
                 <dt>{t("campaign.status")}</dt>

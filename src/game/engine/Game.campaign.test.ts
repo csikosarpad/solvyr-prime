@@ -10,6 +10,10 @@ import { TRAINING_SECTOR, sectorById } from "../data/sectors";
 import { loadProfiles, saveProfiles } from "../systems/profileStorage";
 import { Texture } from "pixi.js";
 import { GlowFilter } from "pixi-filters";
+import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
+import { useCommandStore } from "../state/commandStore";
+import { useVeyloraStore } from "../state/veyloraStore";
+import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
 
 vi.hoisted(() => {
   HTMLCanvasElement.prototype.getContext = () => null;
@@ -18,12 +22,17 @@ vi.hoisted(() => {
 describe("Game campaign lifecycle", () => {
   let game: Game;
 
-  beforeEach(() => {
-    vi.useFakeTimers();
+  beforeEach(async () => {
+    vi.stubGlobal("indexedDB", new IDBFactory());
+    localStorage.removeItem("ballistic-front:profiles");
+    localStorage.removeItem("ballistic-front:profiles:v1");
+    await useVeyloraStore.getState().resetEconomy();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
     useMultiplayerStore.getState().leave();
     useCampaignStore.getState().reset();
     useAiSettings.getState().setEnabled(false);
-    useGameStore.setState({ screen: "playing", muted: true, sector: TRAINING_SECTOR, campaignNewRoutes: [] });
+    useGameStore.setState({ screen: "playing", muted: true, sector: TRAINING_SECTOR, campaignNewRoutes: [],
+      matchMode: "skirmish", campaignMission: null, missionSuccess: null, opponentSkill: null });
     game = new Game();
     Reflect.set(game, "terrain", {
       mask: TerrainMask.fromHeightmap(new Array(1280).fill(550), 720),
@@ -48,6 +57,225 @@ describe("Game campaign lifecycle", () => {
     Reflect.get(game, "explode").call(game, 640, 100);
   };
 
+  const startForge = (starterIndex = 0) => {
+    useCampaignStore.getState().complete("alpha-01");
+    expect(game.startCampaign("forge-17")).toBe(true);
+    game.restart({ seed: 42, starterIndex });
+  };
+
+  it("starts fixed VEYLORA opponents independently of P2 profile and AI memory", async () => {
+    Reflect.get(game, "profiles").P2.levels = { armor: 5, shield: 5, warhead: 5 };
+    useAiSettings.setState({ memory: { matches: 999, wins: 999, shots: 999, hits: 999 } });
+    expect(await game.startOperation("secure-mine")).toBe(true);
+    expect(useGameStore.getState()).toMatchObject({ matchMode: "operation", aiActive: true, opponentSkill: 0.35 });
+    expect(Reflect.get(game, "tanks")[1].stats).toMatchObject({ maxArmor: 0, maxEnergyShield: 0, damage: 1 });
+    expect(await game.startOperation("secure-lab")).toBe(true);
+    expect(Reflect.get(game, "tanks")[1].stats.maxArmor).toBe(20);
+    expect(useGameStore.getState().opponentSkill).toBe(0.55);
+    expect(useGameStore.getState().strategicObjectives[0]?.type).toBe("RESEARCH_LAB");
+    game.startOffline();
+    expect(useGameStore.getState()).toMatchObject({ matchMode: "skirmish", campaignMission: null, opponentSkill: null });
+  });
+
+  it.each([
+    ["P1", 100, true], ["P1", 20, true], ["P1", 19.99, false],
+    ["P2", 100, false], [null, 100, false],
+  ] as const)("separates research mission success from battle result: %s / %s HP", async (winner, hp, success) => {
+    expect(await game.startOperation("secure-lab")).toBe(true);
+    game.restart({ seed: 42, starterIndex: 0 });
+    const memory = structuredClone(useAiSettings.getState().memory);
+    const p2 = structuredClone(Reflect.get(game, "profiles").P2);
+    const objectives: PlacedStrategicObjective[] = Reflect.get(game, "strategicObjectives");
+    objectives[0] = { ...objectives[0]!, hp };
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    tanks[0]!.hp = winner === "P1" ? 100 : 0;
+    tanks[1]!.hp = winner === "P2" ? 100 : 0;
+    game.fire();
+    Reflect.get(game, "explode").call(game, 640, 100);
+    await useVeyloraStore.getState().refresh();
+    expect(useGameStore.getState()).toMatchObject({ winner, missionSuccess: success });
+    expect(useVeyloraStore.getState().completedMissionIds).toEqual(success ? ["secure-lab"] : []);
+    expect(useVeyloraStore.getState().economy.technologies).toEqual(success ? ["materials-blueprint"] : []);
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    expect(useAiSettings.getState().memory).toEqual(memory);
+    expect(Reflect.get(game, "profiles").P2).toEqual(p2);
+    if (winner === "P1") expect(useGameStore.getState().matchStats.P1?.xp).toBeGreaterThanOrEqual(50);
+    game.restart({ seed: 42, starterIndex: 0 });
+    expect(useGameStore.getState().strategicObjectives[0]?.hp).toBe(100);
+    expect(useGameStore.getState().missionSuccess).toBeNull();
+  });
+
+  it("completes only the mine after a VEYLORA mine victory and leaves legacy progress untouched", async () => {
+    await game.startOperation("secure-mine");
+    endBattle("P1");
+    await useVeyloraStore.getState().refresh();
+    expect(useGameStore.getState().missionSuccess).toBe(true);
+    expect(useVeyloraStore.getState().completedMissionIds).toEqual(["secure-mine"]);
+    expect(useVeyloraStore.getState().economy.resources["industrial-ore"]).toBe(20);
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+  });
+
+  it("blocks VEYLORA start before terrain readiness", async () => {
+    Reflect.set(game, "terrain", null);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await game.startOperation("secure-mine")).toBe(false);
+    expect(useGameStore.getState().matchMode).not.toBe("operation");
+  });
+
+  it("does not start a match if mission selection cannot be saved", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(IDBObjectStore.prototype, "put").mockImplementationOnce(() => { throw new Error("quota"); });
+    expect(await game.startOperation("secure-mine")).toBe(false);
+    expect(useGameStore.getState().matchMode).toBe("skirmish");
+  });
+
+  it("applies the purchased shield only to P1 operations and follows later XP upgrades without altering old modes", async () => {
+    Reflect.get(game, "profiles").P1.levels = {};
+    const state = useVeyloraStore.getState;
+    await state().complete("secure-mine", state().economy.generation);
+    await state().complete("secure-lab", state().economy.generation);
+    await state().buy("reinforced-shield");
+    expect(await game.startOperation("secure-mine")).toBe(true);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(0);
+    game.leaveBattle();
+    Reflect.get(game, "profiles").P1.levels.shield = 1;
+    await game.startOperation("secure-mine");
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(22);
+    expect(Reflect.get(game, "tanks")[1].stats.maxEnergyShield).toBe(0);
+    game.leaveBattle();
+    Reflect.get(game, "profiles").P1.levels.shield = 5;
+    await game.startOperation("secure-lab");
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(110);
+    game.startOffline();
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(100);
+    game.startCampaign();
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(100);
+    game.startMultiplayer({ seed: 42, starterIndex: 0 }, useGameStore.getState().profiles, 0);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(100);
+  });
+
+  it("keeps an active battle shield snapshot when economy is reset elsewhere, but removes it next deployment", async () => {
+    const state = useVeyloraStore.getState;
+    await state().complete("secure-mine", state().economy.generation);
+    await state().complete("secure-lab", state().economy.generation);
+    await state().buy("reinforced-shield");
+    Reflect.get(game, "profiles").P1.levels.shield = 1;
+    await game.startOperation("secure-mine");
+    await state().resetEconomy();
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(22);
+    await game.startOperation("secure-mine");
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(20);
+  });
+
+  it("places the two Forge objectives on the terrain and exposes their HP", () => {
+    startForge();
+    expect(useGameStore.getState().strategicObjectives).toEqual([
+      { id: "energy-node-01", type: "ENERGY_NODE", worldX: expect.any(Number), worldY: 550, width: 48, height: 44, hp: 100, maxHp: 100, playerCausedDamage: 0 },
+      { id: "civil-habitat-01", type: "CIVIL_HABITAT", worldX: expect.any(Number), worldY: 550, width: 64, height: 32, hp: 100, maxHp: 100, playerCausedDamage: 0 },
+    ]);
+    game.startOffline();
+    expect(useGameStore.getState().strategicObjectives).toEqual([]);
+    expect(Reflect.get(game, "strategicObjectives")).toEqual([]);
+  });
+
+  it("does not spawn Forge buildings in other campaign sectors", () => {
+    game.startCampaign();
+    expect(useGameStore.getState().strategicObjectives).toEqual([]);
+  });
+
+  it("does not change seeded weather when randomizing objective positions", () => {
+    game.startCampaign();
+    game.restart({ seed: 42, starterIndex: 0 });
+    const wind = useGameStore.getState().wind;
+    startForge();
+    expect(useGameStore.getState().wind).toBe(wind);
+  });
+
+  it.each([0, 1])("attributes only player-caused building damage (starter %s)", (starterIndex) => {
+    startForge(starterIndex);
+    const objective = useGameStore.getState().strategicObjectives[0]!;
+    Reflect.get(game, "launchShot").call(game, 90, 100);
+    Reflect.get(game, "explode").call(game, objective.worldX, objective.worldY - objective.height / 2);
+    expect(useGameStore.getState().strategicObjectives[0]).toMatchObject({
+      hp: 40, playerCausedDamage: starterIndex === 0 ? 60 : 0,
+    });
+    expect(useGameStore.getState().strategicObjectives[1]?.hp).toBe(100);
+    expect(useGameStore.getState().matchStats.P1?.damage).toBe(0);
+    expect(useGameStore.getState().matchStats.P2?.damage).toBe(0);
+    expect(useCommandStore.getState().messages).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        key: "command.ENERGY_NODEDamaged",
+        tone: "warning",
+        params: expect.objectContaining({ damage: 60, hp: 40, maxHp: 100 }),
+      }),
+    ]));
+    expect(useCommandStore.getState().messages.at(-1)?.params?.source).toContain(starterIndex === 0 ? "P1" : "AI");
+  });
+
+  it("uses the pre-crater center for damage then settles without fall damage", () => {
+    startForge();
+    const terrain = Reflect.get(game, "terrain");
+    terrain.carve.mockImplementation(() => {
+      terrain.mask = TerrainMask.fromHeightmap(new Array(1280).fill(700), 720);
+    });
+    game.fire();
+    const objective = useGameStore.getState().strategicObjectives[0]!;
+    Reflect.get(game, "explode").call(game, objective.worldX, objective.worldY - objective.height / 2);
+    expect(useGameStore.getState().strategicObjectives[0]).toMatchObject({ worldY: 700, hp: 40, playerCausedDamage: 60 });
+    expect(useGameStore.getState().strategicObjectives[1]).toMatchObject({ worldY: 700, hp: 100, playerCausedDamage: 0 });
+  });
+
+  it("leaves a shell passing through an objective unaffected until an existing collision explodes", () => {
+    startForge();
+    game.fire();
+    const objective = useGameStore.getState().strategicObjectives[0]!;
+    Reflect.set(game, "shell", { pos: { x: objective.worldX, y: objective.worldY - objective.height / 2 }, vel: { x: 0, y: 0 } });
+    Reflect.get(game, "stepShell").call(game);
+    expect(Reflect.get(game, "terrain").carve).not.toHaveBeenCalled();
+    expect(useGameStore.getState().strategicObjectives[0]?.hp).toBe(100);
+    expect(Reflect.get(game, "shell")).not.toBeNull();
+  });
+
+  it("keeps ruins on the terrain without further HP or player-damage changes", () => {
+    startForge();
+    const objectives: PlacedStrategicObjective[] = Reflect.get(game, "strategicObjectives");
+    objectives[0] = { ...objectives[0]!, hp: 15, playerCausedDamage: 85 };
+    game.fire();
+    const objective = objectives[0];
+    Reflect.get(game, "explode").call(game, objective.worldX, objective.worldY - objective.height / 2);
+    expect(useGameStore.getState().strategicObjectives[0]).toMatchObject({ hp: 15, playerCausedDamage: 85 });
+    expect(useCommandStore.getState().messages.some((message) => message.key === "command.ENERGY_NODEDestroyed")).toBe(false);
+  });
+
+  it("spawns Prime objectives after the mandatory Forge route and varies positions between match seeds", () => {
+    startForge();
+    useCampaignStore.getState().complete("forge-17");
+    useCampaignStore.getState().complete("vanguard-12");
+    expect(game.startCampaign("prime-00")).toBe(true);
+    game.restart({ seed: 42, starterIndex: 0 });
+    const first = useGameStore.getState().strategicObjectives;
+    expect(first.map((objective) => objective.id)).toEqual(["prime-energy-node-01", "prime-civil-habitat-01"]);
+    game.restart({ seed: 43, starterIndex: 0 });
+    expect(useGameStore.getState().strategicObjectives.map((objective) => objective.worldX))
+      .not.toEqual(first.map((objective) => objective.worldX));
+    game.restart({ seed: 42, starterIndex: 0 });
+    expect(useGameStore.getState().strategicObjectives).toEqual(first);
+  });
+
+  it.each(["energy-node-01", "civil-habitat-01"])("logs destruction once and does not log more damage to a ruin: %s", (id) => {
+    startForge();
+    const objectives: PlacedStrategicObjective[] = Reflect.get(game, "strategicObjectives");
+    const index = objectives.findIndex((objective) => objective.id === id);
+    objectives[index] = { ...objectives[index]!, hp: 40, playerCausedDamage: 60 };
+    const objective = objectives[index]!;
+    game.fire();
+    Reflect.get(game, "explode").call(game, objective.worldX, objective.worldY - objective.height / 2);
+    const key = `command.${objective.type}Destroyed`;
+    expect(useCommandStore.getState().messages.filter((message) => message.key === key)).toHaveLength(1);
+    Reflect.get(game, "launchShot").call(game, 90, 100);
+    Reflect.get(game, "explode").call(game, objective.worldX, objective.worldY - objective.height / 2);
+    expect(useCommandStore.getState().messages.filter((message) => message.key === key)).toHaveLength(1);
+  });
   it.each([false, true])("adds team-colored glow and releases filters on restart (touch: %s)", (touch) => {
     vi.stubGlobal("matchMedia", () => ({ matches: touch }));
     try {
@@ -258,14 +486,17 @@ describe("Game campaign lifecycle", () => {
     expect(useCampaignStore.getState().completedIds).toEqual([]);
   });
 
-  it("full progress reset clears campaign, XP and upgrade levels", () => {
+  it("XP reset clears legacy campaign and XP upgrades but preserves the separate campaign economy", async () => {
     useCampaignStore.getState().complete("alpha-01");
+    await useVeyloraStore.getState().complete("secure-mine", useVeyloraStore.getState().economy.generation);
+    const economy = structuredClone(useVeyloraStore.getState().economy);
     game.resetProgress();
     expect(useCampaignStore.getState().completedIds).toEqual([]);
     expect(useGameStore.getState().profiles).toEqual({
       P1: { xp: 0, levels: {} },
       P2: { xp: 0, levels: {} },
     });
+    expect(useVeyloraStore.getState().economy).toEqual(economy);
   });
 
   it("builds the selected real sector, retains it on rematch and resets it for quick battles", () => {

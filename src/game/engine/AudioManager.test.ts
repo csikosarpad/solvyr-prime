@@ -12,7 +12,12 @@ describe("AudioManager volume", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useGameStore.setState({ muted: false });
-    useAudioSettings.setState({ channels: { music: true, voice: true, effects: true }, volume: 0.4, error: null });
+    useAudioSettings.setState({
+      channels: { music: true, voice: true, effects: true },
+      volume: 0.4,
+      channelVolumes: { music: 1, voice: 1, effects: 1 },
+      error: null,
+    });
     vi.stubGlobal(
       "Audio",
       class {
@@ -76,5 +81,67 @@ describe("AudioManager volume", () => {
   it("cancels ongoing narration when its channel is disabled", () => {
     useAudioSettings.getState().setChannel("voice", false);
     expect(cancel).toHaveBeenCalledOnce();
+  });
+
+  it("mixes music and effects independently and only interrupts narration for voice volume changes", () => {
+    useAudioSettings.getState().setChannelVolume("music", 0.2);
+    expect(music.volume).toBeCloseTo(0.25 * 0.4 * 0.2);
+    expect(gain.gain.value).toBeCloseTo(0.6 * 0.4);
+    useAudioSettings.getState().setChannelVolume("effects", 0.5);
+    expect(gain.gain.value).toBeCloseTo(0.6 * 0.4 * 0.5);
+    expect(music.volume).toBeCloseTo(0.25 * 0.4 * 0.2);
+    expect(cancel).not.toHaveBeenCalled();
+    useAudioSettings.getState().setChannelVolume("voice", 0.7);
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+});
+
+describe("AudioManager user activation", () => {
+  const activation = { isActive: false, hasBeenActive: false };
+  const created = vi.fn();
+  let manager: AudioManager;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Object.assign(activation, { isActive: false, hasBeenActive: false });
+    Object.defineProperty(navigator, "userActivation", { value: activation, configurable: true });
+    vi.stubGlobal(
+      "Audio",
+      class {
+        volume = 0;
+        play = vi.fn().mockResolvedValue(undefined);
+        pause = vi.fn();
+      },
+    );
+    vi.stubGlobal(
+      "AudioContext",
+      class {
+        state = "running";
+        destination = {};
+        constructor() {
+          created();
+        }
+        createGain = () => ({ gain: { value: 0 }, connect: vi.fn() });
+        resume = vi.fn().mockResolvedValue(undefined);
+        close = vi.fn().mockResolvedValue(undefined);
+        decodeAudioData = vi.fn().mockResolvedValue({});
+      },
+    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ arrayBuffer: async () => new ArrayBuffer(0) }));
+    manager = new AudioManager();
+  });
+
+  afterEach(() => {
+    manager.destroy();
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, "userActivation");
+  });
+
+  it("waits for a gesture the browser accepts as activation before creating the audio context", () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(created).not.toHaveBeenCalled();
+    Object.assign(activation, { isActive: true, hasBeenActive: true });
+    window.dispatchEvent(new Event("click"));
+    expect(created).toHaveBeenCalledOnce();
   });
 });

@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": 1,
+  "sector": {
+    "id": "veylora-03",
+    "name": "veylora.title",
+    "locations": [
+      { "id": "veylora-a", "kind": "planet", "name": "veylora.mine", "missionIds": ["secure-mine"], "recipeIds": [] },
+      { "id": "veylora-b", "kind": "planet", "name": "veylora.lab", "missionIds": ["secure-lab"], "recipeIds": [] },
+      {
+        "id": "veylora-station",
+        "kind": "station",
+        "name": "veylora.station",
+        "missionIds": [],
+        "recipeIds": ["reinforced-shield"]
+      }
+    ]
+  },
+  "missions": [
+    {
+      "id": "secure-mine",
+      "battlefieldId": "veylora-mine",
+      "opponent": { "armor": 0, "skill": 0.35 },
+      "rewards": { "resources": { "industrial-ore": 20 }, "technologies": [] }
+    },
+    {
+      "id": "secure-lab",
+      "battlefieldId": "veylora-lab",
+      "opponent": { "armor": 20, "skill": 0.55 },
+      "protection": { "objectiveId": "research-lab-01", "minimumHpRatio": 0.2 },
+      "rewards": { "resources": {}, "technologies": ["materials-blueprint"] }
+    }
+  ],
+  "resources": [{ "id": "industrial-ore", "name": "economy.ore" }],
+  "technologies": [{ "id": "materials-blueprint", "name": "economy.blueprint" }],
+  "recipes": [
+    {
+      "id": "reinforced-shield",
+      "name": "economy.shield",
+      "cost": { "industrial-ore": 20 },
+      "technologies": ["materials-blueprint"],
+      "effect": { "maxEnergyShieldMultiplier": 1.1 }
+    }
+  ],
+  "battlefields": [
+    {
+      "id": "veylora-mine",
+      "code": "VEYLORA-A",
+      "name": "Mining Terraces",
+      "briefing": "veylora.mineBrief",
+      "terrain": {
+        "layout": "full",
+        "points": [
+          [0, 0.56],
+          [0.2, 0.56],
+          [0.29, 0.61],
+          [0.37, 0.61],
+          [0.46, 0.68],
+          [0.6, 0.68],
+          [0.69, 0.63],
+          [0.77, 0.63],
+          [0.84, 0.59],
+          [1, 0.59]
+        ],
+        "amplitude": 0.002
+      },
+      "colors": { "fill": 4204340, "grass": 12616005, "surfaceHighlight": 16764058 },
+      "atmosphere": { "tint": 16764075, "mountain": 4793899, "fog": 11438199, "cityIntensity": 0.4 },
+      "strategicObjectives": [],
+      "strategicObjectiveSlots": []
+    },
+    {
+      "id": "veylora-lab",
+      "code": "VEYLORA-B",
+      "name": "Research Plateau",
+      "briefing": "veylora.labBrief",
+      "terrain": {
+        "layout": "full",
+        "points": [
+          [0, 0.67],
+          [0.21, 0.67],
+          [0.36, 0.55],
+          [0.68, 0.55],
+          [0.82, 0.63],
+          [1, 0.63]
+        ],
+        "amplitude": 0.002
+      },
+      "colors": { "fill": 2767437, "grass": 8033720, "surfaceHighlight": 14285554 },
+      "atmosphere": { "tint": 13626111, "mountain": 2240319, "fog": 9479880, "cityIntensity": 0.2 },
+      "strategicObjectives": [
+        { "id": "research-lab-01", "type": "RESEARCH_LAB", "worldX": 640, "width": 64, "height": 40 }
+      ],
+      "strategicObjectiveSlots": [510, 640, 770]
+    }
+  ]
+}

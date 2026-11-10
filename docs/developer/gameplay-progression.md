@@ -2,6 +2,11 @@
 
 Kódbázis-alapú helyzetértékelés, 2026-11-04; térképközpontú irány pontosítva: 2026-11-05.
 
+**2026-11-07: elfogadott új designirány a következményes ostromhadjárat.**
+A [11. fejezet](#11-következményes-ostromhadjárat) a C3 utáni prioritást pontosítja:
+először egy rövid, döntésekre reagáló műveletet próbálunk ki, nem a teljes
+fegyver-/képesség-/osztálycsomagot építjük meg. Ez terv, nem jelenlegi játékműködés.
+
 **Rögzített fejlesztési irány: a Campaign Map legyen a fejlődés központi felülete.**
 Ez a prioritás elfogadott; a részletes mód-, feloldás-, jutalom- és balanszszabályok
 továbbra is döntést igényelnek. A dokumentum nem minden elemében kész implementációs specifikáció.
@@ -25,7 +30,7 @@ A probléma nem egyszerűen a rövid XP-görbe, hanem a tartós választási ké
 A meglévő fejlesztések összeadódnak; nincs egymást kizáró specializáció vagy korlátozott
 felszerelési összeállítás. A játékosok végül ugyanahhoz a maximális statcsomaghoz jutnak.
 
-**Fejlesztési sorrend:**
+**Eredeti fejlesztési sorrend (a C3 utáni prioritást a 11. fejezet módosítja):**
 
 1. **Campaign Map és a meglévő ALPHA-01 csata teljes navigációs köre.**
 2. **Mentett műveleti haladás**, eredményfeldolgozás és visszatérés a térképre.
@@ -837,3 +842,277 @@ Ez külön terepgenerálási véletlen: a dekoráció nem fogyaszthatja a szél/
 regresszióteszt → DELTA/FORGE generálás és járhatósági ellenőrzés → VANGUARD/PRIME →
 vizuális paraméterezés → szektorkontextus és mentésmigráció → térképgráf és teljes C3 kör.
 Nem adunk külön első szektorjutalmat, és a C4 modifikátor-/AI-nehézségrendszere nem előfeltétel.
+
+## 11. Következményes ostromhadjárat
+
+### 11.1. Identitás és elfogadott alapelvek
+
+2026-11-07: elfogadott tervezési irány; az alábbi Phase 1 specifikáció szűkíti
+az első játszható MVP hatókörét. A jelölt balanszértékek és a felsorolt
+döntési kapuk implementáció előtt véglegesítendők.
+
+**Alapígéret: „Nemcsak a győzelmet tervezed meg, hanem azt is, milyen világ marad utána.”**
+A Siege Platform rombolható terepen vívott csatája alakítsa a következő művelet
+feltételeit. A harci győzelem és a szerződés sikeres teljesítése külön eredmény:
+az ellenfél legyőzése mellett elveszhet a megóvandó infrastruktúra vagy erőforrás.
+
+| Következményréteg | Jelentés | Lehetséges hatás |
+| --- | --- | --- |
+| Létesítményállapot | Civil objektumok, energiaellátás és később kitermelés állapota | Sérült ellátás miatt nincs következő csatás támogatás; megsemmisült forrásból nincs nyersanyag |
+| Helyi támogatás | Egy terület/bolygó közösségének viszonya a játékoshoz | Megőrzött infrastruktúráért segítség, nagy károk után csökkentett támogatás |
+| Megbízói/frakcióbizalom | A vállalt célok teljesítésének megítélése | Új megbízások, kedvezőbb feltételek vagy támogatás elmaradása |
+
+A helyi támogatás és a megbízói/frakcióbizalom a későbbi stratégiai irány része,
+nem a Phase 1 része. A kampány és az adott térkép határozza meg a célokat és
+az értük felelős hatalmat: ez lehet a szektorok kormányzója vagy egy hadjáratot
+indító vezető. Ez tartalmi szerep, nem minden kampányra kötelező, globális
+megbízórendszer. Diplomácia, frakciókapcsolati mérő, piac, kereskedelem és
+procedurális történet nem része a Phase 1-nek.
+
+A nagy rombolásnak legyen valós taktikai haszna, például veszélyes állás gyors
+felszámolása vagy a saját egység kockázatának csökkentése. A precíz ostrom értékesebb
+infrastruktúrát hagyhat hátra, de ne legyen minden szempontból ingyenesen jobb.
+Nem a kráterek összterületét büntetjük automatikusan: a megjelölt célok állapota
+és a vállalt feltételek adják a következmények érthető alapját.
+
+### 11.2. Jutalom és felelősség
+
+- **Harci XP:** a lezárt csatában nyújtott teljesítményért; külön a szerződéses céltól.
+- **Szerződéses jutalom:** a szerződésben rögzített kredit- és XP-jutalom, amelyet
+  a szerződés teljesítési foka alapján lineárisan kell skálázni, a harci XP-től
+  külön. Például 82% teljesítés az alap szerződéses kredit- és XP-jutalom 82%-át
+  adja; 0%-nál nincs szerződéses jutalom. A harci XP ettől függetlenül jár.
+- **Kampányhatás:** az `ENERGY_NODE` fizikai végállapota a következő
+  kulcscsatában a P1 maximális energiapajzsát módosítja: ép +10%, sérült 0%,
+  megsemmisült −10%. A tank a módosított maximumon indul, és a csata során
+  eddig regenerálódik. Az alap a P1 fejlesztésekkel számolt aktuális
+  `maxEnergyShield` értéke. Ez Phase 1 egyetlen közvetlen kampányharci hatása.
+  Ez a hatás a tényleges állapotot követi, így az AI által okozott pusztítás
+  is befolyásolhatja; ez nem von le szerződéspontot és nem fogyasztja a
+  játékos okozta kárkeretet.
+- **Nyersanyag, bizalom és támogatás:** későbbi bővítések; nem részei a Phase 1
+  gazdasági vagy reputációs rendszerének.
+
+Korábban megszerzett XP-t és fejlesztést nem veszünk el a rombolás miatt.
+Az elmaradó jutalom pontos oka jelenjen meg az elszámolásban; az unfinished
+csata jelenlegi XP-visszaállítása ettől külön életciklusszabály marad.
+
+A Campaign térkép a küldetések és következmények gazdája; ez a rendszer nem
+vonatkozik a sima offline gyorscsatára. A kampánycél több térképi küldetéshez
+kapcsolódhat: lehetnek kihagyható feladatok és később kulcsfontosságú
+csomópontok is. Nem követelmény minden bolygó bejárása, sem rögzített három
+küldetéses útvonal. Egy cél lehet egyetlen, előre nem ismert helyen keresett
+terv, több szektorban található nyersanyag/tudás összegyűjtése, vagy ellenséges
+megszállás alatt álló szektorok felszabadítása.
+
+A briefing és a térkép előre mutassa az ismert védendő objektumokat, a
+feltételeket és a kockáztatott jutalmat; a titkos vagy még fel nem derített
+cél helyét nem kell felfednie. Az objektum a harctéren is legyen felismerhető.
+Phase 1-ben a szerződés százaléka súlyozott és folyamatos: a fő cél és a
+védett objektumok külön súlyt kapnak; a súlyokat az adott küldetés tartalma
+határozza meg, nem egy globális alapfelosztás. Az első felszabadítási próbában
+a fő cél pontja az ellenséges ostromplatformon elért, játékos által okozott
+sebzés arányát követi; a szektor csak az ellenfél megsemmisítésekor szabadul
+fel. Vereség vagy döntetlen esetén is járhat részpont, de a szektor nem szabadul fel. Egy
+védett objektum szerződéses hozzájárulása lineárisan csökken a játékos által
+okozott HP-vesztés arányával; az objektum fizikai állapotát ettől
+függetlenül a tényleges HP határozza meg. A játékos által okozott objektumkár kampányszinten, a különböző
+bolygókon/küldetéseken összeadódik, és az objektumonként elvesztett HP aránya
+szorozva az objektum kampánybeli fontossági súlyával fogyasztja a kárkeretet;
+az első próbában az `ENERGY_NODE` és `CIVIL_HABITAT` súlya egyaránt 1,
+a kampánykárkeret pedig 1,5 súlyozott objektum-egység. A keret elérése vagy
+átlépése kampánykudarcot okoz, így egyetlen objektum teljes elvesztése önmagában
+nem elég a bukáshoz.
+Az AI/ellenfél rombolása nem számít bele. A túl nagy összesített játékoskár
+a kampányon át fogyó járulékos kárkeretet meríti ki; a keret átlépése a
+kampány fő célját meghiúsíthatja és az adott hadjáratot lezárhatja.
+Lehetséges részleges/kisebb jutalom, de az adott kampány fő célja már nem
+érhető el. Később egy hasonló, új kampányban ismét meg lehet próbálni.
+A későbbi kampányok saját fontossági súlyokat és kárkeretet adhatnak meg.
+A térképen/briefingben alapértelmezésként a teljes keret és a hátralévő érték is látszódjon;
+ha a kijelzés túlzsúfolt, játékpróba után egyszerűsíthető minőségi
+kockázatjelzésre.
+
+### 11.3. Első játszható próba – javasolt hatókör
+
+**Első próba eddig eldöntött iránya (2026-11-07):** Campaign térképhez kötött,
+kis elágazású kampány egy galaktikus kormányzó fennhatósága alatt; a cél
+ellenséges megszállás alatt álló szektorok felszabadítása. Ez a konkrét
+próbakampány tartalmi kerete, nem általános megbízórendszer vagy minden
+későbbi kampányra kötelező történet.
+
+Az első játszható térképszelet az aktuális C3-at bővíti: az `ALPHA-01`
+tréning marad; utána opcionális felderítő művelet, valamint a `DELTA-08` és
+`FORGE-17` megszállt célágai választhatók. A `FORGE-17` a rejtett kulcsszektor;
+felszabadítása továbbviszi a fő célt és megnyitja a `VANGUARD-12`-t.
+A `DELTA-08` felszabadítása helyi eredményt ad, de nem zárja el a `FORGE-17`
+későbbi elérését. Felderítés nélkül is választható mindkét ág; a felderítés
+felfedi a kulcscélt és az alternatívát. A `PRIME-00` a második kötelező,
+védendő létesítményes szektor; győzelme zárja a kampányt. A tényleges
+feloldás `ALPHA-01 → FORGE-17 → VANGUARD-12 → PRIME-00`, `DELTA-08` kihagyható.
+
+1. A sima offline gyorscsata maradjon változatlan. A specifikációban szereplő
+   három küldetés csak lehetséges bemutató-sorozat, nem MVP-korlát vagy
+   kötelező sorrend. A kampány gráfja tartalmazhasson kihagyható és
+   kulcsfontosságú küldetéseket anélkül, hogy minden bolygó teljesítése
+   szükséges lenne. Az opcionális küldetés jutalmat vagy előnyt adjon, de
+   kihagyása ne zárja el a kulcsfontosságú felszabadítási küldetést. Az előny
+   az első próbában felderítési információ: megmutatja, melyik megszállt
+   szektor a kampány kulcscélja, és milyen alternatív szektorok választhatók.
+   Felderítés nélkül is választhatók a megszállt szektorok, de csak a valódi
+   kulcsszektor felszabadítása viszi előre a fő kampánycélt. Más szektor
+   felszabadítható és helyi eredményt ad; a kulcscél később is elérhető marad.
+2. A kampánytérkép és az adott kampánytartalom határozza meg a célokat,
+   felelős hatalmat és az egyes küldetések szerződését. Más kampányokban a
+   cél lehet titkos terv felkutatása, több helyszín erőforrásának/tudásának
+   megszerzése vagy más szereplő hadjárata.
+3. Két stratégiai objektumtípus: `ENERGY_NODE` és `CIVIL_HABITAT`.
+   A Phase 1 a meglévő Campaign Map/C3 fokozatos bővítése; ne hozzon létre
+   párhuzamos kampánymódot. A régi C3-teljesítés maradjon érvényes, de ne
+   lehessen belőle korábbi objektumkárt vagy kampánykudarcot kikövetkeztetni.
+   A gyorscsata változatlan marad.
+4. Mindkét objektumtípus azonos háromállapotú modellt használ:
+   `INTACT`, `DAMAGED`, `DESTROYED`. A HP-százalék küszöbei:
+   70–100% ép, 20–69% sérült, 0–19% megsemmisült. Az objektum a generált
+   terep felszínére illeszkedik, nem lebeg. Az első próba mindkét
+   objektumtípusánál a maximális HP 100; a különbséget a küldetés fontossági
+   súlyai fejezik ki, nem az alap-HP. A `FORGE-17` és `PRIME-00` mindegyike
+   48×44 világpixeles energiareaktort és 64×32 világpixeles civil kupolatelepet
+   tartalmaz. A korábbi fix elhelyezést seedelt választás váltja fel:
+   FORGE X-helyei 380/540/720/900/1020, PRIME X-helyei 340/500/680/860/1000.
+   Új csatánként, újrapróbáláskor is új seed alapján választunk két külön
+   helyet, a meccs időjárásának véletlenszámsorától függetlenül.
+   Azonos seed azonos elrendezést ad; ismétlődő elrendezés lehetséges.
+   Mindkettő rövid alapzata követi a lábnyom alatti
+   egyenetlenséget, terepátalakítás nélkül. Robbanás után az aktuális
+   terepfelszínhez igazodnak, külön esési sebzés nélkül.
+5. Az objektumot csak a meglévő robbanás sebzi, közvetlen lövedéktalálat nem.
+   A specifikáció kiinduló sebzési lépcsői a robbanás közepén az alap-sebzés
+   100%-a, közel 50%, távol 25%, a hatósugáron kívül 0%; a százalék közvetlenül
+   az objektum HP-jából vonódik le, az ismételt robbanások összeadódnak.
+   A zónák az adott robbanás effektív sebzési sugarához (`R`) viszonyulnak:
+   közép `0 ≤ d < R/3`, közeli `R/3 ≤ d < 2R/3`, távoli
+   `2R/3 ≤ d ≤ R`, hatósugáron kívül `d > R`.
+   A távolság a rombolás előtti épületközépponttól számolódik. A jelenlegi
+   motorban `R = 2 × blastRadius`, az alap-sebzés `60 × damage`, a tankok
+   meglévő effektív sebzési sugarával és középponti nyers sebzésével összhangban.
+   A megsemmisült (`HP < 20%`) objektum többé nem sebezhető: a megmaradt
+   HP és játékoskár nem változik további robbanásoktól, de a rom is követi
+   a terepfelszínt.
+6. A szerződés elsődleges célját és a védendő objektumokat a kampányküldetés
+   határozza meg. Az első kulcsküldetésben, a `FORGE-17` felszabadításakor
+   az ellenséges ostromplatform megsemmisítése a fő cél, az `ENERGY_NODE_01`
+   és `CIVIL_HABITAT_01` pedig külön súlyozott, védendő szerződéses
+   objektumok. Ez a cél csak erre a küldetésre vonatkozik; későbbi
+   kampányküldetések más célokat is használhatnak. A szerződés
+   azonosítót, célt, védendő
+   objektumokat, kredit- és XP-jutalmat tartalmaz. A katonai eredmény
+   Victory/Defeat marad; a szerződés teljesítése ettől külön, 0–100%-os
+   súlyozott, folyamatos eredmény. Az első példaküldetés felosztása:
+   ostromplatform 50%, energiaellátó 25%, civil létesítmény 25%; ez nem
+   globális alapérték. A fő cél és a védett objektumok külön
+   súlyozódnak; a súlyok az adott küldetéshez tartoznak. Az első példában a
+   fő cél részpontja az ellenséges ostromplatform játékos által okozott
+   HP-vesztésének aránya; a szektor csak az ellenfél megsemmisítésekor
+   szabadul fel. A játékos által okozott kár arányosan csökkenti a védett
+   objektumok szerződéses súlyát; az AI/ellenfél okozta fizikai kár nem
+   csökkenti azt. Az objektum
+   megjelenített állapota ettől függetlenül a tényleges HP-t tükrözi.
+   Képlet az első példához: `50% × platform P1-sebzése/maxHP +
+   25% × (1 − energiaobjektum P1-sebzése/maxHP) +
+   25% × (1 − civil objektum P1-sebzése/maxHP)`, az egyes arányokat
+   0–1 közé korlátozva.
+   A szerződéses kredit- és XP-jutalom az alapjutalom és a szerződéspont
+   arányának szorzata; a harci XP külön számolódik.
+   A kampánykárkeretbe a játékos által okozott kár összeadódik, az AI/ellenfél
+   okozta kár nem. Az újrapróbálások között a játékos szerződéses sebzése
+   összeadódik, a vereség, döntetlen vagy csataelhagyás után mutatott pontszám
+   előzetes érték. Szerződéses kredit és XP csak a küldetés végleges
+   lezárásakor jár, a végleges összesített pontszám alapján, és ugyanahhoz a
+   szerződéshez legfeljebb egyszer számolható el.
+7. Az `ENERGY_NODE` fizikai végállapota a következő kapcsolódó kulcscsatában
+   a P1 maximális energiapajzsát módosítja: ép állapot +10%, sérült 0%,
+   megsemmisült −10%. A tank a módosított maximumon indul, és a csata során
+   eddig regenerálódik; az alap a P1 fejlesztésekkel számolt aktuális
+   `maxEnergyShield` érték. A hatás a tényleges végállapotból számolódik,
+   tehát AI/ellenfél által okozott pusztítás is módosíthatja; ez nem
+   szerződéses levonás és nem fogyasztja a játékos okozta kárkeretet.
+8. Mentésbe kerüljenek a kampányküldetés objektumkimenetei és a következő hatás
+   (`strategicOutcomes`); a teljes pixeles terepet nem kell menteni.
+   Az új mentési adat legyen verziózott és validált, a meglévő C3-haladás és
+   XP-profil migrációja pedig maradjon kompatibilis.
+9. A ResultScreen katonai jelentéséhez kerüljön külön stratégiai kiértékelés:
+   szerződés százaléka, objektumállapotok és -veszteségek, jutalmak, valamint
+   a következő kulcscsata maximális energiapajzs-módosítása. A pályán az
+   objektumok kapjanak felismerhető, nem csak színre támaszkodó jelölést és
+   HP-/állapotjelzést; a sérült és megsemmisült állapot vizuálisan is különbözzön.
+
+A Phase 1 szándékosan nem tartalmaz mozgó civileket, diplomáciát,
+frakciókapcsolatokat, gazdasági szimulációt, piacot, kereskedelmet, több
+megbízót vagy procedurális történetet. Új fegyverek, egységosztályok, orbitális
+képességek, bázisépítés és online kampány sem előfeltétel. A kredit-jutalom
+szerepel a szerződésadatban, de Phase 1-ben csak az eredményjelentésben
+jelenik meg; elkölthető kredit-egyenleg és bolt nincs. Kampányegyenleg
+későbbi bővítésként tervezhető.
+A szerződés százaléka az adott küldetés súlyozott, folyamatos képletét követi;
+az első `FORGE-17` küldetés súlyai 50/25/25, a későbbi küldetések saját
+súlyokat kaphatnak. A példaként említett 100/75/50/0 és 82% nem írja felül
+ezt a szabályt. A kampánygráfban a küldetések választhatósága, kihagyhatósága
+és kulcsfontosságú csomópontjai kampánytartalomként definiálandók, nem egy
+globális, fix háromlépéses sorozatból következnek.
+
+### 11.4. Technikai határ és kockázatok
+
+- A művelet állapota különüljön el a tartós XP-profiltól és a meglévő C3
+  teljesítéslistától. A régi haladást ne értelmezzük utólag rombolási előzményként.
+  A kampányreset törölje az aktuális kampány küldetésállapotát, felderítési
+  adatát, objektumkimeneteit és kárkeretét, de őrizze meg az XP-profilt és a
+  fejlesztéseket; a teljes mentéstörlés külön művelet marad.
+- Elsőre objektumállapotokat és eredményjelzőket mentsünk, ne teljes pixelterepet.
+  Mentésbővítéshez migráció, validáció és explicit hibajelzés szükséges.
+  Vereség, döntetlen vagy csataelhagyás esetén a stratégiai objektumállapotok
+  és a játékos kampánykár-keretébe számító károk is mentődnek; a szerződés
+  aktuális pontszáma az összes próbálkozás játékos által okozott káraiból
+  számolódik. A vereség, döntetlen vagy csataelhagyás utáni pontszám csak
+  előzetes kijelzés, a szektor nem szabadul fel és szerződéses jutalom nem
+  kerül kifizetésre. Újrapróbáláskor ezek az állapotok maradnak érvényben;
+  kredit és szerződéses XP csak a küldetés végleges lezárásakor, egyszer
+  számolható el.
+- A csataállapot commitja legyen meccsazonosítóhoz kötött, a végleges
+  szerződéselszámolás pedig kampányküldetés-/szerződésazonosítóhoz. Reload,
+  eredményképernyő-remount vagy ismételt esemény egyik műveletet se
+  duplikálhassa.
+- A küldetésszerződés értékelése a játékos által okozott károkat vegye
+  figyelembe. Ehhez a játékos kárhozzájárulását kell követni; külön AI-kárnapló
+  vagy az ellenfél rombolásának szerződéses elszámolása Phase 1-ben nem cél.
+- A fizikai objektumhatások legyenek determinisztikusak és renderfüggetlenek.
+  A tényleges lövés, előnézet, Smart Aim és AI ugyanazokat a releváns szabályokat használja.
+- A jelenlegi AI célzása nem általános objektumvédelmi stratégia. Objektumelhelyezés,
+  véletlen károkozás és precíz lövések elérhetősége külön játékpróbát igényel.
+- Legnagyobb designkockázat a rejtett büntetés, az egyetlen optimális megoldás és
+  a veszteségből önmagát erősítő hátrányspirál. Ne legyen kötelező erőforrás
+  elvesztéséből folytathatatlan kampány.
+- A gyorscsata, hot-seat és online viselkedése maradjon változatlan; közös online
+  kampányhoz külön protokoll- és hitelesítési terv kell.
+
+### 11.5. Döntési és elfogadási kapuk
+
+Implementáció előtt rögzítendő: a későbbi kampánygráf lépései; az objektumok
+geometriája, elhelyezése és mérete; a `FORGE-17`-szerződés alap kredit- és
+XP-jutalma és a későbbi küldetések saját súlyai. Vereség, döntetlen és
+csataelhagyás esetén a stratégiai állapot mentődik, az újrapróbálás pedig
+ezt az állapotot viszi tovább. A
+bizalom, támogatás és nyersanyag első felhasználása nem Phase 1 döntés,
+ezeket későbbi fázisra kell halasztani.
+
+A próba akkor sikeres, ha a játékos megnyerheti a csatát úgy, hogy közben
+részben vagy teljesen elbukja a szerződést; az AI/ellenfél által okozott kár
+nem csökkenti a teljesítési eredményt; az opcionális küldetés kihagyható a
+kulcscél elzárása nélkül; az összesített játékoskár pedig a meghatározott
+kampánykudarcot válthatja ki. A lezárt, sikertelen hadjárat eredménye és
+lehetséges csökkentett jutalma, valamint a következő külön kampányban való
+újrapróbálás legyen érthető. Ellenőrizni kell a mentésből folytatást és a
+meglévő gyorscsata, hot-seat, online, C3- és XP-viselkedés változatlanságát is.
+
+Végrehajtási sorrend és tesztlista:
+[TODO, 6A](./gameplay-progression-todo.md#6a-következményes-ostromhadjárat--első-játszható-próba).

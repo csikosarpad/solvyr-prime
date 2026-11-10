@@ -1,0 +1,70 @@
+.veylora-overlay {
+  overflow: auto;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+.veylora-panel {
+  width: min(1100px, 100%);
+  margin: auto;
+}
+
+.veylora-panel h1,
+.veylora-panel h2 {
+  margin: 8px 0;
+}
+
+.veylora-locations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.veylora-location {
+  padding: 16px;
+  border: 1px solid #607c92;
+  border-radius: 8px;
+  background: #172539;
+}
+
+.veylora-location:first-child {
+  border-color: #ba8049;
+  background: #33272a;
+}
+
+.veylora-location.is-station {
+  border-color: #ad955c;
+}
+
+.veylora-location p {
+  line-height: 1.5;
+}
+
+.veylora-prototype {
+  padding: 12px;
+  border-left: 3px solid #e6b964;
+  background: #272d3b;
+}
+
+.veylora-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.veylora-panel button {
+  min-height: 44px;
+}
+
+.campaign-recipe {
+  border-top: 1px solid #607c92;
+  margin-top: 16px;
+  padding-top: 8px;
+}
+
+.campaign-station ul,
+.campaign-reward ul {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}

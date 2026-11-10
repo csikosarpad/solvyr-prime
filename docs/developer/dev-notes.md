@@ -11,8 +11,30 @@ A dokumentumok szerepeit a [fejlesztői index](./README.md) rögzíti.
 - A [játékmag](../../src/game/) koordinálja a loopot, fizikát, terepet és entitásokat;
   a [React UI](../../src/ui/) a HUD-ot, menüt, lobbyt, boltot és eredményképernyőt kezeli.
 - A fizikai állapot és pozíciók az engine-ben élnek; a gameStore a HUD számára ad nézetet.
+- VEYLORA első prototípusa külön `veylora` képernyő és `operation` meccsmód.
+  A `campaignContent.ts` a csomagolt `veylora.json` adatokat validálja;
+  szektor/helyszín/küldetés külön adat, a harctér a meglévő `Sector` adaptert használja.
+  A régi `SectorId` és C3 katalógus változatlan. Az új terep `layout: "full"`
+  kontrollpontokat használ tükrözés nélkül; a régi profilok továbbra is tükrözöttek.
+  A `veyloraStore` a `campaignDatabase` egyetlen IndexedDB P1-rekordjában
+  ment haladást, közös készletet, technológiát, jutalomledgert és vásárlást.
+  A readwrite tranzakciók a több lapról érkező írásokat is sorosítják;
+  az állapot csak commit után frissül. A jutalom kulcsa szektor+küldetés,
+  nem tartalomverzió vagy csata-ID. A teljes gazdasági reset új generációt ad,
+  a régi generációjú csaták elszámolását elutasítjuk.
+  A prototípus localStorage-haladása egyszer átemelődik, visszamenőleges
+  jutalom nélkül, az eredeti másolat megőrzésével.
+  A labor sikeréhez P1 győzelem és legalább 20/100 `RESEARCH_LAB` HP kell.
+  Az ellenfél statjai és tudásszintje konfiguráltak, P2 profilja és AI-memóriája
+  nem változik. A JSON külön nyersanyag-/technológia-/receptkatalógust és
+  küldetésjutalmakat tartalmaz. A vásárlás eltárolja a hatás szorzóját;
+  a motor új operation-indításkor pillanatképet vesz, csak P1 XP-alapjára
+  alkalmazza. A meccsvégi visszavágó új, mentésellenőrzött indítás.
+  A főmenü XP-resetje nem törli az új kampánygazdaságot/haladást;
+  a szektor- és gazdasági reset külön, megerősített műveletek.
+  Távoli tartalomfrissítés még nincs.
 - Fix 1280×720 világ, aránytartó megjelenítési skálázás; resize nem új meccs.
-- Fix időlépésű ballisztika, seedelt, tükrözött value-noise terep.
+- Fix időlépésű ballisztika, seedelt, profiltól függően tükrözött vagy teljes szélességű value-noise terep.
   Ütközés: pixelmaszk; látvány: RenderTexture; rombolás mindkettőt módosítja.
 - Robbanás után a talajmaszk az alsó pályaszélről négy szomszédos pixel mentén
   kapcsolatvizsgálatot végez. A levált darabok azonnal törlődnek a maszkból és a
