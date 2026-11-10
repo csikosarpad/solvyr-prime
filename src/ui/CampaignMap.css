@@ -31,6 +31,29 @@
   color: var(--bf-highlight);
 }
 
+.campaign-goal {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-left: 2px solid var(--bf-shield);
+  background: rgba(73, 208, 255, 0.06);
+}
+
+.campaign-goal h2 {
+  margin: 0 0 6px;
+  color: var(--bf-shield);
+  font-size: 18px;
+}
+
+.campaign-goal p {
+  margin: 0;
+  color: var(--bf-text);
+  line-height: 1.5;
+}
+
+.campaign-goal .btn {
+  margin-top: 10px;
+}
+
 .campaign-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);

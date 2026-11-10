@@ -39,6 +39,46 @@ Forráscommitok:
 [progressziós elemzés és dokumentációegységesítés – 0e412e1](https://github.com/csikosarpad/ballistic-front/commit/0e412e1),
 [dokumentáció átrendezése – 69af171](https://github.com/csikosarpad/ballistic-front/commit/69af171).
 
+## 2026-11-05–08 – Kampánytérkép, ostromhadjárat és telepítés
+
+### Szektorokra épülő kampány
+
+- Megjelent a kampánytérkép, a szektorválasztás és a küldetés eligazítója;
+  a kampány állapota a csaták között is megmarad.
+- A szektorok saját, seedelt terepgenerálást és térképi megjelenítést kaptak,
+  a célok és a csataeredmények pedig bekötődtek a kampányfolyamatba.
+- A HUD-on és a térképen megjelenő stratégiai célok felolvasást kaptak,
+  a felolvasási preferencia menthetővé vált.
+
+### Ostromhadjárat és harci visszajelzések
+
+- A fejlesztési irány a következményekkel járó ostromhadjárat lett:
+  részletesebb térkép-, küldetés- és célrendszer, valamint megvalósíthatósági
+  és ütemezési dokumentáció készült.
+- A kampányterv rögzítette az újrapróbálkozás, a küldetésértékelés és az
+  egyszeri, végleges lezáráskor járó szerződéses jutalom szabályait.
+  Ezek a commitok dokumentációs pontosítások, nem a teljes jutalmazási rendszer
+  implementációi.
+- A tankillusztrációk külön test- és lövegréteget, a csapatok pedig színkódolt
+  fényhatást kaptak.
+
+### Hang és kiadás
+
+- A zene, a parancsnoki felolvasás és a hangeffektek külön hangerőcsatornát
+  és beállítást kaptak.
+- Elkészült az FTP-alapú telepítőszkript, a hozzá tartozó környezeti
+  mintafájl és a telepítési leírás.
+
+Forráscommitok:
+[kampánytérkép – edf1441](https://github.com/csikosarpad/ballistic-front/commit/edf1441),
+[szektoros terep – c11549b](https://github.com/csikosarpad/ballistic-front/commit/c11549b),
+[ostromhadjárat iránya – 8723785](https://github.com/csikosarpad/ballistic-front/commit/8723785),
+[kampánycélok és felolvasás – 3ca7b15](https://github.com/csikosarpad/ballistic-front/commit/3ca7b15),
+[jutalmazási szabályok dokumentálása – fb35679](https://github.com/csikosarpad/ballistic-front/commit/fb35679),
+[tankgrafika – 0ccfafa](https://github.com/csikosarpad/ballistic-front/commit/0ccfafa),
+[hangerőcsatornák – fe2abdc](https://github.com/csikosarpad/ballistic-front/commit/fe2abdc),
+[FTP-telepítés – f0df483](https://github.com/csikosarpad/ballistic-front/commit/f0df483).
+
 ## 2026-11-03 – Sci-fi látvány, parancsnoki rendszer és AI
 
 ### A csatatér és a harci visszajelzések látványugrása

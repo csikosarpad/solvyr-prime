@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useGameStore } from "@/game/state/gameStore";
 import { useCampaignStore } from "@/game/state/campaignStore";
@@ -39,6 +39,7 @@ describe("Campaign Map UI", () => {
       matchStats: {},
       sector: TRAINING_SECTOR,
       campaignNewRoutes: [],
+      strategicObjectives: [],
     });
   });
 
@@ -69,11 +70,26 @@ describe("Campaign Map UI", () => {
     expect(screen.getByText("Teljesítve: 1 / 5")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /SECTOR ALPHA-01,/ }));
     expect(screen.getByRole("button", { name: "Művelet újrajátszása" })).toBeEnabled();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+    const confirm = vi.spyOn(window, "confirm");
     fireEvent.click(screen.getByRole("button", { name: "Kampányhaladás törlése" }));
+    const dialog = screen.getByRole("dialog", { name: "Törlöd a kampányhaladást?" });
+    expect(dialog).toHaveAccessibleDescription(/Az XP és a fejlesztések megmaradnak/);
+    expect(within(dialog).getByRole("button", { name: "Mégse" })).toHaveFocus();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mégse" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
     fireEvent.click(screen.getByRole("button", { name: "Kampányhaladás törlése" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: "Mégse" }), { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Kampányhaladás törlése" }));
+    fireEvent(screen.getByRole("dialog"), new Event("cancel", { cancelable: true }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
+    fireEvent.click(screen.getByRole("button", { name: "Kampányhaladás törlése" }));
+    fireEvent.click(screen.getByRole("button", { name: "Törlés" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(useCampaignStore.getState().completedIds).toEqual([]);
+    expect(confirm).not.toHaveBeenCalled();
     confirm.mockRestore();
   });
 
@@ -133,6 +149,52 @@ describe("Campaign Map UI", () => {
     expect(useCampaignStore.getState().selectedId).toBe("alpha-01");
   });
 
+  it("announces the Forge objective trial without promising campaign persistence", () => {
+    render(<CampaignMap />);
+    fireEvent.click(screen.getByRole("button", { name: /SECTOR FORGE-17,/ }));
+    const panel = screen.getByRole("heading", { name: "Industrial Expanse" }).parentElement;
+    expect(panel).toHaveTextContent("Energiareaktor");
+    expect(panel).toHaveTextContent("Civil telep");
+    expect(panel).toHaveTextContent("kampánykár-mentés és szerződéses jutalom még nincs");
+  });
+
+  it("places the campaign objective between the header and map layout and explains both mandatory sectors", () => {
+    const { container } = render(<CampaignMap />);
+    const goal = screen.getByRole("region", { name: "A kampány célja" });
+    expect(goal).toHaveTextContent("FORGE-17");
+    expect(goal).toHaveTextContent("PRIME-00");
+    expect(goal).toHaveTextContent("DELTA-08 kihagyható");
+    expect(container.querySelector(".campaign-header")?.nextElementSibling).toBe(goal);
+    expect(goal.nextElementSibling).toHaveClass("campaign-layout");
+    fireEvent.click(screen.getByRole("button", { name: /SECTOR PRIME-00,/ }));
+    const panel = screen.getByRole("heading", { name: "Capital Perimeter" }).parentElement;
+    expect(panel).toHaveTextContent("Energiareaktor");
+    expect(panel).toHaveTextContent("Civil telep");
+  });
+  it("shows objective type, state and HP in the campaign HUD only", () => {
+    useGameStore.setState({
+      matchMode: "campaign",
+      strategicObjectives: [
+        {
+          id: "energy-node-01",
+          type: "ENERGY_NODE",
+          worldX: 1040,
+          worldY: 550,
+          width: 48,
+          height: 44,
+          hp: 40,
+          maxHp: 100,
+          playerCausedDamage: 60,
+        },
+      ],
+    });
+    render(<Hud />);
+    expect(screen.getByRole("region", { name: "Védendő létesítmények" })).toHaveTextContent(
+      "Energiareaktor · Sérült · 40/100 HP",
+    );
+    act(() => useGameStore.setState({ matchMode: "skirmish" }));
+    expect(screen.queryByRole("region", { name: "Védendő létesítmények" })).not.toBeInTheDocument();
+  });
   it("reserves all card layouts but exposes only the active one and restarts its arrival effect", () => {
     const { container } = render(<CampaignMap />);
     const cards = container.querySelectorAll(".campaign-sector-content");
@@ -188,10 +250,10 @@ describe("Campaign Map UI", () => {
 
   it("keeps the skipped branch available after PRIME completes the operation at 4/5", () => {
     const store = useCampaignStore.getState();
-    ["alpha-01", "delta-08", "vanguard-12", "prime-00"].forEach((id) => store.complete(sectorById(id).id));
+    ["alpha-01", "forge-17", "vanguard-12", "prime-00"].forEach((id) => store.complete(sectorById(id).id));
     render(<CampaignMap />);
     expect(screen.getByText("Teljesítve: 4 / 5")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("művelet teljesült");
-    expect(screen.getByRole("button", { name: /SECTOR FORGE-17, Industrial Expanse, Elérhető/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /SECTOR DELTA-08, Crystal Basin, Elérhető/ })).toBeInTheDocument();
   });
 });

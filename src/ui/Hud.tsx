@@ -5,7 +5,7 @@ import { MAX_ANGLE, MIN_ANGLE, MIN_POWER, useGameStore } from "@/game/state/game
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { usePlayerName } from "@/game/state/playerNames";
 import { useAiSettings } from "@/game/state/aiSettings";
-import { MAX_RANK, rankStars } from "@/game/systems/ai";
+import { MAX_RANK, rankStars, rankFromSkill } from "@/game/systems/ai";
 import { newProfile, profileStars } from "@/game/systems/upgrades";
 import { useT } from "@/i18n";
 import { gameRef } from "./gameRef";
@@ -13,6 +13,7 @@ import { RepeatButton } from "./RepeatButton";
 import { CommandConsole } from "./CommandConsole";
 import { WindIndicator } from "./WindIndicator";
 import { BattleExitDialog } from "./BattleExitDialog";
+import { structureState } from "@/game/systems/strategicObjectives";
 
 const toCss = (color?: number) => (color === undefined ? "#ffffff" : `#${color.toString(16).padStart(6, "0")}`);
 
@@ -39,12 +40,18 @@ export function Hud() {
     matchMode,
     aiActive,
     sector,
+    strategicObjectives,
+    opponentSkill,
   } = useGameStore();
   const online = useMultiplayerStore((state) => state.credentials !== null);
   const multiplayerError = useMultiplayerStore((state) => state.error);
   const aiMemory = useAiSettings((state) => state.memory);
   const starsFor = (id: string) =>
-    id === "P2" && aiActive ? rankStars(aiMemory) : profileStars(profiles[id] ?? newProfile(), MAX_RANK);
+    id === "P2" && aiActive
+      ? opponentSkill !== null
+        ? rankFromSkill(opponentSkill)
+        : rankStars(aiMemory)
+      : profileStars(profiles[id] ?? newProfile(), MAX_RANK);
   const locked = phase !== "aiming" || !canControl;
   const me = tanks.find((t) => t.id === currentId);
   // Érintőeszközön a billentyűkre utaló jelzések fölöslegesek.
@@ -52,7 +59,7 @@ export function Hud() {
   const soundState = muted ? t("hud.soundOff") : t("hud.soundOn");
   const soundLabel = t(touch ? "hud.soundTouch" : "hud.sound", { state: soundState });
   const [hintDismissed, setHintDismissed] = useState(false);
-  const [exitDestination, setExitDestination] = useState<"menu" | "campaignMap" | null>(null);
+  const [exitDestination, setExitDestination] = useState<"menu" | "campaignMap" | "veylora" | null>(null);
 
   // Bal/jobb: mozgás, Ctrl+bal/jobb: szög (Shift: x5), fel/le: erő (Shift: x5), szóköz: tűz.
   useEffect(() => {
@@ -156,6 +163,19 @@ export function Hud() {
             <strong>{sector.name}</strong>
           </div>
           <WindIndicator wind={wind} />
+          {matchMode !== "skirmish" && strategicObjectives.length > 0 && (
+            <section className="hud-objectives" aria-label={t("strategic.protected")}>
+              {strategicObjectives.map((objective) => (
+                <div key={objective.id}>
+                  <span>{t(`strategic.${objective.type}`)}</span>
+                  {" · "}
+                  {t(`strategic.${structureState(objective.hp, objective.maxHp)}`)}
+                  {" · "}
+                  {objective.hp}/{objective.maxHp} HP
+                </div>
+              ))}
+            </section>
+          )}
           <div className="hud-readout">
             {t("hud.turn")} <strong style={{ color: toCss(me?.color) }}>{name(currentId)}</strong>
             <span aria-hidden="true">·</span>
@@ -242,7 +262,7 @@ export function Hud() {
           </div>
         </div>
         <div
-          className={`hud-actions${!online ? " hud-offline-actions" : ""}${!online && matchMode === "campaign" ? " hud-campaign-actions" : ""}`}
+          className={`hud-actions${!online ? " hud-offline-actions" : ""}${!online && matchMode !== "skirmish" ? " hud-campaign-actions" : ""}`}
         >
           <RepeatButton
             aria-label={t("hud.moveLeft")}
@@ -308,17 +328,17 @@ export function Hud() {
               <span>{t("result.mainMenu")}</span>
             </button>
           )}
-          {!online && matchMode === "campaign" && (
+          {!online && matchMode !== "skirmish" && (
             <button
-              title={t("campaign.return")}
+              title={t(matchMode === "operation" ? "veylora.title" : "campaign.return")}
               onClick={() => {
-                setExitDestination("campaignMap");
+                setExitDestination(matchMode === "operation" ? "veylora" : "campaignMap");
               }}
             >
               <span className="hud-action-icon" aria-hidden="true">
                 ⌂
               </span>
-              <span>{t("campaign.return")}</span>
+              <span>{t(matchMode === "operation" ? "veylora.title" : "campaign.return")}</span>
             </button>
           )}
         </div>

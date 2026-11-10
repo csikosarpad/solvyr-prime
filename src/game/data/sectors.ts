@@ -1,13 +1,15 @@
 import type { MessageKey } from "@/i18n";
 import { DEFAULT_THEME, type Theme } from "../theme";
+import type { StrategicObjectivePlacement } from "../systems/strategicObjectives";
 
 export interface TerrainProfile {
   points: readonly (readonly [number, number])[];
   amplitude: number;
+  layout?: "mirrored" | "full";
 }
 
 export interface Sector {
-  id: SectorId;
+  id: string;
   code: string;
   name: string;
   briefing: MessageKey;
@@ -16,12 +18,15 @@ export interface Sector {
   atmosphere: { tint: number; mountain: number; fog: number; cityIntensity: number };
   prerequisites: readonly SectorId[];
   position: { x: number; y: number };
+  strategicObjectives?: readonly StrategicObjectivePlacement[];
+  strategicObjectiveSlots?: readonly number[];
 }
 
 export type SectorId = "alpha-01" | "delta-08" | "forge-17" | "vanguard-12" | "prime-00";
-export const CAMPAIGN_CONTENT_VERSION = 1;
+type LegacySector = Sector & { id: SectorId };
+export const CAMPAIGN_CONTENT_VERSION = 2;
 
-export const TRAINING_SECTOR: Sector = {
+export const TRAINING_SECTOR: LegacySector = {
   id: "alpha-01",
   code: "SECTOR ALPHA-01",
   name: "Training Grounds",
@@ -33,7 +38,7 @@ export const TRAINING_SECTOR: Sector = {
   position: { x: 50, y: 85 },
 };
 
-export const SECTORS: readonly Sector[] = [
+export const SECTORS: readonly LegacySector[] = [
   TRAINING_SECTOR,
   {
     id: "delta-08",
@@ -75,6 +80,11 @@ export const SECTORS: readonly Sector[] = [
     atmosphere: { tint: 0xffd4ab, mountain: 0x3b2b30, fog: 0xb18d79, cityIntensity: 1 },
     prerequisites: ["alpha-01"],
     position: { x: 75, y: 60 },
+    strategicObjectives: [
+      { id: "energy-node-01", type: "ENERGY_NODE", worldX: 1040, width: 48, height: 44 },
+      { id: "civil-habitat-01", type: "CIVIL_HABITAT", worldX: 900, width: 64, height: 32 },
+    ],
+    strategicObjectiveSlots: [380, 540, 720, 900, 1020],
   },
   {
     id: "vanguard-12",
@@ -93,7 +103,7 @@ export const SECTORS: readonly Sector[] = [
     },
     colors: { ...DEFAULT_THEME.terrain, fill: 0x243347, grass: 0x477ea8, surfaceHighlight: 0xa8ddff },
     atmosphere: { tint: 0xc1deff, mountain: 0x152f50, fog: 0x7ea7c5, cityIntensity: 0.5 },
-    prerequisites: ["delta-08", "forge-17"],
+    prerequisites: ["forge-17"],
     position: { x: 50, y: 35 },
   },
   {
@@ -115,6 +125,11 @@ export const SECTORS: readonly Sector[] = [
     atmosphere: { tint: 0xffebbf, mountain: 0x303345, fog: 0xb8ac83, cityIntensity: 1 },
     prerequisites: ["vanguard-12"],
     position: { x: 50, y: 10 },
+    strategicObjectives: [
+      { id: "prime-energy-node-01", type: "ENERGY_NODE", worldX: 960, width: 48, height: 44 },
+      { id: "prime-civil-habitat-01", type: "CIVIL_HABITAT", worldX: 780, width: 64, height: 32 },
+    ],
+    strategicObjectiveSlots: [340, 500, 680, 860, 1000],
   },
 ];
 
@@ -122,7 +137,7 @@ export function isSectorId(id: unknown): id is SectorId {
   return typeof id === "string" && SECTORS.some((sector) => sector.id === id);
 }
 
-export function sectorById(id: string): Sector {
+export function sectorById(id: string): LegacySector {
   const sector = SECTORS.find((entry) => entry.id === id);
   if (!sector) throw new Error(`Unknown sector: ${id}`);
   return sector;
@@ -143,9 +158,9 @@ export function nextOperation(completed: readonly SectorId[]): SectorId {
 export function validateSectorGraph(sectors: readonly Sector[]): void {
   const byId = new Map(sectors.map((sector) => [sector.id, sector]));
   if (byId.size !== sectors.length) throw new Error("Duplicate campaign sector");
-  const visiting = new Set<SectorId>();
-  const visited = new Set<SectorId>();
-  const visit = (id: SectorId) => {
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (id: string) => {
     if (visiting.has(id)) throw new Error("Cyclic campaign graph");
     if (visited.has(id)) return;
     const sector = byId.get(id);
@@ -156,7 +171,7 @@ export function validateSectorGraph(sectors: readonly Sector[]): void {
     visited.add(id);
   };
   sectors.forEach((sector) => visit(sector.id));
-  const reachable = new Set<SectorId>();
+  const reachable = new Set<string>();
   for (let pass = 0; pass < sectors.length; pass++) {
     for (const sector of sectors) {
       if (!sector.prerequisites.length || sector.prerequisites.some((id) => reachable.has(id)))

@@ -140,6 +140,9 @@ A projekt sima CSS-t használ; Sass `@mixin` / `@include` nincs beállítva.
 
 Offline csata és kampány közben a HUD főmenügombja natív, a játék témájához igazított
 megerősítő dialógust nyit. A kampánytérképre visszalépés ugyanezt használja.
+A közös komponens a `src/ui/ConfirmDialog.tsx`; a főmenü „Mentés törlése”, a kampánytérkép
+„Kampányhaladás törlése” és a beállítások „AI tapasztalat … törlés” gombja is ezt használja
+(piros, `destructive` változat), böngészős `confirm()` nincs.
 Offline csata közben az Escape is megnyitja a főmenübe lépés megerősítését, lövés vagy az AI köre alatt is.
 Az ablak alatt a HUD gyorsbillentyűi nem aktívak; újabb Escape vagy a folytatás gomb megszakítja a kilépést.
 A csata ettől nem szünetel. Offline az aktuális csata XP-je csak a befejezéskor kerül mentésre;

@@ -82,6 +82,13 @@ export function voiceForSlot(
 
 const MAX_QUEUED = 3;
 let queued = 0;
+const pendingObservers = new Set<() => void>();
+
+export interface SpeechObserver {
+  onBoundary: (charIndex: number) => void;
+  onFinish: () => void;
+  onStart?: () => void;
+}
 
 /** Tetszőleges szöveget felolvas; a mondatok sorban követik egymást, de a felgyülemlett sort eldobja. */
 export function speak(
@@ -90,13 +97,14 @@ export function speak(
   settings: VoiceSettings = DEFAULT_VOICE,
   slot = 0,
   volume = 1,
-): void {
+  observer?: SpeechObserver,
+): (() => void) | undefined {
   if (!speechSupported() || !text || volume === 0) return;
   const synth = window.speechSynthesis;
   // A böngésző nem adja meg a sor hosszát, ezért magunk számoljuk; túlcsordulásnál újrakezdünk.
   if (!synth.speaking && !synth.pending) queued = 0;
   if (queued >= MAX_QUEUED) {
-    synth.cancel();
+    cancelSpeech();
     queued = 0;
   }
   queued += 1;
@@ -107,9 +115,30 @@ export function speak(
   utterance.rate = rate;
   utterance.pitch = pitch;
   utterance.volume = volume;
+  let active = true;
+  const finish = () => {
+    if (!active) return;
+    active = false;
+    pendingObservers.delete(finish);
+    observer?.onFinish();
+  };
+  if (observer) pendingObservers.add(finish);
+  utterance.onstart = () => {
+    if (active) observer?.onStart?.();
+  };
+  utterance.onboundary = (event) => {
+    if (active && event.name === "word") observer?.onBoundary(event.charIndex);
+  };
+  utterance.onend = finish;
+  utterance.onerror = finish;
   synth.speak(utterance);
+  return () => {
+    if (active) cancelSpeech();
+  };
 }
 
 export function cancelSpeech(): void {
+  queued = 0;
+  for (const finish of pendingObservers) finish();
   if (speechSupported()) window.speechSynthesis.cancel();
 }

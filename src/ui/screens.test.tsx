@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Game } from "@/game/engine/Game";
 import { useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useAudioSettings } from "@/game/state/audioSettings";
+import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import { gameRef } from "./gameRef";
 import { MainMenu } from "./main-menu/MainMenu";
@@ -18,7 +19,12 @@ describe("MainMenu", () => {
     useGameStore.setState({ screen: "menu", muted: false, matchMode: "skirmish", aiActive: false });
     useMultiplayerStore.getState().leave();
     useCampaignStore.getState().reset();
-    useAudioSettings.setState({ channels: { music: true, voice: true, effects: true }, volume: 1, error: null });
+    useAudioSettings.setState({
+      channels: { music: true, voice: true, effects: true },
+      volume: 1,
+      channelVolumes: { music: 1, voice: 1, effects: 1 },
+      error: null,
+    });
   });
 
   it("a játékcím alatt a jelenlegi harctér azonosítója és neve szerepel", () => {
@@ -119,6 +125,30 @@ describe("MainMenu", () => {
     expect(slider).toHaveAttribute("data-volume-high", high);
   });
 
+  it("a csatornák hangereje külön állítható, ment, és nem módosítja a központi hangerőt", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    fireEvent.change(screen.getByRole("slider", { name: "Zene hangereje" }), { target: { value: "20" } });
+    fireEvent.change(screen.getByRole("slider", { name: "Parancsnok hangereje" }), { target: { value: "90" } });
+    fireEvent.change(screen.getByRole("slider", { name: "Effektek hangereje" }), { target: { value: "60" } });
+    expect(useAudioSettings.getState()).toMatchObject({
+      volume: 1,
+      channelVolumes: { music: 0.2, voice: 0.9, effects: 0.6 },
+    });
+    expect(JSON.parse(localStorage.getItem("ballistic-front:audio-settings")!).channelVolumes).toEqual({
+      music: 0.2,
+      voice: 0.9,
+      effects: 0.6,
+    });
+    expect(screen.getByRole("slider", { name: "Zene hangereje" })).toHaveAttribute("aria-valuetext", "20%");
+    const musicSwitch = screen.getByRole("switch", { name: "Zene" });
+    expect(musicSwitch).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(musicSwitch);
+    expect(musicSwitch).toHaveAttribute("aria-checked", "false");
+    expect(useAudioSettings.getState().channels.music).toBe(false);
+    expect(screen.getByRole("slider", { name: "Zene hangereje" })).toHaveValue("20");
+  });
+
   it("megjeleníti a hangbeállítások mentési hibáját", () => {
     useAudioSettings.setState({ error: "audio.saveError" });
     render(<MainMenu />);
@@ -175,13 +205,42 @@ describe("MainMenu", () => {
     const confirm = vi.spyOn(window, "confirm");
     render(<MainMenu />);
 
-    confirm.mockReturnValueOnce(false);
     fireEvent.click(screen.getByRole("button", { name: /mentés törlése/i }));
+    const dialog = screen.getByRole("dialog", { name: "Törlöd a mentést?" });
+    expect(dialog).toHaveAccessibleDescription(/nem vonható vissza/);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mégse" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(resetProgress).not.toHaveBeenCalled();
 
-    confirm.mockReturnValueOnce(true);
     fireEvent.click(screen.getByRole("button", { name: /mentés törlése/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Törlés" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(resetProgress).toHaveBeenCalledOnce();
+    expect(confirm).not.toHaveBeenCalled();
+    confirm.mockRestore();
+  });
+
+  it("az AI tapasztalat törlése csak megerősítés után fut le", () => {
+    const memory = { matches: 4, wins: 2, shots: 30, hits: 9 };
+    useAiSettings.setState({ enabled: true, memory });
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+
+    const resetButton = screen.getByRole("button", { name: /AI tapasztalat: 4 meccs/ });
+    fireEvent.click(resetButton);
+    const dialog = screen.getByRole("dialog", { name: "Törlöd az AI tapasztalatát?" });
+    expect(dialog).toHaveAccessibleDescription(/4 meccsnyi tapasztalata/);
+    expect(within(dialog).getByRole("button", { name: "Mégse" })).toHaveFocus();
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(useAiSettings.getState().memory).toEqual(memory);
+
+    fireEvent.click(resetButton);
+    fireEvent.click(screen.getByRole("button", { name: "Törlés" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(useAiSettings.getState().memory.matches).toBe(0);
+    expect(screen.getByRole("button", { name: /AI tapasztalat: 0 meccs/ })).toBeDisabled();
+    useAiSettings.setState({ enabled: false });
   });
 });
 

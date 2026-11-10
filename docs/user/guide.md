@@ -16,8 +16,12 @@ Csökkentett mozgás beállítás mellett nem animálódik. Kis kijelzőn a men�
 - **Online:** két ember külön böngészőből, szobakódos lobbyval.
 - **Műveleti térkép:** külön menügomb, mindig P1 ember vs P2 AI, a gyorscsata
   ellenfélbeállításától függetlenül. Öt szektor, elágazó útvonal és helyi haladás.
+- **VEYLORA-03 prototípus:** külön menügomb, két kezdettől elérhető bolygó
+  és egy nem harci állomáskártya. Mindig P1 ember vs rögzített AI-ellenfél;
+  a régi kampány teljesítése nem előfeltétel.
 
-Jelenleg öt seed alapján változó, tükrözött terepprofil és egy tanktípus van.
+A régi kampányban öt seed alapján változó, tükrözött terepprofil van;
+VEYLORA két új terepe aszimmetrikus. Egy tanktípus használható.
 A gyorscsata/online alap harctere **SECTOR ALPHA-01 / Training Grounds**.
 A főmenü az aktuális kampányműveletet mutatja, a felső középső HUD a tényleges csataszektort.
 Új csata és visszavágó elején 2,5 másodperces
@@ -57,11 +61,60 @@ csak P1 fejleszthető; P2 AI maga vásárol. A profilok és az AI-tapasztalat a
 gyorscsatával közösek, külön kampánynehézség még nincs.
 
 A térképen a „Kampányhaladás törlése” csak a teljesítést törli.
-A főmenü „Mentés törlése” az XP-t, fejlesztéseket és kampányhaladást is törli.
+A főmenü „Mentés törlése” az XP-t, XP-fejlesztéseket és a régi kampány
+haladását törli; az új kampánygazdaságot és VEYLORA-haladást nem.
 Tárolási hibánál figyelmeztetés jelenik meg; sikertelen mentés után a kijelzett
 haladás csak az aktuális munkamenetben érvényes. Hibás/nem támogatott kampánymentés
 esetén az indítás tiltott; a kampányreset új mentést hozhat létre, a régi XP megtartásával.
 Félbehagyott offline csata refresh után nem folytatható, a művelet újra indítható.
+
+### VEYLORA-03 – első játszható prototípus
+
+Főmenü → VEYLORA-03 → bolygó küldetésének indítása → csata → eredmény.
+A két bolygó sorrendje szabad, az utazás és az újrapróbálás ingyenes.
+
+- **Bányabolygó:** rozsdavörös, lépcsőzetes külszíni fejtés. A könnyű
+  küldetéshez az ellenséges tankot kell megsemmisíteni.
+- **Kutatóbolygó:** kékesszürke völgyek és központi fennsík. A közepes
+  küldetéshez tankgyőzelem és legalább 20/100 kutatóépület-HP szükséges.
+  Mindkét fél épületsebzése számít. Minden új próbálkozás teljes épület-HP-val indul.
+- **Orbitális dokk:** közös P1-kampánykészlet, tervrajz és
+  kampányfejlesztés-vásárlás; nem harctér.
+
+Tankgyőzelem mellett is elbukhat a kutatótelepi küldetés. Ilyenkor a harci
+eredmény és annak XP-je megmarad, de nem jár küldetésteljesítés.
+Mindkét küldetés sikerével VEYLORA biztosított, de továbbra is újrajátszható.
+A küldetéshaladás és a gazdaság helyileg, IndexedDB-ben mentődik. Mentési
+hibánál figyelmeztetés látszik; az eredményképernyőn a sikertelen
+teljesítés-/jutalommentés újrapróbálható. Hibás mentésnél az indítás tiltott;
+a szektorhaladás törlése nem kerülheti meg a sérült gazdasági mentést.
+
+- A bánya első sikeres teljesítése **20 ipari ércet** ad.
+- A kutatótelep első sikeres, épületvédelmet is teljesítő küldetése
+  **anyagtechnológiai tervrajzot** ad. A két jutalom azonnal használható.
+- Az állomáson **20 érc és a tervrajz megléte** ellenében egyszer
+  megvehető a **Megerősített pajzs**. Csak az érc fogy el.
+- A fejlesztés az XP-ből számolt maximális energiapajzsot **10%-kal növeli**,
+  kizárólag P1 következő, új rendszerű kampánycsatáiban. A régi kampány,
+  gyorscsata és PvP változatlan. Nulla alap-pajzsnál megvehető, de még nincs
+  hatása; későbbi XP-pajzsfejlesztés után automatikusan érvényesül.
+- Az újrajátszás nem ad újabb gazdasági jutalmat, a megszokott XP viszont jár.
+  A küldetés teljesítése és a jutalom elszámolása külön látszik.
+- **VEYLORA-haladás törlése:** csak a küldetésállapot törlődik. A készlet,
+  tervrajz, vásárlás és korábbi jutalomfelvétel megmarad, nincs újrakifizetés.
+- **Teljes kampánygazdaság törlése:** külön megerősítés után az új kampányok
+  haladása, vagyona, fejlesztései és jutalomnyilvántartása együtt törlődik.
+  A jutalmak újra megszerezhetők; az XP, XP-fejlesztések és a régi kampány
+  megmaradnak. Másik lapon korábban indult csata nem írhat az új gazdaságba.
+
+A korábbi, gazdaság nélküli prototípus haladása átemelődik, de nem ad
+visszamenőleges jutalmat. Az első gazdasági jutalomhoz újra sikeresen teljesítsd
+az érintett küldetést. Az eredeti prototípusmentés biztonsági másolatként megmarad.
+Az IndexedDB elérhetősége szükséges; böngészőadat-törlés a készletet is törli.
+
+**Build nélküli tartalomfrissítés még nem érhető el.** Az új ellenfelek
+nem öröklik és nem fejlesztik a gyorscsata P2-profilját vagy az AI-memóriát.
+A jelenlegi cél a stabil működés; a nehézség és a látvány még finomhangolható.
 
 ## A csata menete
 
@@ -156,12 +209,15 @@ session és a szoba érvényes. Ez nem fiókalapú, eszközök közötti felhőm
   böngészőnyelv esetén az adott nyelv, egyébként angol indul.
 - **Játékosnevek:** P1/P2 neve legfeljebb 16 karakter. Üres névnél az azonosító marad;
   online a lobbyban megadott név az elsődleges.
-- **Hang:** Zene, Parancsnok és Effektek külön kapcsolhatók; az M némítás mindet felülírja.
+- **Hang:** Zene, Parancsnok és Effektek külön kapcsolhatók egy-egy be/ki kapcsolóval; az M némítás mindet felülírja.
   A Beállítások **Játék hangereje** csúszkája 0–100% között szabályozza mindhárom hangcsoportot,
   és a választás megmarad újratöltés után. A 100% az eddigi hangkeverésnek felel meg;
-  a némítás nem törli a beállított hangerőt. A hangerő módosítása megszakítja az aktuális
+  a némítás nem törli a beállított hangerőt. Mindhárom csoport kapcsolója mellett saját
+  0–100%-os csúszka van (**Zene / Parancsnok / Effektek hangereje**); a tényleges hangerő
+  a központi és a csoport hangerejének szorzata, így a zene halkítható a parancsnok
+  halkítása nélkül. A parancsnoki hangerő módosítása megszakítja az aktuális
   felolvasást; a következő közlés már az új hangerőn szól. Mentési hiba esetén figyelmeztetés jelenik meg.
-  A háttérzene energysound „Cyberpunk Neon City”; zeneválasztó és külön csatornahangerők még nincsenek.
+  A háttérzene energysound „Cyberpunk Neon City”; zeneválasztó még nincs.
 - **Parancsnoki konzol:** időbélyeges taktikai közlések és böngészős felolvasás.
   A hangok a böngészőtől/operációs rendszertől függnek; P2 magasabban és gyorsabban szól.
   Győzelemkor szintetizált fanfár és győzelmi bemondás hallható.

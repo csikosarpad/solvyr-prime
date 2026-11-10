@@ -19,6 +19,12 @@ A „Következő fázisok” nem kész funkciók.
   mentések 100%-os hangerővel töltődnek be. Betöltési/mentési hiba naplózott és látható.
   A zene és az effektek azonnal követik a változtatást; a futó/függő beszéd megszakad,
   mert a Web Speech API nem támogat megbízható élő hangerőállítást.
+- Csatornánkénti hangerő: `channelVolumes: { music, voice, effects }` (0..1, alap 1),
+  ugyanabban a mentésben. A `channelVolume(state, channel)` adja a tényleges értéket:
+  kikapcsolt csatornán 0, egyébként `volume × channelVolumes[channel]`. Ezt használja
+  az effekt-master gain, a zene, a `commandStore.announce()` és a kézi felolvasás.
+  A mező nélküli régi mentések 100%-os csatornahangerővel töltődnek be; érvénytelen érték
+  betöltési hibát ad. Beszéd csak a tényleges voice-hangerő változásakor szakad meg.
 - A győzelmi fanfárt jelenleg az `AudioManager.playFanfare()` szintetizálja oszcillátorokkal (helyettesítő); valódi OGG esetén a `SoundName`/`URLS` bővítendő, a bemondás késleltetése (`VICTORY_ANNOUNCE_DELAY_MS` a `Game.ts`-ben) a fanfár hosszához igazítandó.
 - A parancsnoki beszédet a `src/game/systems/speech.ts` adja a böngésző `speechSynthesis`
   API-jával (nem előre felvett hang). A `speak(text, locale, settings, slot, volume)` hu/en/de
@@ -39,7 +45,8 @@ A „Következő fázisok” nem kész funkciók.
 - [ ] `targetMissed` eseményhang csak a lövedék lezárása után, tényleges találat hiányában.
 - [ ] A tankmozgás-hang lazy loadingja és további mobil optimalizálása.
 - [ ] Valódi győzelmi fanfár OGG fájl.
-- [ ] Zeneválasztó és hangerő-szabályzók csatornánként. A `plans/` próbaszámai
+- [x] Hangerő-szabályzók csatornánként (zene, parancsnok, effektek), a központi hangerővel szorozva.
+- [ ] Zeneválasztó. A `plans/` próbaszámai
   (energysound „Dark Cyberpunk Synthwave”, Jamii „Warhammer Background Music”) nem
   szerepelnek a futásidejű katalógusban; bekötésük előtt forrás-/licencellenőrzés kell.
 - [ ] Parancsnoki beszéd beállításai (hang, sebesség, mélység), közlések gyakorisága és felülírható szövegei.

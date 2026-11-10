@@ -8,13 +8,34 @@ import { Shop } from "./Shop";
 import { ResultDecorCanvas } from "./result/ResultDecorCanvas";
 import { getUnitPresentation } from "./result/unitPresentation";
 import { sectorById } from "@/game/data/sectors";
+import { useVeyloraStore } from "@/game/state/veyloraStore";
+import { CampaignReward } from "./CampaignReward";
+import { rewardKey } from "@/game/systems/campaignEconomy";
+import { useState } from "react";
 
 /** Meccs végén: győztes, statisztika, bolt és továbblépés. */
 export function ResultScreen() {
   const t = useT();
   const name = usePlayerName();
-  const { winner, matchStats, setScreen, matchMode, aiActive, sector, campaignNewRoutes } = useGameStore();
+  const {
+    winner,
+    matchStats,
+    setScreen,
+    matchMode,
+    aiActive,
+    sector,
+    campaignNewRoutes,
+    missionSuccess,
+    campaignMission,
+    missionGeneration,
+  } = useGameStore();
   const campaign = matchMode === "campaign";
+  const operation = matchMode === "operation";
+  const operationError = useVeyloraStore((s) => s.error);
+  const operationPending = useVeyloraStore((s) => s.pending);
+  const claims = useVeyloraStore((s) => s.economy.claims);
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState(false);
   const campaignError = useCampaignStore((s) => s.error);
   const completedIds = useCampaignStore((s) => s.completedIds);
   const credentials = useMultiplayerStore((state) => state.credentials);
@@ -39,6 +60,34 @@ export function ResultScreen() {
           <p className="campaign-result" role="status">
             {winner === "P1" ? t("campaign.secured", { code: sector.code }) : t("campaign.notSecured")}
           </p>
+        )}
+        {operation && (
+          <section className="campaign-result" role="status">
+            <p>{t(missionSuccess ? "veylora.missionSuccess" : "veylora.missionFailure")}</p>
+            <p>{t("veylora.prototype")}</p>
+            {operationPending > 0 && <p>{t("economy.saving")}</p>}
+            {missionSuccess && campaignMission && operationPending === 0 && !operationError && (
+              <CampaignReward
+                rewards={claims[rewardKey(campaignMission.id)]?.rewards ?? campaignMission.rewards}
+                claimed={Object.hasOwn(claims, rewardKey(campaignMission.id))}
+              />
+            )}
+          </section>
+        )}
+        {operation && operationError && (
+          <div className="lobby-error" role="alert">
+            <p>{t(operationError)}</p>
+            {missionSuccess && campaignMission && missionGeneration && operationError === "veylora.saveError" && (
+              <button
+                className="btn secondary"
+                disabled={operationPending > 0}
+                onClick={() => void useVeyloraStore.getState().complete(campaignMission.id, missionGeneration)}
+              >
+                {t("veylora.retrySave")}
+              </button>
+            )}
+            {startError && <p role="alert">{t("campaign.startError")}</p>}
+          </div>
         )}
         {campaign && winner === "P1" && campaignNewRoutes.length > 0 && (
           <p className="campaign-result" role="status">
@@ -93,6 +142,18 @@ export function ResultScreen() {
           </p>
         )}
         <div className="result-actions">
+          {operation && (
+            <button
+              className="btn hud-button hud-button-primary"
+              disabled={operationPending > 0 || starting}
+              onClick={() => {
+                gameRef.current?.leaveBattle();
+                setScreen("veylora");
+              }}
+            >
+              {t("veylora.title")}
+            </button>
+          )}
           {campaign && (
             <button
               className="btn hud-button hud-button-primary"
@@ -105,7 +166,22 @@ export function ResultScreen() {
             </button>
           )}
           {!onlineMatch ? (
-            <button className="btn hud-button hud-button-primary" onClick={() => gameRef.current?.restart()}>
+            <button
+              className="btn hud-button hud-button-primary"
+              disabled={operation && (operationPending > 0 || starting)}
+              onClick={async () => {
+                if (!operation || !campaignMission) {
+                  gameRef.current?.restart();
+                  return;
+                }
+                setStarting(true);
+                setStartError(false);
+                if (!(await gameRef.current?.startOperation(campaignMission.id))) {
+                  setStartError(true);
+                  setStarting(false);
+                }
+              }}
+            >
               {t("result.rematch")}
             </button>
           ) : credentials.playerId === "P1" ? (
@@ -121,6 +197,7 @@ export function ResultScreen() {
           )}
           <button
             className="btn secondary hud-button hud-button-secondary"
+            disabled={operation && (operationPending > 0 || starting)}
             onClick={() => {
               if (onlineMatch) useMultiplayerStore.getState().leave();
               gameRef.current?.leaveBattle();
