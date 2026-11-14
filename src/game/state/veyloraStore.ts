@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { MessageKey } from "@/i18n";
-import { VEYLORA, missionById } from "../data/campaignContent";
+import { VEYLORA, missionAvailable, missionById } from "../data/campaignContent";
 import { campaignTransaction, CampaignDataError, LEGACY_VEYLORA_KEY } from "./campaignDatabase";
 import {
   initialSectorProgress,
@@ -67,9 +67,12 @@ export const useVeyloraStore = create<VeyloraState>((set) => {
     error: null,
     refresh: () => write(),
     select: (id) => {
-      missionById(id);
+      const mission = missionById(id);
       return write((save) => {
-        save.progress[VEYLORA.sector.id]!.selectedMissionId = id;
+        const progress = save.progress[VEYLORA.sector.id]!;
+        if (!missionAvailable(mission, progress.completedMissionIds))
+          throw new EconomyRuleError("veylora.missionLocked", save);
+        progress.selectedMissionId = id;
         return save;
       });
     },
@@ -78,6 +81,8 @@ export const useVeyloraStore = create<VeyloraState>((set) => {
       return write((save) => {
         if (save.generation !== generation) throw new EconomyRuleError("economy.resetDuringBattle", save);
         const progress = save.progress[VEYLORA.sector.id]!;
+        if (!missionAvailable(mission, progress.completedMissionIds))
+          throw new EconomyRuleError("veylora.missionLocked", save);
         if (!progress.completedMissionIds.includes(id)) progress.completedMissionIds.push(id);
         const key = rewardKey(id);
         if (!Object.hasOwn(save.claims, key)) {

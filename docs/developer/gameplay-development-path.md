@@ -105,20 +105,17 @@ flowchart TD
 
 ## A diagram olvasása
 
-**2026-11-07: elfogadott következő gameplay-prioritás a következményes
-ostromhadjárat Phase 1 MVP-je.** A diagramon a hosszú távú hadjárathoz
-kapcsolódik, de ez a következő gameplay-próba: nem előfeltétele a teljes C4-,
-fegyver-, orbitális vagy egységosztály-csomag. A rendszer a Campaign térképhez
-tartozik, nem a sima offline módhoz. Az első térképszelet az `ALPHA-01`
-tréningből, opcionális felderítésből és két megszállt célágból áll: a
-`DELTA-08` helyi eredményt ad; a `FORGE-17` a felderítéssel felfedhető
-kulcsszektor, amelynek felszabadítása nyitja meg a `VANGUARD-12`-t. A
-felderítés kihagyható, és egyik célág teljesítése sem zárja el a másikat.
-A módosított feloldás már működik: csak `FORGE-17` nyitja meg
-`VANGUARD-12`-t, majd `PRIME-00` harci győzelme zárja a kampányt.
-`FORGE-17` és `PRIME-00` egyaránt kötelező, védendő létesítményes szektor.
-A régi C3 OR-útvonalon már teljesített szektorok megmaradnak a migráció során;
-korábbi épületkárt nem állítunk elő ezekből.
+**2026-11-07: korábbi gameplay-javaslat a következményes ostromhadjárat
+Phase 1 MVP-jére.** A diagramon a hosszú távú hadjárathoz kapcsolódik; nem
+előfeltétele a teljes C4-, fegyver-, orbitális vagy egységosztály-csomag.
+Ez a kampánytérképhez tartozó javaslat, nem a sima offline mód része. Az
+eredeti térképszelet az `ALPHA-01` tréningből, opcionális felderítésből és két
+megszállt célágból állt; a korábbi terv szerint a `FORGE-17` nyitotta volna
+meg a `VANGUARD-12`-t, majd `PRIME-00` zárta volna a kampányt. Ez a
+feloldási gráf nem része a jelenlegi C3-térképnek: a 2026-11-14-i döntés
+szerint jelenleg csak a VEYLORA-03 függ ALPHA-01-től. A többi szektor
+küldetés- és feloldási kapcsolata későbbi döntés tárgya; a régi C3 mentések
+teljesített szektorai megmaradnak a migráció során.
 
 `FORGE-17`-ben az ostromplatform a fő cél, az `ENERGY_NODE` és
 `CIVIL_HABITAT` védendő szerződéses objektum; a 50/25/25 súlyok csak erre a

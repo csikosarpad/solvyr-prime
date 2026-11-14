@@ -36,6 +36,21 @@ describe("transactional campaign economy", () => {
     expect(localStorage.getItem("ballistic-front:profiles")).toBe("profiles");
   });
 
+  it("keeps station security locked until both planetary missions are complete", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await state().select("secure-station")).toBe(false);
+    expect(state().error).toBe("veylora.missionLocked");
+    expect(await complete("secure-station")).toBe(false);
+    expect(state().completedMissionIds).toEqual([]);
+
+    await complete("secure-mine");
+    expect(await state().select("secure-station")).toBe(false);
+    await complete("secure-lab");
+    expect(await state().select("secure-station")).toBe(true);
+    expect(await complete("secure-station")).toBe(true);
+    expect(state().completedMissionIds).toEqual(["secure-mine", "secure-lab", "secure-station"]);
+  });
+
   it("serializes simultaneous reward callbacks from separate store instances without duplication or loss", async () => {
     vi.resetModules();
     const other = (await import("./veyloraStore")).useVeyloraStore;
@@ -68,7 +83,10 @@ describe("transactional campaign economy", () => {
     const saved = await campaignTransaction();
     expect(saved.resources["industrial-ore"]).toBe(0);
     expect(saved.technologies).toEqual(["materials-blueprint"]);
-    expect(saved.purchases["reinforced-shield"]).toEqual({ contentVersion: 1, maxEnergyShieldMultiplier: 1.1 });
+    expect(saved.purchases["reinforced-shield"]).toEqual({
+      contentVersion: VEYLORA.contentVersion,
+      maxEnergyShieldMultiplier: 1.1,
+    });
     expect(applyCampaignUpgrades(BASE_STATS, saved).maxEnergyShield).toBe(0);
     expect(applyCampaignUpgrades({ ...BASE_STATS, maxEnergyShield: 100 }, saved).maxEnergyShield).toBeCloseTo(110);
     const recipe = VEYLORA.recipes[0]!;

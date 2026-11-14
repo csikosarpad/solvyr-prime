@@ -23,10 +23,13 @@ A jelenlegi és tervezett fejlesztési ágak áttekintő ábrája:
 
 ## Aktuális állapot (2026-11)
 
-- VEYLORA-03 első játszható prototípusa külön főmenübelépéssel elkészült:
-  két konfigurált, aszimmetrikus harctér, rögzített P1–AI ellenfelek,
-  kutatóépület-védelem és külön mentett küldetéshaladás. Az egyszeri
-  érc-/tervrajzjutalom, állomási pajzsvásárlás és tranzakciós helyi gazdaság
+- VEYLORA-03 első játszható prototípusa elkészült, majd a Műveleti térkép
+  második szintű, ALPHA-01 teljesítése után megnyíló szektoraként integrálódott:
+  két bolygóharctér és egy, ezek után feloldódó állomásbiztosító harctér,
+  rögzített P1–AI ellenfelek, kutatóépület-védelem és külön mentett
+  küldetéshaladás. A helyszíntérkép jelöli a teljesített pontokat, a szektor
+  a dokk biztosításakor válik teljesítetté. Az egyszeri érc-/tervrajzjutalom,
+  állomási pajzsvásárlás és tranzakciós helyi gazdaság
   elkészült; külön szektor- és gazdasági reset, megőrzött XP-vel.
   Build nélküli tartalomfrissítés még nincs.
   Részletes hatókör és hátralévő lépések: [VEYLORA fejlesztési alap](./gameplay-progression-todo.md#6c-veylora-03--elfogadott-fejlesztési-alap).
@@ -49,9 +52,10 @@ A jelenlegi és tervezett fejlesztési ágak áttekintő ábrája:
   bezárható briefingben látható. Az eligazítás minden játékmódban pályánként
   elrejthető, helyileg mentett checkbox-választással.
   Modifikátor, orbitális képesség, osztályválasztás és stratégiai hadjárat még nincs.
-- Campaign Map C3 működik: öt szektoros elágazó térkép, P1 vs AI, OR feloldás,
-  eredmény utáni visszatérés, helyileg mentett 0/5 → 5/5 teljesítés és v1→v2 migráció.
-  Külön kampányreset és teljes mentéstörlés; extra kampányjutalom nincs.
+- Campaign Map C3 működik: öt szektor, P1 vs AI, eredmény utáni visszatérés és
+  helyileg mentett teljesítés. A korábbi C3-ágfüggések már nincsenek beállítva.
+  VEYLORA-03 külön belső nézettel, ALPHA-01 után érhető el. Külön kampányreset
+  és teljes mentéstörlés; extra kampányjutalom nincs.
 - A részletes UX- és hang-redesign következő lépései külön checklistként szerepelnek alább.
 
 ## Alapelvek
@@ -130,11 +134,11 @@ Csak egy pálya szükséges; nincs új fizika vagy extra kampányjutalom. A hot-
 gyorscsata megmarad; a kampány mindig P1 vs AI. Kampányreset csak teljesítést,
 a teljes mentéstörlés XP-t/szinteket/teljesítést töröl. Valós telefonos próba hátravan.
 **Elkészült bővítés: C3 (2026-11-05); hosszabb balansz- és valódi telefonos próba még hátravan.**
-Összesen öt játszható pont: ALPHA-01 / Training Grounds, DELTA-08 / Crystal Basin,
+Öt játszható C3-harctér: ALPHA-01 / Training Grounds, DELTA-08 / Crystal Basin,
 FORGE-17 / Industrial Expanse, VANGUARD-12 / Defense Grid, PRIME-00 / Capital Perimeter.
-ALPHA → DELTA / FORGE → VANGUARD → PRIME; szabad ágbejárás, VANGUARD feloldása OR,
-extra kampánybónusz/Smart Aim jutalom nélkül. PRIME biztosítása műveletzárás;
-mind az öt szektor teljesítése 5/5, kihagyott ág és replay utólag is elérhető.
+2026-11-14-én a korábbi C3-ágfüggőségeket kivettük a térképből: csak a VEYLORA-03
+igényli ALPHA-01 teljesítését. A további szektorok és saját küldetéseik közti
+függések még nincsenek beállítva. Nincs extra kampánybónusz/Smart Aim jutalom.
 Közös szektorkatalógus, négy valódi új csatadefiníció, szektor-ID alapú mentés és
 a meglévő ALPHA-teljesítés migrációja elkészült. Az ALPHA gyorscsata/online pálya változatlan.
 A [részletes csataprofil-terv](./gameplay-progression.md#1010-c3-csataprofilok--részletes-tervezési-javaslat)
@@ -156,8 +160,10 @@ A részletes feladatok a [progressziós TODO](./gameplay-progression-todo.md) 2.
 Az O1 pályabeli objektumpróba elkészült a meglévő `FORGE-17` és `PRIME-00` szektorban:
 reaktor és civil kupolatelep, robbanási sebzés, állapotjelzés és HU/EN/DE HUD.
 A teljes feature még nincs kész: kampánykár-mentés, szerződéses jutalom,
-következő csata pajzshatása hátravan. FORGE már megnyitja VANGUARD-ot,
-PRIME győzelme a kampányzárás; DELTA kihagyható. A két szektor épületei
+következő csata pajzshatása hátravan. A régi FORGE → VANGUARD → PRIME
+függési javaslat és a PRIME-hoz kötött kampányzárás nem a jelenlegi
+C3-feloldási szabály; a C3 szektorok egymástól függetlenül választhatók.
+A két szektor épületei
 új csatánként seedelt, tankokkal és egymással nem átfedő helyeket kapnak.
 Alapígéret: a csata megnyerhető úgy is, hogy a játékos részben vagy teljesen
 elbukja a küldetés szerződéses célját. A harci győzelem továbbra is az ellenfél
@@ -180,12 +186,14 @@ küldetését befolyásolja.
   nem fix MVP-terjedelem: lehetnek kihagyható és később kulcsfontosságú
   küldetések, a kampánycél pedig egy titkos terv felkutatásától több szektor
   erőforrásának megszerzésén át szektorok felszabadításáig terjedhet.
+- Az alábbi 2026-11-07-i térképszelet és gráf korábbi kampányjavaslat; a
+  2026-11-14-i döntés óta nem a jelenlegi C3-térkép feloldási terve.
 - Az MVP két objektumtípusa `ENERGY_NODE` és `CIVIL_HABITAT`; az
   `ENERGY_NODE` a következő kapcsolódó kulcscsatában a maximális
   energiapajzsra hat. Mozgó civilek, diplomácia,
   frakciókapcsolatok, gazdasági szimuláció, piac, kereskedelem és procedurális
   történet nem része.
-- Az első C3 térképszeletben az `ALPHA-01` tréning után opcionális
+- A korábbi javaslat első C3 térképszeletében az `ALPHA-01` tréning után opcionális
   felderítés, illetve a `DELTA-08` és `FORGE-17` megszállt célágai jelennek
   meg. A `FORGE-17` a rejtett kulcsszektor; felszabadítása nyitja meg a
   `VANGUARD-12`-t. A `DELTA-08` helyi eredményt ad, de a `FORGE-17` később

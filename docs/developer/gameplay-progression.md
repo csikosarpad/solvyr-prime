@@ -2,6 +2,14 @@
 
 Kódbázis-alapú helyzetértékelés, 2026-11-04; térképközpontú irány pontosítva: 2026-11-05.
 
+**2026-11-14: a Műveleti térkép legalább két szintű.**
+Az első szint a térképi szektoroké, például ALPHA-01 és VEYLORA-03; a
+VEYLORA-csomópont megnyitása a saját helyszín-, küldetés- és állomásnézetébe
+visz. Az Alpha teljesítése nyitja meg a VEYLORA-03-at. A térképen belüli
+útvonalak lehetnek függetlenek vagy egy korábbi pont teljesítéséhez kötöttek.
+Ez nem egy új, párhuzamos kampányválasztó: a VEYLORA a jelenlegi Műveleti
+térkép része.
+
 **2026-11-07: elfogadott új designirány a következményes ostromhadjárat.**
 A [11. fejezet](#11-következményes-ostromhadjárat) a C3 utáni prioritást pontosítja:
 először egy rövid, döntésekre reagáló műveletet próbálunk ki, nem a teljes
@@ -10,9 +18,11 @@ fegyver-/képesség-/osztálycsomagot építjük meg. Ez terv, nem jelenlegi já
 **Rögzített fejlesztési irány: a Campaign Map legyen a fejlődés központi felülete.**
 Ez a prioritás elfogadott; a részletes mód-, feloldás-, jutalom- és balanszszabályok
 továbbra is döntést igényelnek. A dokumentum nem minden elemében kész implementációs specifikáció.
-A Campaign Map C3 már öt játszható szektort, OR feloldást, helyi teljesítésmentést
-és mindig P1 vs AI csatát ad. A v1 ALPHA-teljesítés migrálódik; a további mechanikák
-(modifikátorok, orbitális képességek, osztályok, stratégiai hadjárat) még tervek.
+Campaign Mapen öt játszható C3-harctér és a VEYLORA-03 szerepel; a VEYLORA
+ALPHA-01 után nyílik meg, a többi felső szektor közti függés nincs beállítva.
+A további mechanikák (modifikátorok, orbitális képességek, osztályok,
+stratégiai hadjárat) még tervek.
+2026-11-14-től a VEYLORA-03 is a térkép része, külön belső helyszín-/küldetésnézettel.
 Az alábbi korábbi helyzetértékelés/Foundation-hatókör történeti alap;
 az aktuális C3 működést a 10.1., 10.3. és 10.10. pont rögzíti.
 Az elfogadott első lépést és a további döntési kapukat a
@@ -55,16 +65,16 @@ de **nem előfeltétele a térképmódnak**. A térkép látható célt ad; az X
 
 A [fejlesztési definíciók](../../src/game/data/upgrades.ts) alapján:
 
-| Fejlesztés | Maximális szint | Teljes XP-költség nulláról |
-| --- | ---: | ---: |
-| Páncél | 5 | 528 |
-| Erőtér pajzs | 5 | 660 |
-| Sebzés / robbanófej | 5 | 949 |
-| Kráter / robbanási sugár | 5 | 660 |
-| Hatótáv / maximális lövési erő | 3 | 391 |
-| Motor | 5 | 328 |
-| Célzástámogatás / Smart Aim | 3 | 252 |
-| **Összesen** | **31** | **3768** |
+| Fejlesztés                     | Maximális szint | Teljes XP-költség nulláról |
+| ------------------------------ | --------------: | -------------------------: |
+| Páncél                         |               5 |                        528 |
+| Erőtér pajzs                   |               5 |                        660 |
+| Sebzés / robbanófej            |               5 |                        949 |
+| Kráter / robbanási sugár       |               5 |                        660 |
+| Hatótáv / maximális lövési erő |               3 |                        391 |
+| Motor                          |               5 |                        328 |
+| Célzástámogatás / Smart Aim    |               3 |                        252 |
+| **Összesen**                   |          **31** |                   **3768** |
 
 A költségek a szintenként kerekített `baseCost * costGrowth ** level` összegei.
 Ezek aktuális konfigurációs értékek, nem hosszú távú balanszcélok.
@@ -89,16 +99,16 @@ Következmények:
 
 ## 3. Architektúra: mire lehet építeni?
 
-| Terület | Meglévő alap | Bővítési lehetőség és korlát |
-| --- | --- | --- |
-| Terep | Öt seedelt, tükrözött profil és rombolható pixelmaszk, levált földdarabok törlésével | További profilok olcsóbbak; épületek és fizikai lehullás új szabályokat igényelnek |
-| Fizika | Közös gravitáció-/szélmodell, fix időlépés | Egyszerű fizikai modifikátorokhoz jó alap |
-| AI | A játék fizikájával keres lövéseket, szükség esetén közelít | Terephez alkalmazkodhat; veszélykerülés és képességválasztás még nincs |
-| Multiplayer | Közös seed, profilsnapshot, revision alapú eseménynapló | Determinisztikus új szabályokkal bővíthető; nem szerveroldali fizikai szimuláció |
-| Egységek | Két konkrét tank, talajhoz kötött mozgás és rögzített találati geometria | Szárazföldi variáns egyszerűbb; hover és orbitális egység jelentősen drágább |
-| Megjelenítés | Rétegezett Pixi háttér, külön egységprezentáció | Vizuálisan bővíthető; a prezentáció nem általános gameplay-egységmodell |
-| Mentés | Verziózott helyi profiltárolás | Új feloldásokhoz migráció kell; tartós online hadjáratállapot nincs |
-| Kampány | Öt ponttal működő elágazó térkép és helyi ID-alapú teljesítésmentés | Modifikátorok, tartalombővítés és stratégiai szabályok még szükségesek |
+| Terület      | Meglévő alap                                                                         | Bővítési lehetőség és korlát                                                       |
+| ------------ | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Terep        | Öt seedelt, tükrözött profil és rombolható pixelmaszk, levált földdarabok törlésével | További profilok olcsóbbak; épületek és fizikai lehullás új szabályokat igényelnek |
+| Fizika       | Közös gravitáció-/szélmodell, fix időlépés                                           | Egyszerű fizikai modifikátorokhoz jó alap                                          |
+| AI           | A játék fizikájával keres lövéseket, szükség esetén közelít                          | Terephez alkalmazkodhat; veszélykerülés és képességválasztás még nincs             |
+| Multiplayer  | Közös seed, profilsnapshot, revision alapú eseménynapló                              | Determinisztikus új szabályokkal bővíthető; nem szerveroldali fizikai szimuláció   |
+| Egységek     | Két konkrét tank, talajhoz kötött mozgás és rögzített találati geometria             | Szárazföldi variáns egyszerűbb; hover és orbitális egység jelentősen drágább       |
+| Megjelenítés | Rétegezett Pixi háttér, külön egységprezentáció                                      | Vizuálisan bővíthető; a prezentáció nem általános gameplay-egységmodell            |
+| Mentés       | Verziózott helyi profiltárolás                                                       | Új feloldásokhoz migráció kell; tartós online hadjáratállapot nincs                |
+| Kampány      | Öt ponttal működő elágazó térkép és helyi ID-alapú teljesítésmentés                  | Modifikátorok, tartalombővítés és stratégiai szabályok még szükségesek             |
 
 ### Fontos konkrét kapcsolódások
 
@@ -139,17 +149,17 @@ A becslések nettó fejlesztői napban értendő MVP-nagyságrendek, célzott UI
 tesztekkel és multiplayer-bekötéssel. Nem tartalmaznak teljes tartalomcsomagot,
 végleges assetgyártást vagy hosszas balansziterációt.
 
-| Prioritás | Irány | Kategória | Becsült költség | Kódbázisra gyakorolt hatás |
-| --- | --- | --- | --- | --- |
-| 1 | Pályák / szektorok | Gyors nyereség | 5–10 nap | Kicsi–közepes: konfiguráció, terepprofil, háttér, választó |
-| 2 | Egyszerű környezeti modifikátorok | Gyors nyereség | 3–7 nap | Közepes: fizika, körkezdet, előnézet, AI, szinkron |
-| 3 | Orbitális képességek | Közepes befektetés | 10–20 nap | Közepes–nagy: akciók, töltetek, célzás, HUD, események |
-| 4 | Szárazföldi egységosztályok | Közepes befektetés | 15–30 nap | Nagy: osztályalapok, felszerelés, AI, snapshot, balansz |
-| 5 | Kampány / szektorfoglalás | Hosszú távú stratégia | 20–40 nap | Új tartós stratégiai réteg |
-| 6 | Roguelite kampány | Hosszú távú stratégia | 30–60 nap | Útvonalak, run-állapot, jutalmak, ideiglenes összeállítások |
-| 7 | Prestige | Olcsó, de másodlagos | 3–6 nap | Profilmigráció, reset, bónuszok, multiplayer-szabályok |
-| 8 | További statfejlesztések | Gyors tüneti kezelés | 1–3 nap | Kicsi, ha meglévő statot használ |
-| Külön javaslat | XP-vel feloldható lövedéktípusok | Közepes befektetés | 10–16 nap | Közepes: profil/snapshot, közös lövésfeloldás, AI, HUD és replay |
+| Prioritás      | Irány                             | Kategória             | Becsült költség | Kódbázisra gyakorolt hatás                                       |
+| -------------- | --------------------------------- | --------------------- | --------------- | ---------------------------------------------------------------- |
+| 1              | Pályák / szektorok                | Gyors nyereség        | 5–10 nap        | Kicsi–közepes: konfiguráció, terepprofil, háttér, választó       |
+| 2              | Egyszerű környezeti modifikátorok | Gyors nyereség        | 3–7 nap         | Közepes: fizika, körkezdet, előnézet, AI, szinkron               |
+| 3              | Orbitális képességek              | Közepes befektetés    | 10–20 nap       | Közepes–nagy: akciók, töltetek, célzás, HUD, események           |
+| 4              | Szárazföldi egységosztályok       | Közepes befektetés    | 15–30 nap       | Nagy: osztályalapok, felszerelés, AI, snapshot, balansz          |
+| 5              | Kampány / szektorfoglalás         | Hosszú távú stratégia | 20–40 nap       | Új tartós stratégiai réteg                                       |
+| 6              | Roguelite kampány                 | Hosszú távú stratégia | 30–60 nap       | Útvonalak, run-állapot, jutalmak, ideiglenes összeállítások      |
+| 7              | Prestige                          | Olcsó, de másodlagos  | 3–6 nap         | Profilmigráció, reset, bónuszok, multiplayer-szabályok           |
+| 8              | További statfejlesztések          | Gyors tüneti kezelés  | 1–3 nap         | Kicsi, ha meglévő statot használ                                 |
+| Külön javaslat | XP-vel feloldható lövedéktípusok  | Közepes befektetés    | 10–16 nap       | Közepes: profil/snapshot, közös lövésfeloldás, AI, HUD és replay |
 
 A sorrend ár-érték arányt és stratégiai hasznosságot jelent, nem pusztán fejlesztési gyorsaságot.
 A becslések nem adandók mechanikusan össze: a közös alapok újrahasználhatók.
@@ -158,16 +168,16 @@ nem fér a legegyszerűbb változat költségkeretébe.
 
 ### Minőségi összehasonlítás
 
-| Irány | Újrajátszhatóság | Fenntarthatóság | Multiplayer | AI | Világba illeszkedés |
-| --- | --- | --- | --- | --- | --- |
-| Statok | Alacsony | Gyenge: új plafon | Könnyű, de növelheti a veteránelőnyt | Meglévő statoknál könnyű | Közepes |
-| Prestige | Alacsony–közepes | Közepes; bónuszinfláció veszélye | Tartós erőelőnnyel problémás | Resetstratégia kell | Feltételes |
-| Szektorok | Magas, ha a terep is eltér | Jó, tartalommal bővíthető | Nagyon jó | A jelenlegi célzási AI-val jó | Nagyon erős |
-| Modifikátorok | Magas | Jó, korlátozott kombinációkkal | Jó, determinisztikus szabályokkal | Egyszerű fizikánál jó; veszélyekhez bővítés kell | Erős |
-| Orbitális képességek | Magas | Jó, de interakciós balanszköltséggel | Jó, közös akciószabályokkal | Új képességértékelés kell | Nagyon erős |
-| Egységosztályok | Nagyon magas | Jó, ha oldalirányúak | Jó, jelentős balanszmunkával | Osztály- és fegyverfüggő döntések kellenek | Nagyon erős |
-| Roguelite | Nagyon magas single playerben | Jó, jelentős tartalomigénnyel | Csaták újrahasználhatók; közös kampány drága | Harci AI használható, stratégiai rész új | Erős |
-| Szektorfoglalás | Magas | Nagyon jó rendszeralap | Csatamód jó; tartós online világ külön projekt | Új stratégiai réteg kell | Nagyon erős |
+| Irány                | Újrajátszhatóság              | Fenntarthatóság                      | Multiplayer                                    | AI                                               | Világba illeszkedés |
+| -------------------- | ----------------------------- | ------------------------------------ | ---------------------------------------------- | ------------------------------------------------ | ------------------- |
+| Statok               | Alacsony                      | Gyenge: új plafon                    | Könnyű, de növelheti a veteránelőnyt           | Meglévő statoknál könnyű                         | Közepes             |
+| Prestige             | Alacsony–közepes              | Közepes; bónuszinfláció veszélye     | Tartós erőelőnnyel problémás                   | Resetstratégia kell                              | Feltételes          |
+| Szektorok            | Magas, ha a terep is eltér    | Jó, tartalommal bővíthető            | Nagyon jó                                      | A jelenlegi célzási AI-val jó                    | Nagyon erős         |
+| Modifikátorok        | Magas                         | Jó, korlátozott kombinációkkal       | Jó, determinisztikus szabályokkal              | Egyszerű fizikánál jó; veszélyekhez bővítés kell | Erős                |
+| Orbitális képességek | Magas                         | Jó, de interakciós balanszköltséggel | Jó, közös akciószabályokkal                    | Új képességértékelés kell                        | Nagyon erős         |
+| Egységosztályok      | Nagyon magas                  | Jó, ha oldalirányúak                 | Jó, jelentős balanszmunkával                   | Osztály- és fegyverfüggő döntések kellenek       | Nagyon erős         |
+| Roguelite            | Nagyon magas single playerben | Jó, jelentős tartalomigénnyel        | Csaták újrahasználhatók; közös kampány drága   | Harci AI használható, stratégiai rész új         | Erős                |
+| Szektorfoglalás      | Magas                         | Nagyon jó rendszeralap               | Csatamód jó; tartós online világ külön projekt | Új stratégiai réteg kell                         | Nagyon erős         |
 
 A lore-értékelés a dokumentált sci-fi katonai és Siege Platform-irányon alapul.
 Nem helyettesít részletes világkánont vagy külön világépítési döntést.
@@ -493,31 +503,30 @@ nem mindent megszerezve ér célba, hanem új helyzetekhez új összeállítást
 
 ## 10. Campaign Map / Sector Progression megvalósíthatóság
 
-### 10.1. Értékelés: jó irány, de a térkép és a kampány nem ugyanaz
+### 10.1. Értékelés: jó irány, a térkép és a kampány külön szint
 
 A javaslat erős: láthatóvá teszi a játékos útját, célt ad a következő csatának,
 és a már bevezetett szektoridentitást használja. Új fegyverrendszer nem szükséges.
 Egy statikus, elágazó térkép kevés assettel, a jelenlegi React/Pixi környezetben
 megvalósítható; a jelentős költség a mögöttes állapot-, csata- és jutalomszabály.
 
-| Szempont | Értékelés |
-| --- | --- |
-| Implementációs költség | Kis–közepes a térkép és helyi haladás; nagyobb az eltérő szektorfizika, jutalmazás és stratégiai hadjárat |
-| Kódbázisra gyakorolt hatás | Új képernyő, kampányállapot és meccskontextus; nem szükséges engine-újraírás |
-| Újrajátszhatóság | Az útvonalválasztás és eltérő csaták növelik; az egyszer kipipált térkép újabb véges plafon |
-| Fenntarthatóság | Jó, ha statikus definíció, mentett haladás és csataeredmény különül el, közös szabályfeloldással |
-| Multiplayer | Offline MVP a legolcsóbb; a szektoros PvP újrahasználható, a közös kampány külön termékhatókör |
-| AI | Meglévő harci AI használható; stabil kampánynehézséghez külön policy kell, stratégiai AI később |
-| Solvyr Prime identitás | Nagyon erős: műveletek, útvonalak, fenyegetés és fővárosi célpont; a lore-t a játékszabályok támasszák alá |
+| Szempont                   | Értékelés                                                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Implementációs költség     | Kis–közepes a térkép és helyi haladás; nagyobb az eltérő szektorfizika, jutalmazás és stratégiai hadjárat  |
+| Kódbázisra gyakorolt hatás | Új képernyő, kampányállapot és meccskontextus; nem szükséges engine-újraírás                               |
+| Újrajátszhatóság           | Az útvonalválasztás és eltérő csaták növelik; az egyszer kipipált térkép újabb véges plafon                |
+| Fenntarthatóság            | Jó, ha statikus definíció, mentett haladás és csataeredmény különül el, közös szabályfeloldással           |
+| Multiplayer                | Offline MVP a legolcsóbb; a szektoros PvP újrahasználható, a közös kampány külön termékhatókör             |
+| AI                         | Meglévő harci AI használható; stabil kampánynehézséghez külön policy kell, stratégiai AI később            |
+| Solvyr Prime identitás     | Nagyon erős: műveletek, útvonalak, fenyegetés és fővárosi célpont; a lore-t a játékszabályok támasszák alá |
 
 **Első szállítás:** Campaign Map Foundation egy játszható ALPHA-01 célponttal.
-**Megvalósított C3 (2026-11-05):** öt csomópontos,
-enyhén elágazó offline hadművelet P1 vs AI, helyi mentéssel.
-ALPHA-01 → DELTA-08 / FORGE-17 → VANGUARD-12 → PRIME-00.
-ALPHA mindkét ágat feloldja, VANGUARD bármelyik ág teljesítése után elérhető (OR);
-az ágak szabadon bejárhatók és nem zárják ki egymást. Nincs extra kampánybónusz
-vagy Smart Aim jutalom. PRIME biztosítása lezárja a műveletet akár 4/5 mellett;
-a kihagyott ág utólag is teljesíthető az 5/5-höz. Replay végig megmarad.
+**Megvalósított C3 (2026-11-05):** öt csomópontos offline hadművelet P1 vs AI,
+helyi mentéssel. A kezdeti gráf `ALPHA-01 → DELTA-08 / FORGE-17 →
+VANGUARD-12 → PRIME-00` és a PRIME-hoz tartozó lezárás később már nem
+fejlesztési szabály: 2026-11-14-én a szektorok közti függések nyitva maradtak.
+Az alábbiak a régi megvalósítás történeti leírásai, nem a mostani feloldási terv.
+Nincs extra kampánybónusz vagy Smart Aim jutalom. Replay végig megmarad.
 Öt célpont öt tényleges terepprofilt és szektorfüggő vizuális beállításokat használ;
 ALPHA az eredeti generátort, a másik négy a 10.10. pont alapgörbéit.
 
@@ -534,14 +543,14 @@ A C1–C4 sorok az előző lépcsőre épülő többletmunkát jelölik, nem tel
 A szektorok/modifikátorok elkészítése a 4. és 6.2. fejezet külön munkája, nem számolandó
 kétszer. Végleges assetek és hosszabb balansziteráció nincsenek a becslésben.
 
-| Lépcső | Hatókör | Függőség | Többletköltség | Mit ad / mit nem ad? |
-| --- | --- | --- | ---: | --- |
-| C1 – Térkép és csatabelépés | ALPHA-01 pont, kijelölés/kártya, navigáció és valódi csataindítás; React + SVG | ALPHA-katalógus és új képernyő/meccskontextus kialakítása | 2–4 nap | Működő belépési útvonal; a Foundation első részlépése, még nincs mentett teljesítés |
-| C2 – Helyi haladás | Csataeredmény, térképre visszatérés, ALPHA teljesítésmentése és újrapróbálás | C1, mód-/resetdöntések, meccslezárás | 4–7 nap | Kész Foundation egy pályával, meglévő harci XP-vel; új fizika és bónuszjutalom nélkül |
-| C3 – Elágazó művelet | Öt játszható célpont, statikus gráf, szabad ágbejárás, OR feloldás, szektoros mentésmigráció; extra bónusz nélkül | C2, négy további valódi csatadefiníció és minimális közös szektorkonfig | 2–4 nap a gráf/haladás alapjára; a pályák és migráció további munkák | Érdemi célválasztás; még nincs erőforrás-háború vagy ellenfél-területfoglalás |
-| C4 – Eltérő szektorcsaták | Közös szabálykonfig, kontrollált AI-nehézség, valós kártyaadatok, TTS és opcionális térkép-VFX | C3 és Sector Operations alapok | 5–10 nap | Taktikailag eltérő csaták; nem szükséges új fegyver vagy osztály |
-| C5 – Stratégiai hadjárat | Küldetések, ellenséges ellenlépések, erőforrások, tartós veszteségek | C4 és külön design | 20–40 napos teljes hadjárat-nagyságrend, a meglévő részek beszámítandók | Új stratégiai játék, nem térkép-polish |
-| C6 – Közös online kampány | Közös tulajdon, tartós szerverállapot, konfliktuskezelés, hitelesített eredmény/jutalom | Külön backend- és termékspecifikáció | Jelen adatokból nem becsülhető megbízhatóan | Nem következik a jelenlegi kétfős lobbyból |
+| Lépcső                      | Hatókör                                                                                                           | Függőség                                                                |                                                          Többletköltség | Mit ad / mit nem ad?                                                                  |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------: | ------------------------------------------------------------------------------------- |
+| C1 – Térkép és csatabelépés | ALPHA-01 pont, kijelölés/kártya, navigáció és valódi csataindítás; React + SVG                                    | ALPHA-katalógus és új képernyő/meccskontextus kialakítása               |                                                                 2–4 nap | Működő belépési útvonal; a Foundation első részlépése, még nincs mentett teljesítés   |
+| C2 – Helyi haladás          | Csataeredmény, térképre visszatérés, ALPHA teljesítésmentése és újrapróbálás                                      | C1, mód-/resetdöntések, meccslezárás                                    |                                                                 4–7 nap | Kész Foundation egy pályával, meglévő harci XP-vel; új fizika és bónuszjutalom nélkül |
+| C3 – Elágazó művelet        | Öt játszható célpont, kezdetben OR-feloldási gráffal (azóta felülírva), szektoros mentésmigráció; extra bónusz nélkül | C2, négy további valódi csatadefiníció és minimális közös szektorkonfig |    2–4 nap a gráf/haladás alapjára; a pályák és migráció további munkák | Érdemi célválasztás; még nincs erőforrás-háború vagy ellenfél-területfoglalás         |
+| C4 – Eltérő szektorcsaták   | Közös szabálykonfig, kontrollált AI-nehézség, valós kártyaadatok, TTS és opcionális térkép-VFX                    | C3 és Sector Operations alapok                                          |                                                                5–10 nap | Taktikailag eltérő csaták; nem szükséges új fegyver vagy osztály                      |
+| C5 – Stratégiai hadjárat    | Küldetések, ellenséges ellenlépések, erőforrások, tartós veszteségek                                              | C4 és külön design                                                      | 20–40 napos teljes hadjárat-nagyságrend, a meglévő részek beszámítandók | Új stratégiai játék, nem térkép-polish                                                |
+| C6 – Közös online kampány   | Közös tulajdon, tartós szerverállapot, konfliktuskezelés, hitelesített eredmény/jutalom                           | Külön backend- és termékspecifikáció                                    |                             Jelen adatokból nem becsülhető megbízhatóan | Nem következik a jelenlegi kétfős lobbyból                                            |
 
 **Végrehajtás:** minimális ALPHA-katalógus/meccskontextus → C1 → C2 →
 minimális közös szektorkonfig és új csatadefiníciók → C3 → modifikátorok/C4.
@@ -563,8 +572,9 @@ Az „ágas” térképhez később sem kell procedurális generátor vagy strat
   A térkép megnyitása önmagában nem állítja le a
   [Game](../../src/game/engine/Game.ts) AI-időzítőit, ezért a bekötött `leaveBattle`
   csatazárást végez. Rejtett csata nem fut tovább a térkép alatt.
-- A [szektorkatalógus](../../src/game/data/sectors.ts) öt definíciót, OR előfeltételeket,
-  térképpozíciót, terepprofilt, palettát és briefingkulcsot ad.
+- A [szektorkatalógus](../../src/game/data/sectors.ts) öt C3-harctér definíciót, OR
+  előfeltételeket, térképpozíciót, terepprofilt, palettát és briefingkulcsot ad;
+  a VEYLORA-03 egy felső térképi csomópontként ezek mellé kerül.
   A Game az aktív szektort teszi a meccsnézetbe, a briefing/HUD/eredmény ezt olvassa;
   a menü/térkép az elérhető kijelölt vagy következő műveletet mutatja.
 - A [ResultScreen](../../src/ui/ResultScreen.tsx) bemutatja az eredményt és boltot,
@@ -585,11 +595,11 @@ Az „ágas” térképhez később sem kell procedurális generátor vagy strat
 A javasolt `Sector { completed, unlocked, connections }` prototípushoz elég,
 de a tartalomdefiníciót és a játékos haladását összekeveri. Célszerű három rész:
 
-| Réteg | Javasolt adatok |
-| --- | --- |
+| Réteg              | Javasolt adatok                                                                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Statikus definíció | Kampány-ID/verzió, szektor-ID, megjelenített kód/név, helyzet a térképen, irányított kapcsolatok, belépési feltétel, csataszabály-hivatkozás |
-| Mentett haladás | Sémaverzió, kampány-/tartalomverzió, teljesített szektorok, kiválasztott célpont, elszámolt meccs-/jutalomazonosítók |
-| Aktív csata | Stabil meccs-ID, mód, szektor, seed, szabálykonfig, játékosi oldal és lezárási státusz |
+| Mentett haladás    | Sémaverzió, kampány-/tartalomverzió, teljesített szektorok, kiválasztott célpont, elszámolt meccs-/jutalomazonosítók                         |
+| Aktív csata        | Stabil meccs-ID, mód, szektor, seed, szabálykonfig, játékosi oldal és lezárási státusz                                                       |
 
 A `completed` a mentett teljesítésből, az `available/locked` a gráfból és
 előfeltételekből legyen levezetve, ne három egymástól független mentett boolean.
@@ -639,15 +649,15 @@ ALPHA-boolean migrációja szükséges, a meglévő XP/profilok megőrzésével.
 
 ### 10.6. Szektorcsaták és AI: olcsóbbtól a drágábbig
 
-| Eltérés | Megvalósíthatóság | Korlát / kötelező bekötés |
-| --- | --- | --- |
-| Leírás, háttérpaletta, rétegek | Olcsó | Látvány, nem taktikai különbség; új assetek gyártása külön költség |
-| Terepprofil | Kis–közepes | Biztonságos spawn, collision/rombolás, járhatóság és találati lehetőség |
-| Állandó vagy korlátozott szélprofil | Közepes | Körkezdet és közös seed; a HUD/előnézet/AI a valós szabályt használja |
-| Egyszerű AI-nehézség | Közepes | Beállított skill és ellenfélprofil; ne pusztán a helyi AI-memória rejtett növekedése |
-| 85%-os gravitáció | Közepes | 600 × 0,85 = 510 px/s² az alaphoz képest; lövedék, előnézet, Smart Aim, AI-lövés és mozgástervezés együtt |
-| Új AI-viselkedés | Közepes–nagy | Agresszív/defenzív/helyezkedő policy új döntési logika, nem csak pontossági csúszka |
-| Stratégiai ellenfél a térképen | Nagy | Célpontválasztás, ellenlépések és hadjáratszabályok; a harci AI nem oldja meg |
+| Eltérés                             | Megvalósíthatóság | Korlát / kötelező bekötés                                                                                 |
+| ----------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| Leírás, háttérpaletta, rétegek      | Olcsó             | Látvány, nem taktikai különbség; új assetek gyártása külön költség                                        |
+| Terepprofil                         | Kis–közepes       | Biztonságos spawn, collision/rombolás, járhatóság és találati lehetőség                                   |
+| Állandó vagy korlátozott szélprofil | Közepes           | Körkezdet és közös seed; a HUD/előnézet/AI a valós szabályt használja                                     |
+| Egyszerű AI-nehézség                | Közepes           | Beállított skill és ellenfélprofil; ne pusztán a helyi AI-memória rejtett növekedése                      |
+| 85%-os gravitáció                   | Közepes           | 600 × 0,85 = 510 px/s² az alaphoz képest; lövedék, előnézet, Smart Aim, AI-lövés és mozgástervezés együtt |
+| Új AI-viselkedés                    | Közepes–nagy      | Agresszív/defenzív/helyezkedő policy új döntési logika, nem csak pontossági csúszka                       |
+| Stratégiai ellenfél a térképen      | Nagy              | Célpontválasztás, ellenlépések és hadjáratszabályok; a harci AI nem oldja meg                             |
 
 Az [AI](../../src/game/systems/ai.ts) már fogad gravitációt, de a Game az alapértéket adja.
 Az alacsonyabb gravitáció hosszabb röppályát okozhat: a keresés időhorizontja,
@@ -751,13 +761,13 @@ Hosszabb ember/AI balansz, valós telefonos teljesítmény és képernyőolvasó
 
 #### Öt szektor karaktere
 
-| Szektor | Terep és taktikai szerep | Vizuális irány | Rövid eligazítás tartalma |
-| --- | --- | --- | --- |
-| ALPHA-01 / Training Grounds | Meglévő tükrözött hullámos terep; kontrollpálya, általános mozgás és célzás | Jelenlegi kék-cián rétegek, sziklák és városfények változatlanul | Rombolható terep, változó szél, ellenséges egység semlegesítése |
-| DELTA-08 / Crystal Basin | Széles, mély központi medence; lefelé haladva alacsonyabb tüzelőállás, a visszakapaszkodás hosszabb út | Sötét palakék talaj, türkiz felszín, kevés lila köd; gyenge városfények | A medencébe ereszkedés megváltoztatja a lövési szögeket; figyeld a kijáratokat |
-| FORGE-17 / Industrial Expanse | Hosszú lapos teraszok, köztük járható rámpák; pozícióváltás és kiszámíthatóbb felszíni mozgás | Grafitszürke talaj, visszafogott réz/narancs felszín, erősebb meglévő városfények | A teraszok mozgásteret adnak; a kráterek megszakíthatják a járható útvonalakat |
-| VANGUARD-12 / Defense Grid | Két alacsonyabb árok egy széles központi gerinc körül; a gerinc részben takarja a közvetlen lövéseket | Sötét acélkék talaj, jégkék felszín, tisztább háttér | Használd a magas ívű lövéseket vagy bontsd meg a központi gerincet |
-| PRIME-00 / Capital Perimeter | Két kisebb védődomb és egy központi, sekély teknő; összetettebb, de nem magasabb statokra épülő zárócsata | Sötét kékes talaj, arany felszíni hangsúly, hangsúlyos meglévő városfények | A védődombok és a központi mélyedés között válassz tüzelőállást |
+| Szektor                       | Terep és taktikai szerep                                                                                  | Vizuális irány                                                                    | Rövid eligazítás tartalma                                                      |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| ALPHA-01 / Training Grounds   | Meglévő tükrözött hullámos terep; kontrollpálya, általános mozgás és célzás                               | Jelenlegi kék-cián rétegek, sziklák és városfények változatlanul                  | Rombolható terep, változó szél, ellenséges egység semlegesítése                |
+| DELTA-08 / Crystal Basin      | Széles, mély központi medence; lefelé haladva alacsonyabb tüzelőállás, a visszakapaszkodás hosszabb út    | Sötét palakék talaj, türkiz felszín, kevés lila köd; gyenge városfények           | A medencébe ereszkedés megváltoztatja a lövési szögeket; figyeld a kijáratokat |
+| FORGE-17 / Industrial Expanse | Hosszú lapos teraszok, köztük járható rámpák; pozícióváltás és kiszámíthatóbb felszíni mozgás             | Grafitszürke talaj, visszafogott réz/narancs felszín, erősebb meglévő városfények | A teraszok mozgásteret adnak; a kráterek megszakíthatják a járható útvonalakat |
+| VANGUARD-12 / Defense Grid    | Két alacsonyabb árok egy széles központi gerinc körül; a gerinc részben takarja a közvetlen lövéseket     | Sötét acélkék talaj, jégkék felszín, tisztább háttér                              | Használd a magas ívű lövéseket vagy bontsd meg a központi gerincet             |
+| PRIME-00 / Capital Perimeter  | Két kisebb védődomb és egy központi, sekély teknő; összetettebb, de nem magasabb statokra épülő zárócsata | Sötét kékes talaj, arany felszíni hangsúly, hangsúlyos meglévő városfények        | A védődombok és a központi mélyedés között válassz tüzelőállást                |
 
 A DELTA nem alacsony gravitációjú pálya, FORGE nem kap működő gyárat, VANGUARD
 nem kap aktív védelmi pajzsot, PRIME nem boss-statcsata. Ezek későbbi rendszerek lennének.
@@ -769,13 +779,13 @@ Az alábbiak a **bal félpálya alapgörbéjének** normalizált vezérlőpontja
 Kisebb y magasabb talaj. A jobb fél a bal tükrözése; a pontokat sima átmenet köti össze,
 FORGE lapos szakaszait azonban meg kell őrizni. Nem kész magasságtérképek vagy mért balanszértékek.
 
-| Profil | Bal félpálya vezérlőpontjai | Seedelt hullám legnagyobb amplitúdója |
-| --- | --- | --- |
-| ALPHA | Jelenlegi 4 oktávos value-noise, y/H = 0,45 + 0,35 × normalizált noise | Változatlan |
-| DELTA | (0; 0,58), (0,12; 0,58), (0,22; 0,60), (0,34; 0,71), (0,50; 0,76) | ±0,015 H, kb. 11 px |
-| FORGE | (0; 0,62), (0,20; 0,62), (0,28; 0,58), (0,40; 0,58), (0,48; 0,63), (0,50; 0,63) | ±0,006 H, kb. 4 px |
-| VANGUARD | (0; 0,62), (0,20; 0,62), (0,28; 0,67), (0,40; 0,52), (0,50; 0,49) | ±0,012 H, kb. 9 px |
-| PRIME | (0; 0,62), (0,20; 0,62), (0,30; 0,56), (0,40; 0,65), (0,50; 0,63) | ±0,010 H, kb. 7 px |
+| Profil   | Bal félpálya vezérlőpontjai                                                     | Seedelt hullám legnagyobb amplitúdója |
+| -------- | ------------------------------------------------------------------------------- | ------------------------------------- |
+| ALPHA    | Jelenlegi 4 oktávos value-noise, y/H = 0,45 + 0,35 × normalizált noise          | Változatlan                           |
+| DELTA    | (0; 0,58), (0,12; 0,58), (0,22; 0,60), (0,34; 0,71), (0,50; 0,76)               | ±0,015 H, kb. 11 px                   |
+| FORGE    | (0; 0,62), (0,20; 0,62), (0,28; 0,58), (0,40; 0,58), (0,48; 0,63), (0,50; 0,63) | ±0,006 H, kb. 4 px                    |
+| VANGUARD | (0; 0,62), (0,20; 0,62), (0,28; 0,67), (0,40; 0,52), (0,50; 0,49)               | ±0,012 H, kb. 9 px                    |
+| PRIME    | (0; 0,62), (0,20; 0,62), (0,30; 0,56), (0,40; 0,65), (0,50; 0,63)               | ±0,010 H, kb. 7 px                    |
 
 Az új profilok hullámaihoz a meglévő value-noise módszer használható, kezdetben két
 oktávval, 160 és 80 px hullámhosszal, 1 és 0,5 súllyal; a súlyozott eredmény
@@ -798,13 +808,13 @@ Ez külön terepgenerálási véletlen: a dekoráció nem fogyaszthatja a szél/
 
 #### Vizuális kiindulóértékek és assethatár
 
-| Profil | Talaj kitöltése | Felszíni sáv / világos perem | Városfények |
-| --- | --- | --- | --- |
-| ALPHA | `#2a3a4f` | `#2399ad` / `#8beeff` | Jelenlegi értékek |
-| DELTA | `#26384c` | `#36b8bc` / `#b2fbf2` | A jelenlegi intenzitás 30%-a |
-| FORGE | `#34343b` | `#b87843` / `#ffd0a0` | A jelenlegi intenzitás 100%-a |
-| VANGUARD | `#243347` | `#477ea8` / `#a8ddff` | A jelenlegi intenzitás 50%-a |
-| PRIME | `#293447` | `#b49a52` / `#ffe4a3` | A jelenlegi intenzitás 100%-a |
+| Profil   | Talaj kitöltése | Felszíni sáv / világos perem | Városfények                   |
+| -------- | --------------- | ---------------------------- | ----------------------------- |
+| ALPHA    | `#2a3a4f`       | `#2399ad` / `#8beeff`        | Jelenlegi értékek             |
+| DELTA    | `#26384c`       | `#36b8bc` / `#b2fbf2`        | A jelenlegi intenzitás 30%-a  |
+| FORGE    | `#34343b`       | `#b87843` / `#ffd0a0`        | A jelenlegi intenzitás 100%-a |
+| VANGUARD | `#243347`       | `#477ea8` / `#a8ddff`        | A jelenlegi intenzitás 50%-a  |
+| PRIME    | `#293447`       | `#b49a52` / `#ffe4a3`        | A jelenlegi intenzitás 100%-a |
 
 - A meglévő égbolt-/városképeket használjuk; árnyalat, köd- és hegyrétegszínek,
   városfény-intenzitás paraméterezhető. Nem vállalunk új részletes ipari/fővárosi hátteret.
@@ -843,6 +853,42 @@ regresszióteszt → DELTA/FORGE generálás és járhatósági ellenőrzés →
 vizuális paraméterezés → szektorkontextus és mentésmigráció → térképgráf és teljes C3 kör.
 Nem adunk külön első szektorjutalmat, és a C4 modifikátor-/AI-nehézségrendszere nem előfeltétel.
 
+### 10.11. Többszintű Műveleti térkép és a VEYLORA integrációja
+
+**Irány elfogadva (2026-11-14), első integráció implementálva.** A Műveleti
+térkép legalább két szintű: a felső térképen harctéri szektorok és saját
+belső nézettel rendelkező szektorok együtt szerepelhetnek. A VEYLORA-03 nem
+külön kampány a térkép mellett, hanem annak egyik csomópontja; megnyitása a
+meglévő bolygó-, küldetés- és állomási menethez vezet.
+
+- A meglévő C3 harctéri csomópontjai megmaradnak a felső térképen. A VEYLORA-03
+  külön szektorként, ALPHA-01 teljesítése után nyílik meg; kiválasztása után
+  a bánya, kutatótelep és állomás saját második szintű nézetében érhető el.
+- A térképen a szektorcsomópontok csak a kódot mutatják; a teljes név és
+  eligazítás a kijelölt szektor jobb oldali kártyáján jelenik meg.
+- A VEYLORA belső csillagtérképe a teljesített helyszíneket külön jelöli.
+  A bánya és a kutatótelep szabad sorrendben végezhető el; az orbitális dokk
+  saját harci küldetése csak mindkettő után nyílik meg, és ennek teljesítése
+  zárja le a szektort. A gazdasági vásárlás nem helyettesíti a biztosítást.
+- A jelenlegi külön főmenübelépést a térképi belépés váltotta fel. A VEYLORA
+  belső nézetéből vissza lehet lépni a Műveleti térképre; az eredményképernyő
+  és a HUD továbbra is visszavezet a folyamatban lévő szektorhoz.
+- Egyelőre csak a VEYLORA-03 → ALPHA-01 előfeltétel van beállítva.
+  DELTA-08, FORGE-17, VANGUARD-12 és PRIME-00 egymástól függetlenül
+  választható; nincs köztük konfigurált feloldási él vagy PRIME-hoz kötött
+  kampányzárás. Mindegyik szektor később saját küldetéseket kap, de azok
+  egymás közti függéseit még nem rögzítjük. Ez még nem általános,
+  tartalomból szerkeszthető mérföldkő-gráf.
+- A P1 kampánygazdasága továbbra is közös, tartós készlet/technológia;
+  az érc, tervrajz és fejlesztés megszerzése nem azonos a kampánytérképi
+  csomópont teljesítésével, és nem válik automatikus feloldási feltétellé.
+- A gyorscsata és az online/skirmish útvonal változatlanul közvetlenül elérhető.
+  Az egységesítés nem teheti a kampány teljesítését általános játékmód-előfeltétellé.
+- A C3 szektorok haladása, a VEYLORA küldetéshaladása és a közös gazdaság
+  külön mentési egység marad. A VEYLORA bekötése nem fizet ki újra korábban
+  megszerzett jutalmat, és a VEYLORA haladásresetje nem állítja vissza a
+  felső térkép Alpha-feltételét.
+
 ## 11. Következményes ostromhadjárat
 
 ### 11.1. Identitás és elfogadott alapelvek
@@ -856,11 +902,11 @@ A Siege Platform rombolható terepen vívott csatája alakítsa a következő m�
 feltételeit. A harci győzelem és a szerződés sikeres teljesítése külön eredmény:
 az ellenfél legyőzése mellett elveszhet a megóvandó infrastruktúra vagy erőforrás.
 
-| Következményréteg | Jelentés | Lehetséges hatás |
-| --- | --- | --- |
-| Létesítményállapot | Civil objektumok, energiaellátás és később kitermelés állapota | Sérült ellátás miatt nincs következő csatás támogatás; megsemmisült forrásból nincs nyersanyag |
-| Helyi támogatás | Egy terület/bolygó közösségének viszonya a játékoshoz | Megőrzött infrastruktúráért segítség, nagy károk után csökkentett támogatás |
-| Megbízói/frakcióbizalom | A vállalt célok teljesítésének megítélése | Új megbízások, kedvezőbb feltételek vagy támogatás elmaradása |
+| Következményréteg       | Jelentés                                                       | Lehetséges hatás                                                                               |
+| ----------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Létesítményállapot      | Civil objektumok, energiaellátás és később kitermelés állapota | Sérült ellátás miatt nincs következő csatás támogatás; megsemmisült forrásból nincs nyersanyag |
+| Helyi támogatás         | Egy terület/bolygó közösségének viszonya a játékoshoz          | Megőrzött infrastruktúráért segítség, nagy károk után csökkentett támogatás                    |
+| Megbízói/frakcióbizalom | A vállalt célok teljesítésének megítélése                      | Új megbízások, kedvezőbb feltételek vagy támogatás elmaradása                                  |
 
 A helyi támogatás és a megbízói/frakcióbizalom a későbbi stratégiai irány része,
 nem a Phase 1 része. A kampány és az adott térkép határozza meg a célokat és
@@ -1019,8 +1065,8 @@ feloldás `ALPHA-01 → FORGE-17 → VANGUARD-12 → PRIME-00`, `DELTA-08` kihag
    csökkenti azt. Az objektum
    megjelenített állapota ettől függetlenül a tényleges HP-t tükrözi.
    Képlet az első példához: `50% × platform P1-sebzése/maxHP +
-   25% × (1 − energiaobjektum P1-sebzése/maxHP) +
-   25% × (1 − civil objektum P1-sebzése/maxHP)`, az egyes arányokat
+25% × (1 − energiaobjektum P1-sebzése/maxHP) +
+25% × (1 − civil objektum P1-sebzése/maxHP)`, az egyes arányokat
    0–1 közé korlátozva.
    A szerződéses kredit- és XP-jutalom az alapjutalom és a szerződéspont
    arányának szorzata; a harci XP külön számolódik.

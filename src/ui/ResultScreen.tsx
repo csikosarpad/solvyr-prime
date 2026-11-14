@@ -37,7 +37,6 @@ export function ResultScreen() {
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState(false);
   const campaignError = useCampaignStore((s) => s.error);
-  const completedIds = useCampaignStore((s) => s.completedIds);
   const credentials = useMultiplayerStore((state) => state.credentials);
   const session = useMultiplayerStore((state) => state.session);
   const multiplayerError = useMultiplayerStore((state) => state.error);
@@ -92,11 +91,6 @@ export function ResultScreen() {
         {campaign && winner === "P1" && campaignNewRoutes.length > 0 && (
           <p className="campaign-result" role="status">
             {t("campaign.newRoutes", { names: campaignNewRoutes.map((id) => sectorById(id).name).join(", ") })}
-          </p>
-        )}
-        {campaign && winner === "P1" && completedIds.includes("prime-00") && (
-          <p className="campaign-result" role="status">
-            {t("campaign.operationComplete")}
           </p>
         )}
         {campaign && campaignError && (

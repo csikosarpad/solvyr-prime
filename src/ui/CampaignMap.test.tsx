@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useGameStore } from "@/game/state/gameStore";
 import { useCampaignStore } from "@/game/state/campaignStore";
@@ -8,8 +8,11 @@ import { CampaignMap } from "./CampaignMap";
 import { MainMenu } from "./main-menu/MainMenu";
 import { ResultScreen } from "./ResultScreen";
 import { Hud } from "./Hud";
+import { VeyloraOperations } from "./VeyloraOperations";
 import { gameRef } from "./gameRef";
 import { TRAINING_SECTOR, sectorById } from "@/game/data/sectors";
+import { useVeyloraStore } from "@/game/state/veyloraStore";
+import { IDBFactory } from "fake-indexeddb";
 
 vi.mock("./gameRef", () => ({
   gameRef: { current: { startCampaign: vi.fn(() => true), leaveBattle: vi.fn(), restart: vi.fn() } },
@@ -22,9 +25,11 @@ vi.mock("./CampaignStarfieldCanvas", () => ({
 }));
 
 describe("Campaign Map UI", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    vi.stubGlobal("indexedDB", new IDBFactory());
     useCampaignStore.getState().reset();
+    await useVeyloraStore.getState().resetEconomy();
     useMultiplayerStore.getState().leave();
     useAiSettings.getState().setEnabled(false);
     useGameStore.setState({
@@ -51,6 +56,28 @@ describe("Campaign Map UI", () => {
     expect(useGameStore.getState().screen).toBe("campaignMap");
   });
 
+  it("opens VEYLORA as a second-level sector after ALPHA and returns to the operation map", async () => {
+    const { unmount: unmountMap } = render(<CampaignMap />);
+    const node = await screen.findByRole("button", { name: /VEYLORA-03 · Bányászati szektor, Zárolt/ });
+    fireEvent.click(node);
+    expect(screen.getByRole("button", { name: "Szektor megnyitása" })).toBeDisabled();
+    act(() => useCampaignStore.getState().complete("alpha-01"));
+    expect(screen.getByRole("button", { name: /VEYLORA-03 · Bányászati szektor, Elérhető/ })).toBeEnabled();
+    expect(screen.getByRole("heading", { name: "VEYLORA-03 · Bányászati szektor" })).toBeInTheDocument();
+    expect(screen.getByText("Teljesítve: 0 / 3")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Szektor megnyitása" }));
+    expect(useGameStore.getState().screen).toBe("veylora");
+    unmountMap();
+    const { unmount } = render(<VeyloraOperations />);
+    expect(await screen.findByRole("button", { name: "Művelet indítása" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^VEYLORA-B,/ }));
+    expect(screen.getByRole("button", { name: "Művelet indítása" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Műveleti térkép" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Műveleti térkép" }));
+    expect(useGameStore.getState().screen).toBe("campaignMap");
+    unmount();
+  });
+
   it("deploys only the real ALPHA-01 operation without changing quick-battle AI settings", () => {
     render(<CampaignMap />);
     expect(screen.getByRole("button", { name: /SECTOR ALPHA-01, Training Grounds, Elérhető/ })).toHaveAttribute(
@@ -64,10 +91,10 @@ describe("Campaign Map UI", () => {
     expect(useAiSettings.getState().enabled).toBe(false);
   });
 
-  it("shows 1/5 and replay after completion, and resets with confirmation only", () => {
+  it("shows 1/6 and replay after completion, and resets with confirmation only", () => {
     useCampaignStore.getState().complete("alpha-01");
     render(<CampaignMap />);
-    expect(screen.getByText("Teljesítve: 1 / 5")).toBeInTheDocument();
+    expect(screen.getByText("Teljesítve: 1 / 6")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /SECTOR ALPHA-01,/ }));
     expect(screen.getByRole("button", { name: "Művelet újrajátszása" })).toBeEnabled();
     const confirm = vi.spyOn(window, "confirm");
@@ -136,17 +163,20 @@ describe("Campaign Map UI", () => {
     expect(starfield).toHaveAttribute("data-warp-sequence", "1");
     fireEvent.click(screen.getByRole("button", { name: /SECTOR ALPHA-01,/ }));
     expect(starfield).toHaveAttribute("data-warp-sequence", "2");
-    fireEvent.click(screen.getByRole("button", { name: /SECTOR PRIME-00,/ }));
+    fireEvent.click(screen.getByRole("button", { name: /VEYLORA-03 · Bányászati szektor, Zárolt/ }));
     expect(starfield).toHaveAttribute("data-warp-sequence", "3");
-    expect(screen.getByRole("button", { name: "Művelet indítása" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Szektor megnyitása" })).toBeDisabled();
   });
 
-  it("allows inspection but not launch of locked sectors", () => {
+  it("allows inspection of independently available sectors and keeps VEYLORA locked before ALPHA", () => {
     render(<CampaignMap />);
     fireEvent.click(screen.getByRole("button", { name: /SECTOR PRIME-00,/ }));
     expect(screen.getByRole("heading", { name: "Capital Perimeter" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Művelet indítása" })).toBeDisabled();
-    expect(useCampaignStore.getState().selectedId).toBe("alpha-01");
+    expect(screen.getByRole("button", { name: "Művelet indítása" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: /VEYLORA-03 · Bányászati szektor, Zárolt/ }));
+    expect(screen.getByRole("heading", { name: "VEYLORA-03 · Bányászati szektor" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Szektor megnyitása" })).toBeDisabled();
+    expect(useCampaignStore.getState().selectedId).toBe("prime-00");
   });
 
   it("announces the Forge objective trial without promising campaign persistence", () => {
@@ -158,12 +188,11 @@ describe("Campaign Map UI", () => {
     expect(panel).toHaveTextContent("kampánykár-mentés és szerződéses jutalom még nincs");
   });
 
-  it("places the campaign objective between the header and map layout and explains both mandatory sectors", () => {
+  it("places the campaign objective between the header and map layout and explains current unlock rules", () => {
     const { container } = render(<CampaignMap />);
     const goal = screen.getByRole("region", { name: "A kampány célja" });
-    expect(goal).toHaveTextContent("FORGE-17");
-    expect(goal).toHaveTextContent("PRIME-00");
-    expect(goal).toHaveTextContent("DELTA-08 kihagyható");
+    expect(goal).toHaveTextContent("VEYLORA-03 az ALPHA-01 teljesítése után nyílik meg");
+    expect(goal).toHaveTextContent("A többi szektor és küldetései közti függéseket később határozzuk meg");
     expect(container.querySelector(".campaign-header")?.nextElementSibling).toBe(goal);
     expect(goal.nextElementSibling).toHaveClass("campaign-layout");
     fireEvent.click(screen.getByRole("button", { name: /SECTOR PRIME-00,/ }));
@@ -248,12 +277,22 @@ describe("Campaign Map UI", () => {
     expect(useCampaignStore.getState().completedIds).toEqual([]);
   });
 
-  it("keeps the skipped branch available after PRIME completes the operation at 4/5", () => {
+  it("does not imply that PRIME completes the operation or that other sectors are optional", () => {
     const store = useCampaignStore.getState();
     ["alpha-01", "forge-17", "vanguard-12", "prime-00"].forEach((id) => store.complete(sectorById(id).id));
     render(<CampaignMap />);
-    expect(screen.getByText("Teljesítve: 4 / 5")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("művelet teljesült");
-    expect(screen.getByRole("button", { name: /SECTOR DELTA-08, Crystal Basin, Elérhető/ })).toBeInTheDocument();
+    expect(screen.getByText("Teljesítve: 4 / 6")).toBeInTheDocument();
+    expect(screen.queryByText(/művelet teljesült/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /SECTOR DELTA-08, Crystal Basin, Elérhető/ })).toBeEnabled();
+  });
+
+  it("shows only sector codes in map nodes and full descriptions in the right panel", () => {
+    const { container } = render(<CampaignMap />);
+    const alphaNode = screen.getByRole("button", { name: /SECTOR ALPHA-01,/ });
+    expect(alphaNode).toHaveTextContent("ALPHA-01");
+    expect(alphaNode.querySelector("strong")).toBeNull();
+    expect(alphaNode.querySelector(".campaign-node-symbol")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Training Grounds" })).toBeInTheDocument();
+    expect(container.querySelectorAll(".campaign-node")).toHaveLength(6);
   });
 });

@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { VEYLORA, missionById, missionBattlefield, parseCampaignContent } from "./campaignContent";
 
 describe("campaign content", () => {
-  it("loads the two planets and non-combat station from the bundled JSON", () => {
+  it("loads the two planets and the final station mission from the bundled JSON", () => {
     expect(VEYLORA.sector.id).toBe("veylora-03");
     expect(VEYLORA.sector.locations.map((location) => location.kind)).toEqual(["planet", "planet", "station"]);
-    expect(VEYLORA.missions).toHaveLength(2);
+    expect(VEYLORA.missions).toHaveLength(3);
+    expect(missionById("secure-station").prerequisites).toEqual(["secure-mine", "secure-lab"]);
+    expect(missionBattlefield(missionById("secure-station")).code).toBe("VEYLORA-STATION");
     expect(missionBattlefield(missionById("secure-lab")).strategicObjectives?.[0]?.type).toBe("RESEARCH_LAB");
     expect(parseCampaignContent(structuredClone(VEYLORA))).toEqual(VEYLORA);
   });
@@ -39,6 +41,12 @@ describe("campaign content", () => {
     const protection = structuredClone(VEYLORA);
     protection.missions[1]!.protection!.objectiveId = "missing";
     expect(() => parseCampaignContent(protection)).toThrow("protection");
+    const prerequisite = structuredClone(VEYLORA);
+    prerequisite.missions[2]!.prerequisites = ["missing-mission"];
+    expect(() => parseCampaignContent(prerequisite)).toThrow("prerequisite");
+    const cycle = structuredClone(VEYLORA);
+    cycle.missions[0]!.prerequisites = ["secure-station"];
+    expect(() => parseCampaignContent(cycle)).toThrow("Cyclic");
   });
 
   it("requires one location per mission but accepts additional configured locations and missions", () => {

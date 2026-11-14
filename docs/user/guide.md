@@ -15,10 +15,11 @@ Csökkentett mozgás beállítás mellett nem animálódik. Kis kijelzőn a men�
   Az ellenfélválasztás a következő meccstől érvényes.
 - **Online:** két ember külön böngészőből, szobakódos lobbyval.
 - **Műveleti térkép:** külön menügomb, mindig P1 ember vs P2 AI, a gyorscsata
-  ellenfélbeállításától függetlenül. Öt szektor, elágazó útvonal és helyi haladás.
-- **VEYLORA-03 prototípus:** külön menügomb, két kezdettől elérhető bolygó
-  és egy nem harci állomáskártya. Mindig P1 ember vs rögzített AI-ellenfél;
-  a régi kampány teljesítése nem előfeltétel.
+  ellenfélbeállításától függetlenül. Az öt C3-harctér mellett a VEYLORA-03
+  szektor is elérhető; az ALPHA-01 teljesítése nyitja meg.
+- **VEYLORA-03:** a térkép második szintje, két bolygóval és egy orbitális
+  dokkal. Mindig P1 ember vs rögzített AI-ellenfél; a két bolygóküldetés
+  szabad sorrendben indítható, a dokk biztosítása ezek után nyílik meg.
 
 A régi kampányban öt seed alapján változó, tükrözött terepprofil van;
 VEYLORA két új terepe aszimmetrikus. Egy tanktípus használható.
@@ -38,16 +39,17 @@ A teljesítés és az elérhető aktuális művelet helyileg mentett, újratölt
 | Szektor | Harctér | Elérés |
 | --- | --- | --- |
 | ALPHA-01 | Training Grounds – az eredeti hullámos terep | Kezdettől |
-| DELTA-08 | Crystal Basin – mély központi medence | ALPHA teljesítése |
-| FORGE-17 | Industrial Expanse – teraszok és rámpák | ALPHA teljesítése |
-| VANGUARD-12 | Defense Grid – árkok és központi gerinc | DELTA **vagy** FORGE teljesítése |
-| PRIME-00 | Capital Perimeter – védődombok és sekély teknő | VANGUARD teljesítése |
+| VEYLORA-03 | Bányászati szektor – bánya, kutatótelep és orbitális dokk | ALPHA-01 teljesítése |
+| DELTA-08 | Crystal Basin – mély központi medence | Nincs beállítva |
+| FORGE-17 | Industrial Expanse – teraszok és rámpák | Nincs beállítva |
+| VANGUARD-12 | Defense Grid – árkok és központi gerinc | Nincs beállítva |
+| PRIME-00 | Capital Perimeter – védődombok és sekély teknő | Nincs beállítva |
 
-Az ágak nem zárják ki egymást. A zárolt pont részletei megtekinthetők, de nem indítható.
-PRIME biztosításakor a művelet lezárul akár 4/5 mellett; a kihagyott ág később is
-teljesíthető az 5/5-höz. A teljesített szektorok újrajátszhatók, a visszavágó ugyanazon
-szektort használja. „Új útvonal” csak tényleges új feloldáskor jelenik meg.
-Győzelem után a következő még nem teljesített, elérhető művelet kerül kijelölésre.
+A térképen a dobozok csak a szektorkódot mutatják; a név és leírás a jobb oldali
+részletkártyán látható. A VEYLORA-03 csak ALPHA-01 teljesítése után nyílik meg.
+A többi felső szektor közti függést még nem határoztuk meg; mindegyik saját
+küldetéseket kap, azok egymás közti függései későbbi döntések. A C3-szektorok
+jelenleg újrajátszható harcteret adnak; a visszavágó ugyanazt a szektort használja.
 
 Mindegyik szektoron a megszokott gravitáció és szél működik, az AI-tapasztalat közös;
 nincs szektorhoz rendelt rögzített AI-nehézség. A régi 1/1 mentés ALPHA teljesítésként
@@ -70,20 +72,25 @@ Félbehagyott offline csata refresh után nem folytatható, a művelet újra ind
 
 ### VEYLORA-03 – első játszható prototípus
 
-Főmenü → VEYLORA-03 → bolygó küldetésének indítása → csata → eredmény.
-A két bolygó sorrendje szabad, az utazás és az újrapróbálás ingyenes.
+Főmenü → Műveleti térkép → ALPHA-01 teljesítése → VEYLORA-03 →
+bolygó küldetésének indítása → csata → eredmény. A térkép szektorai az első
+szintet, a VEYLORA bolygói és állomása a szektor belső nézetét adják.
+A két bolygó sorrendje szabad; a térképen minden teljesített helyszín jelölést
+kap. Az orbitális dokk végső biztosító küldetése csak mindkét bolygó
+teljesítése után nyílik meg. Az utazás és az újrapróbálás ingyenes.
 
 - **Bányabolygó:** rozsdavörös, lépcsőzetes külszíni fejtés. A könnyű
   küldetéshez az ellenséges tankot kell megsemmisíteni.
 - **Kutatóbolygó:** kékesszürke völgyek és központi fennsík. A közepes
   küldetéshez tankgyőzelem és legalább 20/100 kutatóépület-HP szükséges.
   Mindkét fél épületsebzése számít. Minden új próbálkozás teljes épület-HP-val indul.
-- **Orbitális dokk:** közös P1-kampánykészlet, tervrajz és
-  kampányfejlesztés-vásárlás; nem harctér.
+- **Orbitális dokk:** a közös P1-kampánykészlet és a fejlesztésvásárlás
+  mellett külön harci küldetésben kell felszabadítani az ellenséges őrségtől.
+  Ez a harmadik, szektorzáró művelet.
 
 Tankgyőzelem mellett is elbukhat a kutatótelepi küldetés. Ilyenkor a harci
 eredmény és annak XP-je megmarad, de nem jár küldetésteljesítés.
-Mindkét küldetés sikerével VEYLORA biztosított, de továbbra is újrajátszható.
+Mindhárom küldetés sikerével VEYLORA biztosított, de továbbra is újrajátszható.
 A küldetéshaladás és a gazdaság helyileg, IndexedDB-ben mentődik. Mentési
 hibánál figyelmeztetés látszik; az eredményképernyőn a sikertelen
 teljesítés-/jutalommentés újrapróbálható. Hibás mentésnél az indítás tiltott;

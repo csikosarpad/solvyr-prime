@@ -24,7 +24,7 @@ export interface Sector {
 
 export type SectorId = "alpha-01" | "delta-08" | "forge-17" | "vanguard-12" | "prime-00";
 type LegacySector = Sector & { id: SectorId };
-export const CAMPAIGN_CONTENT_VERSION = 2;
+export const CAMPAIGN_CONTENT_VERSION = 3;
 
 export const TRAINING_SECTOR: LegacySector = {
   id: "alpha-01",
@@ -57,7 +57,7 @@ export const SECTORS: readonly LegacySector[] = [
     },
     colors: { ...DEFAULT_THEME.terrain, fill: 0x26384c, grass: 0x36b8bc, surfaceHighlight: 0xb2fbf2 },
     atmosphere: { tint: 0xb4e9ef, mountain: 0x173949, fog: 0x9591c9, cityIntensity: 0.3 },
-    prerequisites: ["alpha-01"],
+    prerequisites: [],
     position: { x: 25, y: 60 },
   },
   {
@@ -78,7 +78,7 @@ export const SECTORS: readonly LegacySector[] = [
     },
     colors: { ...DEFAULT_THEME.terrain, fill: 0x34343b, grass: 0xb87843, surfaceHighlight: 0xffd0a0 },
     atmosphere: { tint: 0xffd4ab, mountain: 0x3b2b30, fog: 0xb18d79, cityIntensity: 1 },
-    prerequisites: ["alpha-01"],
+    prerequisites: [],
     position: { x: 75, y: 60 },
     strategicObjectives: [
       { id: "energy-node-01", type: "ENERGY_NODE", worldX: 1040, width: 48, height: 44 },
@@ -103,7 +103,7 @@ export const SECTORS: readonly LegacySector[] = [
     },
     colors: { ...DEFAULT_THEME.terrain, fill: 0x243347, grass: 0x477ea8, surfaceHighlight: 0xa8ddff },
     atmosphere: { tint: 0xc1deff, mountain: 0x152f50, fog: 0x7ea7c5, cityIntensity: 0.5 },
-    prerequisites: ["forge-17"],
+    prerequisites: [],
     position: { x: 50, y: 35 },
   },
   {
@@ -123,7 +123,7 @@ export const SECTORS: readonly LegacySector[] = [
     },
     colors: { ...DEFAULT_THEME.terrain, fill: 0x293447, grass: 0xb49a52, surfaceHighlight: 0xffe4a3 },
     atmosphere: { tint: 0xffebbf, mountain: 0x303345, fog: 0xb8ac83, cityIntensity: 1 },
-    prerequisites: ["vanguard-12"],
+    prerequisites: [],
     position: { x: 50, y: 10 },
     strategicObjectives: [
       { id: "prime-energy-node-01", type: "ENERGY_NODE", worldX: 960, width: 48, height: 44 },

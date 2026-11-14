@@ -77,6 +77,33 @@ describe("Game campaign lifecycle", () => {
     expect(useGameStore.getState()).toMatchObject({ matchMode: "skirmish", campaignMission: null, opponentSkill: null });
   });
 
+  it("does not allow starting the station mission until both planetary operations are complete", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await game.startOperation("secure-station")).toBe(false);
+    expect(useGameStore.getState().matchMode).toBe("skirmish");
+    await useVeyloraStore.getState().complete("secure-mine", useVeyloraStore.getState().economy.generation);
+    expect(await game.startOperation("secure-station")).toBe(false);
+    await useVeyloraStore.getState().complete("secure-lab", useVeyloraStore.getState().economy.generation);
+    expect(await game.startOperation("secure-station")).toBe(true);
+    expect(useGameStore.getState().sector.code).toBe("VEYLORA-STATION");
+    expect(useGameStore.getState().opponentSkill).toBe(0.65);
+  });
+
+  it("only clears VEYLORA after a successful victory in the station mission", async () => {
+    const progress = useVeyloraStore.getState();
+    await progress.complete("secure-mine", progress.economy.generation);
+    await progress.complete("secure-lab", progress.economy.generation);
+    expect(await game.startOperation("secure-station")).toBe(true);
+    endBattle("P1");
+    await useVeyloraStore.getState().refresh();
+    expect(useGameStore.getState().missionSuccess).toBe(true);
+    expect(useVeyloraStore.getState().completedMissionIds).toEqual([
+      "secure-mine",
+      "secure-lab",
+      "secure-station",
+    ]);
+  });
+
   it.each([
     ["P1", 100, true], ["P1", 20, true], ["P1", 19.99, false],
     ["P2", 100, false], [null, 100, false],
@@ -513,7 +540,7 @@ describe("Game campaign lifecycle", () => {
     expect(useGameStore.getState().sector.id).toBe("forge-17");
     endBattle("P1");
     expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01", "forge-17"]);
-    expect(useGameStore.getState().campaignNewRoutes).toEqual(["vanguard-12"]);
+    expect(useGameStore.getState().campaignNewRoutes).toEqual([]);
     endBattle("P1");
     expect(useGameStore.getState().campaignNewRoutes).toEqual([]);
     game.startOffline();
@@ -528,10 +555,9 @@ describe("Game campaign lifecycle", () => {
     expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
   });
 
-  it("rejects a locked campaign operation without starting a match", () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(game.startCampaign("prime-00")).toBe(false);
-    expect(useGameStore.getState().sector.id).toBe("alpha-01");
+  it("starts an independent campaign sector without prior sector completions", () => {
+    expect(game.startCampaign("prime-00")).toBe(true);
+    expect(useGameStore.getState().sector.id).toBe("prime-00");
   });
 
   it("preserves a campaign selected before the terrain is initialized", () => {

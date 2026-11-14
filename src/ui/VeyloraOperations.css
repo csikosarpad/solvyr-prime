@@ -14,31 +14,8 @@
   margin: 8px 0;
 }
 
-.veylora-locations {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-  gap: 16px;
-  margin: 20px 0;
-}
-
-.veylora-location {
-  padding: 16px;
-  border: 1px solid #607c92;
-  border-radius: 8px;
-  background: #172539;
-}
-
-.veylora-location:first-child {
-  border-color: #ba8049;
-  background: #33272a;
-}
-
-.veylora-location.is-station {
-  border-color: #ad955c;
-}
-
-.veylora-location p {
-  line-height: 1.5;
+.veylora-star-map {
+  min-height: 420px;
 }
 
 .veylora-prototype {
@@ -67,4 +44,6 @@
 .campaign-reward ul {
   padding-left: 20px;
   overflow-wrap: anywhere;
+  list-style-type: none;
+  list-style-position: inside;
 }

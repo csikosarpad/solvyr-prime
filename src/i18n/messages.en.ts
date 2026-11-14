@@ -2,15 +2,23 @@ import type { MessageKey } from "./messages.hu";
 
 export const en: Record<MessageKey, string> = {
   "veylora.title": "VEYLORA-03 · Mining Sector",
-  "veylora.description": "Two freely selectable operations. Secure the mine and preserve the research facility.",
+  "veylora.description":
+    "Secure the mine and preserve the research facility, then liberate the orbital dock to clear the sector.",
   "veylora.mine": "VEYLORA-A · Mining Planet",
   "veylora.lab": "VEYLORA-B · Research Planet",
   "veylora.station": "VEYLORA · Orbital Dock",
   "veylora.mineBrief": "Rust-red open-pit mining terraces. Neutralize the enemy tank occupying the mine.",
-  "veylora.labBrief": "Cold rocky valleys and a central research plateau. Neutralize the enemy tank and protect the research building.",
-  "veylora.protection": "Research building: preserve at least 20/100 HP when you win. Damage from either side counts. Each new attempt starts with 100 building HP.",
-  "veylora.prototype": "First campaign version: one-time economic rewards and station shield purchases. Replays still grant XP. Build-free content updates are not available yet.",
-  "veylora.stationPrototype": "A dark steel orbital dock with amber-cyan signals. Shared P1 campaign inventory and immediate upgrade purchases.",
+  "veylora.labBrief":
+    "Cold rocky valleys and a central research plateau. Neutralize the enemy tank and protect the research building.",
+  "veylora.stationBrief":
+    "An enemy garrison still occupies the orbital dock approach. Neutralize them to clear the sector.",
+  "veylora.noEconomicReward": "No one-time resource or technology reward; combat XP still applies.",
+  "veylora.protection":
+    "Research building: preserve at least 20/100 HP when you win. Damage from either side counts. Each new attempt starts with 100 building HP.",
+  "veylora.prototype":
+    "The dock-securing mission unlocks after completing the mine and research facility. Campaign upgrades are available at the station; replays still grant XP.",
+  "veylora.stationPrototype":
+    "A dark steel orbital dock with amber-cyan signals. Shared P1 campaign inventory and immediate upgrade purchases.",
   "veylora.easy": "Easy · Fixed mine garrison",
   "veylora.medium": "Medium · Fixed research garrison",
   "veylora.completed": "Mission completed",
@@ -18,21 +26,26 @@ export const en: Record<MessageKey, string> = {
   "veylora.secured": "VEYLORA-03 secured. You can still revisit the sector freely.",
   "veylora.missionSuccess": "Mission successful.",
   "veylora.missionFailure": "Mission unsuccessful. You can retry; the battle result and XP are counted separately.",
-  "veylora.loadError": "Campaign economy could not be loaded. The original save was preserved. Repair it or explicitly reset the entire economy; a sector progress reset must not delete wealth.",
-  "veylora.saveError": "Campaign economy could not be saved. The change, including any reward or purchase, has not been persisted. Check browser storage and retry.",
+  "veylora.loadError":
+    "Campaign economy could not be loaded. The original save was preserved. Repair it or explicitly reset the entire economy; a sector progress reset must not delete wealth.",
+  "veylora.saveError":
+    "Campaign economy could not be saved. The change, including any reward or purchase, has not been persisted. Check browser storage and retry.",
   "veylora.retrySave": "Retry saving completion",
   "veylora.reset": "Reset VEYLORA progress",
-  "veylora.resetConfirm": "Reset VEYLORA mission progress? Inventory, blueprints, purchases and reward claims are preserved: previously claimed rewards cannot be collected again. XP and the legacy campaign are unchanged.",
+  "veylora.resetConfirm":
+    "Reset VEYLORA mission progress? Inventory, blueprints, purchases and reward claims are preserved: previously claimed rewards cannot be collected again. XP and the legacy campaign are unchanged.",
   "economy.ore": "Industrial ore",
   "economy.blueprint": "Materials blueprint",
   "economy.shield": "Reinforced Shield",
   "economy.inventory": "P1 campaign inventory",
   "economy.acquired": "acquired",
   "economy.notAcquired": "not acquired",
-  "economy.shieldEffect": "+{value}% maximum energy shield relative to the XP-upgraded base. Applies only to P1's next battles in new-system campaigns; legacy campaign, quick battle and PvP are unchanged.",
+  "economy.shieldEffect":
+    "+{value}% maximum energy shield relative to the XP-upgraded base. Applies only to P1's next battles in new-system campaigns; legacy campaign, quick battle and PvP are unchanged.",
   "economy.cost": "One-time price and requirement:",
   "economy.notConsumed": "required, not consumed",
-  "economy.zeroShield": "You currently have no base energy shield: this purchase has no effect yet. It will apply automatically after a later XP shield upgrade.",
+  "economy.zeroShield":
+    "You currently have no base energy shield: this purchase has no effect yet. It will apply automatically after a later XP shield upgrade.",
   "economy.shieldPreview": "XP base: {base} → campaign shield: {value}",
   "economy.owned": "Already purchased.",
   "economy.missingTechnology": "The required blueprint has not been acquired.",
@@ -42,8 +55,10 @@ export const en: Record<MessageKey, string> = {
   "economy.rewardClaimed": "Economic reward already credited; replays will not grant it again:",
   "economy.saving": "Loading / saving campaign economy…",
   "economy.reset": "Reset entire campaign economy",
-  "economy.resetConfirm": "Delete mission progress across all new-system sectors, all resources, blueprints, campaign upgrades and reward claims? Rewards can be earned again. XP, XP upgrades and the legacy campaign are preserved. This cannot be undone.",
-  "economy.resetDuringBattle": "The campaign economy was reset in another tab. This older battle cannot write to the new economy. Return to the sector and start a new operation; battle XP is preserved.",
+  "economy.resetConfirm":
+    "Delete mission progress across all new-system sectors, all resources, blueprints, campaign upgrades and reward claims? Rewards can be earned again. XP, XP upgrades and the legacy campaign are preserved. This cannot be undone.",
+  "economy.resetDuringBattle":
+    "The campaign economy was reset in another tab. This older battle cannot write to the new economy. Return to the sector and start a new operation; battle XP is preserved.",
   "strategic.RESEARCH_LAB": "Research building",
   "command.RESEARCH_LABDamaged": "{source}: research building damaged, −{damage} HP ({hp}/{maxHp})",
   "command.RESEARCH_LABDestroyed": "{source}: research building destroyed, −{damage} HP ({hp}/{maxHp})",
@@ -59,7 +74,8 @@ export const en: Record<MessageKey, string> = {
   "audio.saveError": "Audio settings could not be saved; changes apply only to this session.",
   "menu.reset": "Reset progress",
   "menu.resetTitle": "Delete your save?",
-  "menu.resetConfirm": "All XP, XP upgrades and legacy campaign progress will be permanently deleted. VEYLORA progress and campaign economy are unchanged; reset them separately on the sector screen. This cannot be undone.",
+  "menu.resetConfirm":
+    "All XP, XP upgrades and legacy campaign progress will be permanently deleted. VEYLORA progress and campaign economy are unchanged; reset them separately on the sector screen. This cannot be undone.",
   "menu.language": "Language",
   "credits.title": "Credits",
   "credits.sources": "Assets and sources",
@@ -75,17 +91,17 @@ export const en: Record<MessageKey, string> = {
 
   "campaign.title": "Campaign Map",
   "campaign.goalTitle": "Campaign objective",
-  "campaign.goalDescription": "Advance from sector to sector, neutralize the occupying forces, and liberate protected structures with as little damage as possible. Liberating FORGE-17 unlocks VANGUARD-12; liberating PRIME-00 completes the campaign. Both key sectors contain an energy reactor and a civil habitat to liberate. DELTA-08 is optional. Building positions may change in every new battle; combat victory and preserving structures are separate objectives.",
+  "campaign.goalDescription":
+    "Choose a sector on the Operation Map and complete its missions. VEYLORA-03 unlocks after completing ALPHA-01. Dependencies between the other sectors and their missions will be defined later.",
   "campaign.operation": "Current operation",
   "campaign.progress": "Completed: {value} / {total}",
   "campaign.completed": "Completed",
   "campaign.available": "Available",
   "campaign.locked": "Locked",
+  "veylora.missionLocked": "Mission prerequisites are not complete yet.",
   "campaign.requires": "Unlock requirement",
   "campaign.or": "or",
   "campaign.newRoutes": "New route available: {names}",
-  "campaign.operationComplete":
-    "Capital perimeter secured. Operation complete; skipped sectors and replays remain available.",
   "campaign.foundation": "The first operation is active. More sectors will arrive in future content updates.",
   "campaign.status": "Status",
   "campaign.opponent": "P1 human vs P2 AI",
@@ -93,6 +109,7 @@ export const en: Record<MessageKey, string> = {
   "campaign.baseRules": "Sector terrain, shifting winds, normal gravity",
   "campaign.rewards": "Rewards",
   "campaign.baseRewards": "Existing combat XP; no extra campaign bonus",
+  "campaign.enterSector": "Enter sector",
   "strategic.protected": "Protected structures",
   "strategic.ENERGY_NODE": "Energy reactor",
   "strategic.CIVIL_HABITAT": "Civil habitat",
@@ -192,7 +209,8 @@ export const en: Record<MessageKey, string> = {
   "result.waitingRematch": "Waiting for the room host to start the rematch.",
   "result.mainMenu": "Main menu",
   "battleExit.title": "Abort deployment?",
-  "battleExit.warning": "The battle is not over. Leaving now forfeits all XP earned in this match, and the campaign sector will not count as completed. Previously earned XP and upgrades are retained.",
+  "battleExit.warning":
+    "The battle is not over. Leaving now forfeits all XP earned in this match, and the campaign sector will not count as completed. Previously earned XP and upgrades are retained.",
   "battleExit.cancel": "Continue fighting",
   "battleExit.confirm": "Abort deployment",
 
@@ -240,7 +258,8 @@ export const en: Record<MessageKey, string> = {
   "menu.opponentAi": "Machine (AI)",
   "menu.aiExperience": "AI experience: {matches} matches – reset",
   "menu.aiResetTitle": "Reset AI experience?",
-  "menu.aiResetConfirm": "The AI's experience from {matches} matches will be erased and it will play at beginner level again. This cannot be undone.",
+  "menu.aiResetConfirm":
+    "The AI's experience from {matches} matches will be erased and it will play at beginner level again. This cannot be undone.",
   "menu.opponentHint": "The machine controls tank P2, learns and upgrades itself. Applies from the next match.",
   "menu.audioChannels": "Sound channels",
   "audio.music": "Music",

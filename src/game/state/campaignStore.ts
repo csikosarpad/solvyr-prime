@@ -38,7 +38,7 @@ function load(): Pick<CampaignState, "completedIds" | "selectedId" | "error"> {
     if (
       raw.version !== VERSION ||
       !("contentVersion" in raw) ||
-      (raw.contentVersion !== 1 && raw.contentVersion !== CAMPAIGN_CONTENT_VERSION) ||
+      (raw.contentVersion !== 1 && raw.contentVersion !== 2 && raw.contentVersion !== CAMPAIGN_CONTENT_VERSION) ||
       !("completedIds" in raw) ||
       !Array.isArray(raw.completedIds) ||
       !raw.completedIds.every(isSectorId) ||
@@ -50,18 +50,14 @@ function load(): Pick<CampaignState, "completedIds" | "selectedId" | "error"> {
     const completedIds = raw.completedIds;
     if (
       completedIds.some((id) => {
-        // Completed C3 sectors stay valid even if Vanguard was reached through Delta.
-        const prerequisites = id === "vanguard-12" ? (["delta-08", "forge-17"] as const) : sectorById(id).prerequisites;
-        return prerequisites.length > 0 && !prerequisites.some((required) => completedIds.includes(required));
+        const { prerequisites } = sectorById(id);
+        return prerequisites.some((required) => !completedIds.includes(required));
       })
     )
       throw new Error("Invalid campaign progression");
-    if (raw.contentVersion === 1) {
-      const legacySelectedAvailable = raw.selectedId === "vanguard-12" && completedIds.includes("delta-08");
-      if (!legacySelectedAvailable && sectorStatus(raw.selectedId, completedIds) === "locked")
-        throw new Error("Invalid campaign progression");
-      const selectedId =
-        sectorStatus(raw.selectedId, completedIds) === "locked" ? nextOperation(completedIds) : raw.selectedId;
+    if (raw.contentVersion < CAMPAIGN_CONTENT_VERSION) {
+      if (sectorStatus(raw.selectedId, completedIds) === "locked") throw new Error("Invalid campaign progression");
+      const selectedId = raw.selectedId;
       return { completedIds, selectedId, error: save(completedIds, selectedId) };
     }
     if (sectorStatus(raw.selectedId, completedIds) === "locked") throw new Error("Invalid campaign progression");

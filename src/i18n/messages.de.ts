@@ -2,37 +2,51 @@ import type { MessageKey } from "./messages.hu";
 
 export const de: Record<MessageKey, string> = {
   "veylora.title": "VEYLORA-03 · Bergbausektor",
-  "veylora.description": "Zwei frei wählbare Operationen. Sichere die Mine und bewahre die Forschungsanlage.",
+  "veylora.description":
+    "Sichere die Mine und bewahre die Forschungsanlage, dann befreie das Orbitaldock, um den Sektor zu säubern.",
   "veylora.mine": "VEYLORA-A · Bergbauplanet",
   "veylora.lab": "VEYLORA-B · Forschungsplanet",
   "veylora.station": "VEYLORA · Orbitaldock",
   "veylora.mineBrief": "Rostrote Tagebauterrassen. Neutralisiere den feindlichen Panzer in der Mine.",
-  "veylora.labBrief": "Kalte Felstäler und ein zentrales Forschungsplateau. Neutralisiere den feindlichen Panzer und schütze das Forschungsgebäude.",
-  "veylora.protection": "Forschungsgebäude: Beim Sieg müssen mindestens 20/100 HP bleiben. Schaden beider Seiten zählt. Jeder neue Versuch beginnt mit 100 Gebäude-HP.",
-  "veylora.prototype": "Erste Kampagnenversion: einmalige Wirtschaftsbelohnungen und Schildkauf im Dock. Wiederholungen geben weiterhin XP. Inhaltsaktualisierungen ohne Build sind noch nicht verfügbar.",
-  "veylora.stationPrototype": "Ein Orbitaldock aus dunklem Stahl mit bernstein-cyanfarbenen Signalen. Gemeinsames P1-Kampagneninventar und sofortiger Verbesserungskauf.",
+  "veylora.labBrief":
+    "Kalte Felstäler und ein zentrales Forschungsplateau. Neutralisiere den feindlichen Panzer und schütze das Forschungsgebäude.",
+  "veylora.stationBrief":
+    "Eine feindliche Garnison besetzt noch den Zugang zum Orbitaldock. Schalte sie aus, um den Sektor zu säubern.",
+  "veylora.noEconomicReward": "Keine einmalige Ressourcen- oder Technologiebelohnung; Kampf-EP gibt es weiterhin.",
+  "veylora.protection":
+    "Forschungsgebäude: Beim Sieg müssen mindestens 20/100 HP bleiben. Schaden beider Seiten zählt. Jeder neue Versuch beginnt mit 100 Gebäude-HP.",
+  "veylora.prototype":
+    "Die Dock-Sicherungsmission wird nach Mine und Forschungsanlage freigeschaltet. Kampagnenverbesserungen sind an der Station verfügbar; Wiederholungen geben weiterhin XP.",
+  "veylora.stationPrototype":
+    "Ein Orbitaldock aus dunklem Stahl mit bernstein-cyanfarbenen Signalen. Gemeinsames P1-Kampagneninventar und sofortiger Verbesserungskauf.",
   "veylora.easy": "Leicht · Feste Minengarnison",
   "veylora.medium": "Mittel · Feste Forschungsgarnison",
   "veylora.completed": "Mission abgeschlossen",
   "veylora.available": "Mission verfügbar",
   "veylora.secured": "VEYLORA-03 gesichert. Der Sektor bleibt frei zugänglich.",
   "veylora.missionSuccess": "Mission erfolgreich.",
-  "veylora.missionFailure": "Mission nicht erfolgreich. Erneuter Versuch möglich; Kampfergebnis und XP werden getrennt gewertet.",
-  "veylora.loadError": "Die Kampagnenwirtschaft konnte nicht geladen werden. Der ursprüngliche Spielstand bleibt erhalten. Reparieren oder die gesamte Wirtschaft ausdrücklich zurücksetzen; ein Sektor-Reset darf kein Vermögen löschen.",
-  "veylora.saveError": "Die Kampagnenwirtschaft konnte nicht gespeichert werden. Änderung, Belohnung oder Kauf wurden nicht gesichert. Browserspeicher prüfen und erneut versuchen.",
+  "veylora.missionFailure":
+    "Mission nicht erfolgreich. Erneuter Versuch möglich; Kampfergebnis und XP werden getrennt gewertet.",
+  "veylora.loadError":
+    "Die Kampagnenwirtschaft konnte nicht geladen werden. Der ursprüngliche Spielstand bleibt erhalten. Reparieren oder die gesamte Wirtschaft ausdrücklich zurücksetzen; ein Sektor-Reset darf kein Vermögen löschen.",
+  "veylora.saveError":
+    "Die Kampagnenwirtschaft konnte nicht gespeichert werden. Änderung, Belohnung oder Kauf wurden nicht gesichert. Browserspeicher prüfen und erneut versuchen.",
   "veylora.retrySave": "Abschluss erneut speichern",
   "veylora.reset": "VEYLORA-Fortschritt zurücksetzen",
-  "veylora.resetConfirm": "VEYLORA-Missionsfortschritt zurücksetzen? Inventar, Baupläne, Käufe und Belohnungsansprüche bleiben erhalten: bereits erhaltene Belohnungen werden nicht erneut vergeben. XP und die bisherige Kampagne bleiben unverändert.",
+  "veylora.resetConfirm":
+    "VEYLORA-Missionsfortschritt zurücksetzen? Inventar, Baupläne, Käufe und Belohnungsansprüche bleiben erhalten: bereits erhaltene Belohnungen werden nicht erneut vergeben. XP und die bisherige Kampagne bleiben unverändert.",
   "economy.ore": "Industrieerz",
   "economy.blueprint": "Materialtechnologie-Bauplan",
   "economy.shield": "Verstärkter Schild",
   "economy.inventory": "P1-Kampagneninventar",
   "economy.acquired": "erworben",
   "economy.notAcquired": "noch nicht erworben",
-  "economy.shieldEffect": "+{value}% maximaler Energieschild relativ zur XP-verbesserten Basis. Nur für P1 ab dem nächsten Kampf in neuen Kampagnen; bisherige Kampagne, Schnellkampf und PvP bleiben unverändert.",
+  "economy.shieldEffect":
+    "+{value}% maximaler Energieschild relativ zur XP-verbesserten Basis. Nur für P1 ab dem nächsten Kampf in neuen Kampagnen; bisherige Kampagne, Schnellkampf und PvP bleiben unverändert.",
   "economy.cost": "Einmaliger Preis und Voraussetzung:",
   "economy.notConsumed": "erforderlich, wird nicht verbraucht",
-  "economy.zeroShield": "Du hast derzeit keinen Basis-Energieschild: Der Kauf hat noch keine Wirkung. Nach einer späteren XP-Schildverbesserung wirkt er automatisch.",
+  "economy.zeroShield":
+    "Du hast derzeit keinen Basis-Energieschild: Der Kauf hat noch keine Wirkung. Nach einer späteren XP-Schildverbesserung wirkt er automatisch.",
   "economy.shieldPreview": "XP-Basis: {base} → Kampagnenschild: {value}",
   "economy.owned": "Bereits gekauft.",
   "economy.missingTechnology": "Der erforderliche Bauplan fehlt noch.",
@@ -42,8 +56,10 @@ export const de: Record<MessageKey, string> = {
   "economy.rewardClaimed": "Wirtschaftsbelohnung bereits gutgeschrieben; Wiederholungen vergeben sie nicht erneut:",
   "economy.saving": "Kampagnenwirtschaft wird geladen / gespeichert…",
   "economy.reset": "Gesamte Kampagnenwirtschaft zurücksetzen",
-  "economy.resetConfirm": "Missionsfortschritt aller neuen Sektoren, sämtliche Rohstoffe, Baupläne, Kampagnenverbesserungen und Belohnungsansprüche löschen? Belohnungen können erneut verdient werden. XP, XP-Verbesserungen und die bisherige Kampagne bleiben erhalten. Nicht rückgängig zu machen.",
-  "economy.resetDuringBattle": "Die Kampagnenwirtschaft wurde in einem anderen Tab zurückgesetzt. Dieser ältere Kampf kann nicht in die neue Wirtschaft schreiben. Zum Sektor zurückkehren und einen neuen Einsatz starten; Kampf-XP bleiben erhalten.",
+  "economy.resetConfirm":
+    "Missionsfortschritt aller neuen Sektoren, sämtliche Rohstoffe, Baupläne, Kampagnenverbesserungen und Belohnungsansprüche löschen? Belohnungen können erneut verdient werden. XP, XP-Verbesserungen und die bisherige Kampagne bleiben erhalten. Nicht rückgängig zu machen.",
+  "economy.resetDuringBattle":
+    "Die Kampagnenwirtschaft wurde in einem anderen Tab zurückgesetzt. Dieser ältere Kampf kann nicht in die neue Wirtschaft schreiben. Zum Sektor zurückkehren und einen neuen Einsatz starten; Kampf-XP bleiben erhalten.",
   "strategic.RESEARCH_LAB": "Forschungsgebäude",
   "command.RESEARCH_LABDamaged": "{source}: Forschungsgebäude beschädigt, −{damage} HP ({hp}/{maxHp})",
   "command.RESEARCH_LABDestroyed": "{source}: Forschungsgebäude zerstört, −{damage} HP ({hp}/{maxHp})",
@@ -60,7 +76,8 @@ export const de: Record<MessageKey, string> = {
   "audio.saveError": "Audioeinstellungen konnten nicht gespeichert werden; Änderungen gelten nur für diese Sitzung.",
   "menu.reset": "Fortschritt löschen",
   "menu.resetTitle": "Spielstand löschen?",
-  "menu.resetConfirm": "Alle XP, XP-Verbesserungen und der bisherige Kampagnenfortschritt werden endgültig gelöscht. VEYLORA-Fortschritt und Kampagnenwirtschaft bleiben unverändert; sie können im Sektorbildschirm getrennt zurückgesetzt werden. Nicht rückgängig zu machen.",
+  "menu.resetConfirm":
+    "Alle XP, XP-Verbesserungen und der bisherige Kampagnenfortschritt werden endgültig gelöscht. VEYLORA-Fortschritt und Kampagnenwirtschaft bleiben unverändert; sie können im Sektorbildschirm getrennt zurückgesetzt werden. Nicht rückgängig zu machen.",
   "menu.language": "Sprache",
   "credits.title": "Danksagung",
   "credits.sources": "Verwendete Inhalte und Quellen",
@@ -76,17 +93,17 @@ export const de: Record<MessageKey, string> = {
 
   "campaign.title": "Kampagnenkarte",
   "campaign.goalTitle": "Kampagnenziel",
-  "campaign.goalDescription": "Rücke von Sektor zu Sektor vor, neutralisiere die Besatzung und befreie die zu schützenden Gebäude mit möglichst geringen Schäden. Die Befreiung von FORGE-17 schaltet VANGUARD-12 frei; PRIME-00 schließt die Kampagne ab. Beide Schlüsselsektoren enthalten einen Energiereaktor und eine zivile Siedlung. DELTA-08 ist optional. Die Gebäude stehen in jeder neuen Schlacht an wechselnden Positionen; Kampfsieg und Gebäudeschutz sind getrennte Ziele.",
+  "campaign.goalDescription":
+    "Wähle einen Sektor auf der Operationskarte und erfülle seine Missionen. VEYLORA-03 wird nach dem Abschluss von ALPHA-01 freigeschaltet. Abhängigkeiten zwischen den übrigen Sektoren und ihren Missionen werden später festgelegt.",
   "campaign.operation": "Aktuelle Operation",
   "campaign.progress": "Abgeschlossen: {value} / {total}",
   "campaign.completed": "Abgeschlossen",
   "campaign.available": "Verfügbar",
   "campaign.locked": "Gesperrt",
+  "veylora.missionLocked": "Die Missionsvoraussetzungen sind noch nicht erfüllt.",
   "campaign.requires": "Freischaltbedingung",
   "campaign.or": "oder",
   "campaign.newRoutes": "Neue Route verfügbar: {names}",
-  "campaign.operationComplete":
-    "Hauptstadtperimeter gesichert. Operation abgeschlossen; übersprungene Sektoren und Wiederholungen bleiben verfügbar.",
   "campaign.foundation": "Die erste Operation ist aktiv. Weitere Sektoren folgen in späteren Inhaltsupdates.",
   "campaign.status": "Status",
   "campaign.opponent": "P1 Mensch vs P2 KI",
@@ -94,6 +111,7 @@ export const de: Record<MessageKey, string> = {
   "campaign.baseRules": "Sektorgelände, wechselnder Wind, normale Gravitation",
   "campaign.rewards": "Belohnungen",
   "campaign.baseRewards": "Bisherige Kampf-XP; kein zusätzlicher Kampagnenbonus",
+  "campaign.enterSector": "Sektor öffnen",
   "strategic.protected": "Zu schützende Gebäude",
   "strategic.ENERGY_NODE": "Energiereaktor",
   "strategic.CIVIL_HABITAT": "Zivile Siedlung",
@@ -106,7 +124,8 @@ export const de: Record<MessageKey, string> = {
   "campaign.replay": "Operation wiederholen",
   "campaign.reset": "Kampagnenfortschritt löschen",
   "campaign.resetTitle": "Kampagnenfortschritt löschen?",
-  "campaign.resetConfirm": "Die auf der Karte abgeschlossenen Sektoren werden zurückgesetzt. XP und Upgrades bleiben erhalten.",
+  "campaign.resetConfirm":
+    "Die auf der Karte abgeschlossenen Sektoren werden zurückgesetzt. XP und Upgrades bleiben erhalten.",
   "dialog.cancel": "Abbrechen",
   "dialog.delete": "Löschen",
   "campaign.return": "Zurück zur Karte",
@@ -128,8 +147,10 @@ export const de: Record<MessageKey, string> = {
   "speech.disabled": "Aktiviere Ton und den Sprachkanal und erhöhe die Lautstärke zum Vorlesen.",
   "sector.briefingClose": "Verstanden",
   "sector.briefingDontShowAgain": "In diesem Sektor nicht erneut anzeigen",
-  "sector.briefingLoadError": "Die Einweisungseinstellungen konnten nicht geladen werden. Einweisungen werden weiterhin angezeigt.",
-  "sector.briefingSaveError": "Die Einstellung konnte nicht gespeichert werden. Erneut versuchen oder das Häkchen zum Schließen entfernen.",
+  "sector.briefingLoadError":
+    "Die Einweisungseinstellungen konnten nicht geladen werden. Einweisungen werden weiterhin angezeigt.",
+  "sector.briefingSaveError":
+    "Die Einstellung konnte nicht gespeichert werden. Erneut versuchen oder das Häkchen zum Schließen entfernen.",
   "sector.deltaBrief": "Tiefes zentrales Becken. Der Abstieg verändert die Schusswinkel; achte auf die Ausgänge.",
   "sector.forgeBrief":
     "Industrielle Terrassen und Rampen. Flache Abschnitte erlauben Bewegung; Krater können den Weg unterbrechen.",
@@ -198,7 +219,8 @@ export const de: Record<MessageKey, string> = {
   "result.waitingRematch": "Warte auf den Host für die Revanche.",
   "result.mainMenu": "Hauptmenü",
   "battleExit.title": "Einsatz abbrechen?",
-  "battleExit.warning": "Das Gefecht ist noch nicht beendet. Beim Verlassen gehen alle in dieser Partie gesammelten XP verloren, und der Kampagnensektor gilt nicht als abgeschlossen. Bereits zuvor erworbene XP und Verbesserungen bleiben erhalten.",
+  "battleExit.warning":
+    "Das Gefecht ist noch nicht beendet. Beim Verlassen gehen alle in dieser Partie gesammelten XP verloren, und der Kampagnensektor gilt nicht als abgeschlossen. Bereits zuvor erworbene XP und Verbesserungen bleiben erhalten.",
   "battleExit.cancel": "Gefecht fortsetzen",
   "battleExit.confirm": "Einsatz abbrechen",
 
@@ -246,7 +268,8 @@ export const de: Record<MessageKey, string> = {
   "menu.opponentAi": "Computer (KI)",
   "menu.aiExperience": "KI-Erfahrung: {matches} Spiele – löschen",
   "menu.aiResetTitle": "KI-Erfahrung löschen?",
-  "menu.aiResetConfirm": "Die Erfahrung der KI aus {matches} Spielen wird gelöscht, sie spielt wieder auf Anfängerniveau. Dies kann nicht rückgängig gemacht werden.",
+  "menu.aiResetConfirm":
+    "Die Erfahrung der KI aus {matches} Spielen wird gelöscht, sie spielt wieder auf Anfängerniveau. Dies kann nicht rückgängig gemacht werden.",
   "menu.opponentHint": "Der Computer steuert Panzer P2 und lernt dazu. Gilt ab dem nächsten Spiel.",
   "menu.audioChannels": "Tonkanäle",
   "audio.music": "Musik",

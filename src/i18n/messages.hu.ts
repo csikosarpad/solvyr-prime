@@ -1,15 +1,23 @@
 /** Magyar szövegek: ez a forrásnyelv, a kulcsokat az angol fordítás típusa is ebből veszi. */
 export const hu = {
   "veylora.title": "VEYLORA-03 · Bányászati szektor",
-  "veylora.description": "Két szabadon választható művelet. Biztosítsd a bányát és őrizd meg a kutatótelepet.",
+  "veylora.description":
+    "Biztosítsd a bányát és őrizd meg a kutatótelepet, majd szabadítsd fel az orbitális dokkot a szektor megtisztításához.",
   "veylora.mine": "VEYLORA-A · Bányabolygó",
   "veylora.lab": "VEYLORA-B · Kutatóbolygó",
   "veylora.station": "VEYLORA · Orbitális dokk",
   "veylora.mineBrief": "Rozsdavörös, lépcsőzetes külszíni fejtés. Semlegesítsd a bányát megszálló ellenséges tankot.",
-  "veylora.labBrief": "Hideg sziklás völgyek és központi kutatófennsík. Semlegesítsd az ellenséges tankot, és óvd meg a kutatóépületet.",
-  "veylora.protection": "Kutatóépület: a győzelemkor legalább 20/100 HP maradjon. Mindkét fél sebzése számít. Új próbálkozáskor az épület 100 HP-val indul.",
-  "veylora.prototype": "Első kampányverzió: egyszeri gazdasági jutalmak és állomási pajzsvásárlás. Az XP újrajátszáskor is jár. Build nélküli tartalomfrissítés még nincs.",
-  "veylora.stationPrototype": "Sötét acél orbitális dokk, borostyán-cián jelzésekkel. Közös P1-kampánykészlet és azonnali fejlesztésvásárlás.",
+  "veylora.labBrief":
+    "Hideg sziklás völgyek és központi kutatófennsík. Semlegesítsd az ellenséges tankot, és óvd meg a kutatóépületet.",
+  "veylora.stationBrief":
+    "Az orbitális dokk megközelítési zónáját még ellenséges őrség tartja megszállva. Semlegesítsd őket, hogy megtisztítsd a szektort.",
+  "veylora.noEconomicReward": "Egyszeri nyersanyag- vagy technológiajutalom nincs; a harci XP továbbra is jár.",
+  "veylora.protection":
+    "Kutatóépület: a győzelemkor legalább 20/100 HP maradjon. Mindkét fél sebzése számít. Új próbálkozáskor az épület 100 HP-val indul.",
+  "veylora.prototype":
+    "A dokk biztosítása a bánya és a kutatótelep teljesítése után nyílik meg. Az állomáson kampányfejlesztés vásárolható; az XP újrajátszáskor is jár.",
+  "veylora.stationPrototype":
+    "Sötét acél orbitális dokk, borostyán-cián jelzésekkel. Közös P1-kampánykészlet és azonnali fejlesztésvásárlás.",
   "veylora.easy": "Könnyű · Rögzített bányaőrség",
   "veylora.medium": "Közepes · Rögzített kutatótelepi őrség",
   "veylora.completed": "Küldetés teljesítve",
@@ -17,21 +25,26 @@ export const hu = {
   "veylora.secured": "VEYLORA-03 biztosítva. A szektor továbbra is szabadon látogatható.",
   "veylora.missionSuccess": "Küldetés sikeres.",
   "veylora.missionFailure": "Küldetés sikertelen. Újrapróbálható; a harci eredmény és XP külön számolódik.",
-  "veylora.loadError": "A kampánygazdaság nem tölthető be. Az eredeti mentést megőriztük. Javítás vagy kifejezett teljes gazdasági törlés szükséges; a szektorhaladás törlése nem törölheti a vagyont.",
-  "veylora.saveError": "A kampánygazdaság nem menthető. A változás és az esetleges jutalom vagy vásárlás nincs elmentve. Ellenőrizd a böngésző tárhelyét, majd próbáld újra.",
+  "veylora.loadError":
+    "A kampánygazdaság nem tölthető be. Az eredeti mentést megőriztük. Javítás vagy kifejezett teljes gazdasági törlés szükséges; a szektorhaladás törlése nem törölheti a vagyont.",
+  "veylora.saveError":
+    "A kampánygazdaság nem menthető. A változás és az esetleges jutalom vagy vásárlás nincs elmentve. Ellenőrizd a böngésző tárhelyét, majd próbáld újra.",
   "veylora.retrySave": "Teljesítés mentésének újrapróbálása",
   "veylora.reset": "VEYLORA-haladás törlése",
-  "veylora.resetConfirm": "Törlöd a VEYLORA küldetéshaladását? A készlet, tervrajzok, vásárlások és jutalomjogosultságok megmaradnak: ez nem teszi újra felvehetővé a már megszerzett jutalmakat. Az XP és a régi kampány sem változik.",
+  "veylora.resetConfirm":
+    "Törlöd a VEYLORA küldetéshaladását? A készlet, tervrajzok, vásárlások és jutalomjogosultságok megmaradnak: ez nem teszi újra felvehetővé a már megszerzett jutalmakat. Az XP és a régi kampány sem változik.",
   "economy.ore": "Ipari érc",
   "economy.blueprint": "Anyagtechnológiai tervrajz",
   "economy.shield": "Megerősített pajzs",
   "economy.inventory": "P1 kampánykészlet",
   "economy.acquired": "megszerezve",
   "economy.notAcquired": "még nincs",
-  "economy.shieldEffect": "+{value}% maximális energiapajzs az XP-fejlesztett alaphoz képest. Csak az új rendszerű kampányokban, P1 következő csatáitól; a régi kampány, gyorscsata és PvP változatlan.",
+  "economy.shieldEffect":
+    "+{value}% maximális energiapajzs az XP-fejlesztett alaphoz képest. Csak az új rendszerű kampányokban, P1 következő csatáitól; a régi kampány, gyorscsata és PvP változatlan.",
   "economy.cost": "Egyszeri ár és feltétel:",
   "economy.notConsumed": "feltétel, nem fogy el",
-  "economy.zeroShield": "Jelenleg nincs alap energiapajzsod: a vásárlásnak most nincs hatása. Későbbi XP-pajzsfejlesztés után automatikusan érvényesül.",
+  "economy.zeroShield":
+    "Jelenleg nincs alap energiapajzsod: a vásárlásnak most nincs hatása. Későbbi XP-pajzsfejlesztés után automatikusan érvényesül.",
   "economy.shieldPreview": "XP-alap: {base} → kampánypajzs: {value}",
   "economy.owned": "Már megvásárolva.",
   "economy.missingTechnology": "A szükséges tervrajz még nincs meg.",
@@ -41,8 +54,10 @@ export const hu = {
   "economy.rewardClaimed": "Gazdasági jutalom már elszámolva; újrajátszáskor nem jár újra:",
   "economy.saving": "Kampánygazdaság betöltése / mentése…",
   "economy.reset": "Teljes kampánygazdaság törlése",
-  "economy.resetConfirm": "Minden új rendszerű szektor küldetéshaladása, teljes nyersanyagkészlete, tervrajzai, kampányfejlesztései és jutalomnyilvántartása törlődik. A jutalmak újra megszerezhetők. Az XP, az XP-fejlesztések és a régi kampány megmaradnak. Nem vonható vissza.",
-  "economy.resetDuringBattle": "Másik lapon törölték a kampánygazdaságot. Ez a korábbi csata már nem írhat bele az új gazdaságba. Térj vissza a szektorhoz és indíts új bevetést; a harci XP megmarad.",
+  "economy.resetConfirm":
+    "Minden új rendszerű szektor küldetéshaladása, teljes nyersanyagkészlete, tervrajzai, kampányfejlesztései és jutalomnyilvántartása törlődik. A jutalmak újra megszerezhetők. Az XP, az XP-fejlesztések és a régi kampány megmaradnak. Nem vonható vissza.",
+  "economy.resetDuringBattle":
+    "Másik lapon törölték a kampánygazdaságot. Ez a korábbi csata már nem írhat bele az új gazdaságba. Térj vissza a szektorhoz és indíts új bevetést; a harci XP megmarad.",
   "strategic.RESEARCH_LAB": "Kutatóépület",
   "command.RESEARCH_LABDamaged": "{source}: kutatóépület sérült, −{damage} HP ({hp}/{maxHp})",
   "command.RESEARCH_LABDestroyed": "{source}: kutatóépület megsemmisült, −{damage} HP ({hp}/{maxHp})",
@@ -58,7 +73,8 @@ export const hu = {
   "audio.saveError": "A hangbeállítások mentése sikertelen; a módosítás csak ebben a munkamenetben érvényes.",
   "menu.reset": "Mentés törlése",
   "menu.resetTitle": "Törlöd a mentést?",
-  "menu.resetConfirm": "Az összes XP, XP-fejlesztés és a régi kampány haladása véglegesen törlődik. A VEYLORA-haladás és kampánygazdaság nem változik; azok külön törölhetők a szektorképernyőn. Ez nem vonható vissza.",
+  "menu.resetConfirm":
+    "Az összes XP, XP-fejlesztés és a régi kampány haladása véglegesen törlődik. A VEYLORA-haladás és kampánygazdaság nem változik; azok külön törölhetők a szektorképernyőn. Ez nem vonható vissza.",
   "menu.language": "Nyelv",
   "credits.title": "Köszönet",
   "credits.sources": "Felhasznált tartalmak és források",
@@ -74,17 +90,17 @@ export const hu = {
 
   "campaign.title": "Műveleti térkép",
   "campaign.goalTitle": "A kampány célja",
-  "campaign.goalDescription": "Haladj szektorról szektorra, semlegesítsd a megszálló erőket, és szabadítsd fel a védendő létesítményeket a lehető legkisebb sérüléssel. FORGE-17 felszabadítása nyitja meg VANGUARD-12-t; PRIME-00 felszabadítása zárja a kampányt. Mindkét kulcsszektorban energiareaktor és civil telep vár felszabadításra. DELTA-08 kihagyható. Az épületek helye minden új csatában változhat; a harci győzelem és a létesítmények megóvása külön cél.",
+  "campaign.goalDescription":
+    "Válassz szektort a Műveleti térképen, és teljesítsd a hozzá tartozó küldetéseket. VEYLORA-03 az ALPHA-01 teljesítése után nyílik meg. A többi szektor és küldetései közti függéseket később határozzuk meg.",
   "campaign.operation": "Aktuális művelet",
   "campaign.progress": "Teljesítve: {value} / {total}",
   "campaign.completed": "Teljesített",
   "campaign.available": "Elérhető",
   "campaign.locked": "Zárolt",
+  "veylora.missionLocked": "A küldetés előfeltételei még nem teljesültek.",
   "campaign.requires": "Feloldási feltétel",
   "campaign.or": "vagy",
   "campaign.newRoutes": "Új útvonal elérhető: {names}",
-  "campaign.operationComplete":
-    "A fővárosi perem biztosítva. A művelet teljesült; a kihagyott szektorok és visszavágók továbbra is elérhetők.",
   "campaign.foundation": "Az első művelet aktív. További szektorok későbbi tartalmi bővítésben érkeznek.",
   "campaign.status": "Állapot",
   "campaign.opponent": "P1 ember vs P2 AI",
@@ -92,6 +108,7 @@ export const hu = {
   "campaign.baseRules": "Szektorfüggő terep, változó szél, normál gravitáció",
   "campaign.rewards": "Jutalom",
   "campaign.baseRewards": "Meglévő harci XP; nincs külön kampánybónusz",
+  "campaign.enterSector": "Szektor megnyitása",
   "strategic.protected": "Védendő létesítmények",
   "strategic.ENERGY_NODE": "Energiareaktor",
   "strategic.CIVIL_HABITAT": "Civil telep",
@@ -191,7 +208,8 @@ export const hu = {
   "result.waitingRematch": "Várakozás a szoba létrehozójára a visszavágóhoz.",
   "result.mainMenu": "Főmenü",
   "battleExit.title": "Megszakítod a bevetést?",
-  "battleExit.warning": "A csata még nem ért véget. Ha most kilépsz, az ebben a menetben gyűjtött XP elvész, és a kampánypálya nem számít teljesítettnek. A korábbi XP-d és fejlesztéseid megmaradnak.",
+  "battleExit.warning":
+    "A csata még nem ért véget. Ha most kilépsz, az ebben a menetben gyűjtött XP elvész, és a kampánypálya nem számít teljesítettnek. A korábbi XP-d és fejlesztéseid megmaradnak.",
   "battleExit.cancel": "Harc folytatása",
   "battleExit.confirm": "Bevetés megszakítása",
 
@@ -239,7 +257,8 @@ export const hu = {
   "menu.opponentAi": "Gép (AI)",
   "menu.aiExperience": "AI tapasztalat: {matches} meccs – törlés",
   "menu.aiResetTitle": "Törlöd az AI tapasztalatát?",
-  "menu.aiResetConfirm": "Az AI {matches} meccsnyi tapasztalata törlődik, és újra kezdő szinten játszik. Ez nem vonható vissza.",
+  "menu.aiResetConfirm":
+    "Az AI {matches} meccsnyi tapasztalata törlődik, és újra kezdő szinten játszik. Ez nem vonható vissza.",
   "menu.opponentHint": "A gép a P2 tankot vezérli, tanul és fejlődik. A következő meccstől érvényes.",
   "menu.audioChannels": "Hangcsoportok",
   "audio.music": "Zene",

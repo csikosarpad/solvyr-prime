@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, within, waitFor, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { VeyloraOperations } from "./VeyloraOperations";
+import { CampaignMap } from "./CampaignMap";
 import { ResultScreen } from "./ResultScreen";
 import { Hud } from "./Hud";
-import { MainMenu } from "./main-menu/MainMenu";
 import { gameRef } from "./gameRef";
 import { useGameStore } from "@/game/state/gameStore";
 import { useVeyloraStore } from "@/game/state/veyloraStore";
@@ -15,6 +15,11 @@ import { VEYLORA_STORAGE_KEY } from "@/game/state/veyloraStore";
 
 vi.mock("./gameRef", () => ({
   gameRef: { current: { startOperation: vi.fn(async () => true), leaveBattle: vi.fn(), restart: vi.fn() } },
+}));
+vi.mock("./CampaignStarfieldCanvas", () => ({
+  CampaignStarfieldCanvas: ({ warpSequence }: { warpSequence: number }) => (
+    <div data-testid="starfield" data-warp-sequence={warpSequence} />
+  ),
 }));
 vi.mock("./result/ResultDecorCanvas", () => ({ ResultDecorCanvas: () => null }));
 
@@ -51,36 +56,51 @@ describe("VEYLORA UI", () => {
   };
   const complete = (id: string) =>
     useVeyloraStore.getState().complete(id, useVeyloraStore.getState().economy.generation);
+  const selectLocation = (id: string) => fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${id},`) }));
 
-  it("opens separately from the legacy campaign and offers both missions immediately", async () => {
-    const menu = render(<MainMenu />);
-    fireEvent.click(screen.getByRole("button", { name: /VEYLORA-03/ }));
+  it("opens from the operation map after ALPHA and offers missions from their location nodes", async () => {
+    useCampaignStore.getState().complete("alpha-01");
+    const map = render(<CampaignMap />);
+    fireEvent.click(screen.getByRole("button", { name: /VEYLORA-03.*Elérhető/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Szektor megnyitása" }));
     expect(useGameStore.getState().screen).toBe("veylora");
-    menu.unmount();
+    map.unmount();
     await renderOperations();
-    expect(screen.getAllByRole("button", { name: "Művelet indítása" })).toHaveLength(2);
-    expect(screen.getByText(/Build nélküli tartalomfrissítés még nincs/)).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: "Művelet indítása" })[1]!);
+    expect(screen.getByRole("button", { name: "Művelet indítása" })).toBeInTheDocument();
+    expect(screen.getByText(/A dokk biztosítása .* kutatótelep teljesítése után nyílik meg/)).toBeInTheDocument();
+    selectLocation("VEYLORA-B");
+    fireEvent.click(screen.getByRole("button", { name: "Művelet indítása" }));
     expect(gameRef.current?.startOperation).toHaveBeenCalledWith("secure-lab");
     await waitFor(() => expect(useGameStore.getState().screen).toBe("playing"));
-    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
   });
 
   it("shows a secured but replayable sector, with a confirmed separate progress reset", async () => {
-    await complete("secure-mine");
-    await complete("secure-lab");
+    await act(async () => {
+      await complete("secure-mine");
+      await complete("secure-lab");
+    });
     await renderOperations();
+    expect(screen.getByRole("status")).toHaveTextContent("2 / 3");
+    expect(screen.getByRole("button", { name: /^VEYLORA-STATION,.*Elérhető/ })).toBeInTheDocument();
+    selectLocation("VEYLORA-STATION");
+    expect(screen.getByRole("button", { name: "Művelet indítása" })).toBeInTheDocument();
+    await act(async () => {
+      await complete("secure-station");
+    });
     expect(screen.getByRole("status")).toHaveTextContent("biztosítva");
-    expect(screen.getAllByRole("button", { name: "Művelet újrajátszása" })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Művelet újrajátszása" })).toBeInTheDocument();
+    selectLocation("VEYLORA-B");
+    expect(screen.getByRole("button", { name: "Művelet újrajátszása" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "VEYLORA-haladás törlése" }));
     const dialog = screen.getByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Mégse" }));
-    expect(useVeyloraStore.getState().completedMissionIds).toHaveLength(2);
+    expect(useVeyloraStore.getState().completedMissionIds).toHaveLength(3);
     fireEvent.click(screen.getByRole("button", { name: "VEYLORA-haladás törlése" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Törlés" }));
     await waitFor(() => expect(useVeyloraStore.getState().completedMissionIds).toEqual([]));
     expect(useVeyloraStore.getState().economy.resources["industrial-ore"]).toBe(20);
-    expect(Object.keys(useVeyloraStore.getState().economy.claims)).toHaveLength(2);
+    expect(Object.keys(useVeyloraStore.getState().economy.claims)).toHaveLength(3);
   });
 
   it("blocks start on a load error and requires full economic reset rather than deleting wealth implicitly", async () => {
@@ -99,7 +119,7 @@ describe("VEYLORA UI", () => {
     vi.mocked(gameRef.current!.startOperation).mockResolvedValueOnce(false);
     useGameStore.setState({ screen: "veylora" });
     await renderOperations();
-    fireEvent.click(screen.getAllByRole("button", { name: "Művelet indítása" })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Művelet indítása" }));
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     expect(useGameStore.getState().screen).toBe("veylora");
   });
@@ -108,6 +128,10 @@ describe("VEYLORA UI", () => {
     await complete("secure-mine");
     await complete("secure-lab");
     await renderOperations();
+    selectLocation("VEYLORA-STATION");
+    expect(screen.getByText(/Semlegesítsd.*megtisztítsd a szektort/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Művelet indítása" })).toBeInTheDocument();
+    expect(screen.getByText(/Egyszeri nyersanyag- vagy technológiajutalom nincs/)).toBeInTheDocument();
     const recipe = screen.getByRole("region", { name: "Megerősített pajzs" });
     expect(within(recipe).getByText(/vásárlásnak most nincs hatása/)).toBeInTheDocument();
     expect(within(recipe).getByText(/nem fogy el/)).toBeInTheDocument();
@@ -120,6 +144,40 @@ describe("VEYLORA UI", () => {
       await useVeyloraStore.getState().refresh();
     });
     expect(within(recipe).getByText("Már megvásárolva.")).toBeInTheDocument();
+  });
+
+  it("animates the star map and preserves the tallest location detail panel", async () => {
+    await renderOperations();
+    const starfield = screen.getByTestId("starfield");
+    const card = document.querySelector(".veylora-layout .campaign-sector-card");
+    expect(starfield).toHaveAttribute("data-warp-sequence", "1");
+    expect(card?.querySelectorAll(".campaign-sector-content")).toHaveLength(3);
+    expect(card?.querySelector(".campaign-sector-content.is-active")).toHaveTextContent("Bányabolygó");
+
+    selectLocation("VEYLORA-B");
+    expect(starfield).toHaveAttribute("data-warp-sequence", "2");
+    expect(card?.querySelector(".campaign-sector-content.is-active")).toHaveTextContent("Kutatóbolygó");
+    expect(card?.querySelector(".campaign-sector-content.is-departing")).toHaveTextContent("Bányabolygó");
+    expect(card?.querySelector(".campaign-sector-content.is-arriving")).toHaveTextContent("Kutatóbolygó");
+  });
+
+  it("marks completed locations on the star map and locks the station until both planets are secured", async () => {
+    await renderOperations();
+    expect(screen.getByRole("button", { name: /^VEYLORA-STATION,.*Zárolt/ })).toBeInTheDocument();
+    await act(async () => {
+      await complete("secure-mine");
+    });
+    expect(screen.getByRole("button", { name: /^VEYLORA-A,.*Teljesített/ })).toHaveClass("is-completed");
+    expect(screen.getByRole("button", { name: /^VEYLORA-STATION,.*Zárolt/ })).toBeInTheDocument();
+    await act(async () => {
+      await complete("secure-lab");
+    });
+    expect(screen.getByRole("button", { name: /^VEYLORA-B,.*Teljesített/ })).toHaveClass("is-completed");
+    expect(screen.getByRole("button", { name: /^VEYLORA-STATION,.*Elérhető/ })).toBeInTheDocument();
+    await act(async () => {
+      await complete("secure-station");
+    });
+    expect(screen.getByRole("button", { name: /^VEYLORA-STATION,.*Teljesített/ })).toHaveClass("is-completed");
   });
 
   it("confirms full economic reset separately and preserves XP and legacy progress", async () => {
