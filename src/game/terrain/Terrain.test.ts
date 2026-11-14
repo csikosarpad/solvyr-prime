@@ -3,7 +3,9 @@ import { Graphics, type Renderer } from "pixi.js";
 import { Terrain } from "./Terrain";
 import { TerrainMask } from "./mask";
 import { DEFAULT_THEME } from "../theme";
-import { sectorById } from "../data/sectors";
+import { SECTORS, sectorById } from "../data/sectors";
+import { VEYLORA } from "../data/campaignContent";
+import { generateSectorHeightmap } from "./heightmap";
 
 vi.hoisted(() => {
   HTMLCanvasElement.prototype.getContext = () => null;
@@ -12,6 +14,25 @@ vi.hoisted(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Terrain collapse", () => {
+  it.each([...SECTORS, ...VEYLORA.battlefields])("adds rocky details to $id without changing its collision mask", (sector) => {
+    const terrain = new Terrain({ render: vi.fn() } as unknown as Renderer);
+    const poly = vi.spyOn(Graphics.prototype, "poly");
+    terrain.build(1280, 720, 42, sector);
+    expect(poly).toHaveBeenCalled();
+    const expected = TerrainMask.fromHeightmap(generateSectorHeightmap(1280, 720, 42, sector.terrain), 720);
+    expect(Array.from({ length: 1280 }, (_, x) => terrain.mask.surfaceY(x)))
+      .toEqual(Array.from({ length: 1280 }, (_, x) => expected.surfaceY(x)));
+    terrain.destroy();
+  });
+
+  it("also adds rocky details when no sector is supplied", () => {
+    const terrain = new Terrain({ render: vi.fn() } as unknown as Renderer);
+    const poly = vi.spyOn(Graphics.prototype, "poly");
+    terrain.build(1280, 720, 42);
+    expect(poly).toHaveBeenCalled();
+    terrain.destroy();
+  });
+
   it("uses sector colors only for explicit sector builds and otherwise preserves constructor colors", () => {
     const colors = { ...DEFAULT_THEME.terrain, fill: 0xabcdef };
     const terrain = new Terrain({ render: vi.fn() } as unknown as Renderer, colors);

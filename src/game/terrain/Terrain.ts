@@ -4,6 +4,7 @@ import type { Sector } from "../data/sectors";
 import { TerrainMask, type TerrainSpan } from "./mask";
 import { scorchDots } from "./scorch";
 import { DEFAULT_THEME, type Theme } from "../theme";
+import { rockDetails } from "./rockDetails";
 
 /** Terep: a látvány egy RenderTexture, a rombolás `erase` blendű körökkel történik; az ütközést a TerrainMask adja. */
 export class Terrain {
@@ -53,7 +54,14 @@ export class Terrain {
     }
 
     const terrainVisuals = new Container();
-    terrainVisuals.addChild(shape, strata);
+    const rocks = new Graphics();
+    for (const detail of rockDetails(heightmap, height, seed)) {
+      rocks.poly(detail.points).fill({
+        color: detail.light ? this.colors.soilLight : this.colors.soilDeep,
+        alpha: detail.light ? 0.12 : 0.22,
+      }).stroke({ color: this.colors.soilDeep, alpha: 0.25, width: 1 });
+    }
+    terrainVisuals.addChild(shape, rocks, strata);
 
     this.texture?.destroy(true);
     this.texture = RenderTexture.create({ width, height });

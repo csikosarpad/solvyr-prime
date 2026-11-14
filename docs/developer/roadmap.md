@@ -48,6 +48,8 @@ A jelenlegi és tervezett fejlesztési ágak áttekintő ábrája:
   Részletes hatókör és hátralévő lépések: [VEYLORA fejlesztési alap](./gameplay-progression-todo.md#6c-veylora-03--elfogadott-fejlesztési-alap).
 - A ResultScreen, a HUD és a játéktér sci-fi katonai vizuális rendszere működik.
 - A játéktér rétegezett hátteret használ: csillagos ég, hegyek, atmoszféra, terrain és visszafogott szikla-dekorációk.
+- Minden harctér terepén seedelt, visszafogott sziklarészletek láthatók a rombolható
+  terrain textúrájába rajzolva, a szektor terepszíneit használva.
 - A terrain fizikája, a ballisztika, a szél és a multiplayer determinisztikus működése megmaradt.
 - A robbanással leválasztott talajdarabok azonnal eltűnnek a maszkból és a látványból;
   porladás, lehullás és omlási sebzés még nincs. A külön dekorációs réteg nem érintett.
