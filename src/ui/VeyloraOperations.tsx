@@ -182,6 +182,9 @@ export function VeyloraOperations() {
           </p>
         )}
         <footer className="veylora-actions">
+          <button className="btn secondary" disabled={starting || pending > 0} onClick={() => useGameStore.getState().openWorkshop()}>
+            {t("workshop.title")}
+          </button>
           <button
             className="btn secondary"
             disabled={starting || pending > 0}

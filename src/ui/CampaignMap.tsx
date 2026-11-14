@@ -20,11 +20,12 @@ type MapNodeId = SectorId | "veylora-03";
 
 export function CampaignMap() {
   const t = useT();
-  const { completedIds, selectedId, select, error, reset } = useCampaignStore();
-  const { completedMissionIds, refresh: refreshVeylora } = useVeyloraStore();
+  const { completedIds, selectedId, select, error, reset, playerId, switchPlayer } = useCampaignStore();
+  const { completedMissionIds, refresh: refreshVeylora, switchPlayer: switchVeylora, pending } = useVeyloraStore();
   const [inspectedId, setInspectedId] = useState<MapNodeId>(selectedId);
   const setScreen = useGameStore((s) => s.setScreen);
   const [starting, setStarting] = useState(false);
+  const [switching, setSwitching] = useState(false);
   const [startError, setStartError] = useState(false);
   const [warpSequence, setWarpSequence] = useState(0);
   const [resetOpen, setResetOpen] = useState(false);
@@ -91,6 +92,20 @@ export function CampaignMap() {
           </p>
           <ReadAloudButton text={goalText} playback={goalSpeech} />
         </section>
+        <div className="workshop-players" aria-label={t("workshop.player")}>
+          {(["P1", "P2"] as const).map((id) => (
+            <button key={id} className={`btn secondary player-selector-${id}`} aria-pressed={id === playerId}
+              disabled={pending > 0 || starting || switching || error === "campaign.saveError"}
+              onClick={async () => {
+                if (id === playerId) return;
+                setSwitching(true);
+                switchPlayer(id);
+                setInspectedId(useCampaignStore.getState().selectedId);
+                await switchVeylora(id);
+                setSwitching(false);
+              }}>{id}</button>
+          ))}
+        </div>
         <div className="campaign-layout">
           <section className="campaign-star-map" aria-label={t("campaign.title")}>
             <CampaignStarfieldCanvas warpSequence={warpSequence} />
@@ -162,7 +177,7 @@ export function CampaignMap() {
                 <p>{t("campaign.progress", { value: veyloraProgress, total: VEYLORA.missions.length })}</p>
                 <button
                   className="btn"
-                  disabled={veyloraState === "locked" || starting}
+                  disabled={veyloraState === "locked" || starting || switching}
                   onClick={() => setScreen("veylora")}
                 >
                   {t("campaign.enterSector")}
@@ -173,7 +188,7 @@ export function CampaignMap() {
             <CampaignSectorCard
               inspectedId={inspectedId}
               completedIds={completedIds}
-              starting={starting}
+              starting={starting || switching}
               loadError={error === "campaign.loadError"}
               warpSequence={warpSequence}
               departingId={departingId}
@@ -192,6 +207,9 @@ export function CampaignMap() {
           </p>
         )}
         <footer className="campaign-actions">
+          <button className="btn secondary" onClick={() => useGameStore.getState().openWorkshop()}>
+            {t("workshop.title")}
+          </button>
           <button className="btn secondary" onClick={() => setScreen("menu")}>
             {t("result.mainMenu")}
           </button>

@@ -4,7 +4,6 @@ import { usePlayerName } from "@/game/state/playerNames";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import { useT } from "@/i18n";
 import { gameRef } from "./gameRef";
-import { Shop } from "./Shop";
 import { ResultDecorCanvas } from "./result/ResultDecorCanvas";
 import { getUnitPresentation } from "./result/unitPresentation";
 import { sectorById } from "@/game/data/sectors";
@@ -22,12 +21,12 @@ export function ResultScreen() {
     matchStats,
     setScreen,
     matchMode,
-    aiActive,
     sector,
     campaignNewRoutes,
     missionSuccess,
     campaignMission,
     missionGeneration,
+    campaignPlayer,
   } = useGameStore();
   const campaign = matchMode === "campaign";
   const operation = matchMode === "operation";
@@ -41,7 +40,6 @@ export function ResultScreen() {
   const session = useMultiplayerStore((state) => state.session);
   const multiplayerError = useMultiplayerStore((state) => state.error);
   const onlineMatch = credentials !== null;
-  const aiOpponent = aiActive || campaign;
   const matchFinished = session?.status === "finished";
 
   return (
@@ -57,7 +55,7 @@ export function ResultScreen() {
         </div>
         {campaign && (
           <p className="campaign-result" role="status">
-            {winner === "P1" ? t("campaign.secured", { code: sector.code }) : t("campaign.notSecured")}
+            {winner === campaignPlayer ? t("campaign.secured", { code: sector.code }) : t("campaign.notSecured")}
           </p>
         )}
         {operation && (
@@ -88,7 +86,7 @@ export function ResultScreen() {
             {startError && <p role="alert">{t("campaign.startError")}</p>}
           </div>
         )}
-        {campaign && winner === "P1" && campaignNewRoutes.length > 0 && (
+        {campaign && winner === campaignPlayer && campaignNewRoutes.length > 0 && (
           <p className="campaign-result" role="status">
             {t("campaign.newRoutes", { names: campaignNewRoutes.map((id) => sectorById(id).name).join(", ") })}
           </p>
@@ -120,15 +118,6 @@ export function ResultScreen() {
             ))}
           </tbody>
         </table>
-        <div className="result-shop">
-          {onlineMatch ? (
-            <Shop editablePlayerId={credentials.playerId} disabled={!matchFinished} />
-          ) : aiOpponent ? (
-            <Shop editablePlayerId="P1" />
-          ) : (
-            <Shop />
-          )}
-        </div>
         {onlineMatch && !matchFinished && <p role="status">{t("result.syncing")}</p>}
         {multiplayerError && onlineMatch && (
           <p className="lobby-error" role="alert">
@@ -136,6 +125,13 @@ export function ResultScreen() {
           </p>
         )}
         <div className="result-actions">
+          <button
+            className="btn hud-button hud-button-primary"
+            disabled={(onlineMatch && !matchFinished) || (operation && (operationPending > 0 || starting))}
+            onClick={() => useGameStore.getState().openWorkshop()}
+          >
+            {t("workshop.title")}
+          </button>
           {operation && (
             <button
               className="btn hud-button hud-button-primary"

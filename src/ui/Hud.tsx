@@ -42,12 +42,13 @@ export function Hud() {
     sector,
     strategicObjectives,
     opponentSkill,
+    campaignPlayer,
   } = useGameStore();
   const online = useMultiplayerStore((state) => state.credentials !== null);
   const multiplayerError = useMultiplayerStore((state) => state.error);
   const aiMemory = useAiSettings((state) => state.memory);
   const starsFor = (id: string) =>
-    id === "P2" && aiActive
+    id === (matchMode === "skirmish" ? "P2" : campaignPlayer === "P1" ? "P2" : "P1") && aiActive
       ? opponentSkill !== null
         ? rankFromSkill(opponentSkill)
         : rankStars(aiMemory)

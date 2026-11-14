@@ -194,7 +194,8 @@ describe("Campaign Map UI", () => {
     expect(goal).toHaveTextContent("VEYLORA-03 az ALPHA-01 teljesítése után nyílik meg");
     expect(goal).toHaveTextContent("A többi szektor és küldetései közti függéseket később határozzuk meg");
     expect(container.querySelector(".campaign-header")?.nextElementSibling).toBe(goal);
-    expect(goal.nextElementSibling).toHaveClass("campaign-layout");
+    expect(goal.nextElementSibling).toHaveClass("workshop-players");
+    expect(goal.nextElementSibling?.nextElementSibling).toHaveClass("campaign-layout");
     fireEvent.click(screen.getByRole("button", { name: /SECTOR PRIME-00,/ }));
     const panel = screen.getByRole("heading", { name: "Capital Perimeter" }).parentElement;
     expect(panel).toHaveTextContent("Energiareaktor");

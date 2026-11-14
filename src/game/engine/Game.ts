@@ -65,6 +65,7 @@ import { useVeyloraStore } from "../state/veyloraStore";
 import { missionSucceeded } from "../systems/campaignMission";
 import { BASE_STATS } from "../data/upgrades";
 import { applyCampaignUpgrades, type CampaignSave } from "../systems/campaignEconomy";
+import type { LocalPlayerId } from "../state/playerId";
 
 /** Ennyi HP-arány alatt kritikus a tank állapota. */
 const CRITICAL_HP_FRACTION = 0.3;
@@ -136,6 +137,7 @@ export class Game {
   private tanks: Tank[] = [];
   /** A meccsek között megmaradó fejlődés (meta-progresszió). */
   private profiles: Record<string, Profile> = loadProfiles(["P1", "P2"]);
+  private aiProfile: Profile = loadProfiles(["AI"]).AI!;
   private matchStats: MatchStats = newMatchStats(["P1", "P2"]);
   private turns = new TurnManager([]);
   private nextStarter = Math.floor(Math.random() * 2);
@@ -144,10 +146,12 @@ export class Game {
   private matchMode: MatchMode = "skirmish";
   private campaignMission: CampaignMission | null = null;
   private campaignEconomy: CampaignSave | null = null;
+  private campaignPlayer: LocalPlayerId = "P1";
   private sector: Sector = TRAINING_SECTOR;
   private matchActive = true;
   private matchProfiles: Record<string, Profile> | null = null;
   private profilesBeforeMatch: Record<string, Profile> | null = null;
+  private aiProfileBeforeMatch: Profile | null = null;
   private lastMultiplayerRevision = 0;
   private pendingMultiplayerEvents: RoomEvent[] = [];
   private pendingMultiplayerStart: { setup: MatchSetup; profiles: Record<string, Profile>; revision: number } | null =
@@ -297,6 +301,7 @@ export class Game {
       this.profilesBeforeMatch = Object.fromEntries(
         Object.entries(this.profiles).map(([id, profile]) => [id, { ...profile, levels: { ...profile.levels } }]),
       );
+      this.aiProfileBeforeMatch = structuredClone(this.aiProfile);
     }
     useCommandStore.getState().clear();
     window.clearTimeout(this.victoryTimer);
@@ -350,6 +355,7 @@ export class Game {
       missionSuccess: null,
       opponentSkill: this.campaignMission?.opponent.skill ?? null,
       missionGeneration: this.campaignEconomy?.generation ?? null,
+      campaignPlayer: this.campaignPlayer,
     });
     this.beginTurn();
   }
@@ -366,11 +372,12 @@ export class Game {
     this.pendingMultiplayerStart = null;
     this.multiplayer = true;
     this.profilesBeforeMatch = null;
+    this.aiProfileBeforeMatch = null;
     this.matchProfiles = profiles;
     this.profiles = Object.fromEntries(
       Object.entries(profiles).map(([id, profile]) => [id, { xp: profile.xp, levels: { ...profile.levels } }]),
     );
-    saveProfiles(this.profiles);
+    this.saveProfiles();
     this.lastMultiplayerRevision = revision;
     this.pendingMultiplayerEvents = [];
     this.unsubscribeMultiplayer?.();
@@ -410,6 +417,7 @@ export class Game {
   startCampaign(id: SectorId = useCampaignStore.getState().selectedId): boolean {
     const sector = sectorById(id);
     if (!useCampaignStore.getState().select(id)) return false;
+    this.campaignPlayer = useCampaignStore.getState().playerId;
     this.sector = sector;
     this.startOffline("campaign");
     return true;
@@ -421,7 +429,12 @@ export class Game {
       console.error("Cannot start VEYLORA before the battlefield is ready");
       return false;
     }
+    if (useVeyloraStore.getState().playerId !== useCampaignStore.getState().playerId) {
+      console.error("Campaign player does not match the selected economy");
+      return false;
+    }
     if (!await useVeyloraStore.getState().select(id)) return false;
+    this.campaignPlayer = useVeyloraStore.getState().playerId;
     this.campaignMission = mission;
     this.campaignEconomy = structuredClone(useVeyloraStore.getState().economy);
     this.sector = missionBattlefield(mission);
@@ -449,15 +462,22 @@ export class Game {
     if (!this.profilesBeforeMatch) return;
     this.profiles = this.profilesBeforeMatch;
     this.profilesBeforeMatch = null;
+    if (this.aiProfileBeforeMatch) this.aiProfile = this.aiProfileBeforeMatch;
+    this.aiProfileBeforeMatch = null;
     this.matchStats = newMatchStats(Object.keys(this.profiles));
   }
 
   private statsFor(id: string) {
-    if (id === "P2" && this.campaignMission)
+    if (id === this.aiId() && this.campaignMission)
       return { ...BASE_STATS, maxArmor: this.campaignMission.opponent.armor };
+    if (this.aiActive && id === this.aiId()) return computeStats(this.aiProfile.levels);
     const stats = computeStats((this.matchProfiles?.[id] ?? this.profiles[id]!).levels);
-    return id === "P1" && this.campaignMission && this.campaignEconomy
+    return id === this.campaignPlayer && this.campaignMission && this.campaignEconomy
       ? applyCampaignUpgrades(stats, this.campaignEconomy) : stats;
+  }
+
+  private aiId(): LocalPlayerId {
+    return this.matchMode !== "skirmish" && this.campaignPlayer === "P2" ? "P1" : "P2";
   }
 
   /** Tankonként egy sprite-pár: a cső a test mögött forog a saját forgáspontja körü. */
@@ -494,33 +514,49 @@ export class Game {
   }
 
   private award(id: string, xp: number): void {
-    if (!this.campaignMission || id !== "P2")
+    if (this.aiActive && id === this.aiId()) {
+      if (!this.campaignMission) this.aiProfile = awardXp(this.aiProfile, xp);
+    } else {
       this.profiles[id] = awardXp(this.profiles[id]!, xp);
+    }
     this.matchStats = recordXp(this.matchStats, id, xp);
-    if (this.multiplayer) saveProfiles(this.profiles);
+    if (this.multiplayer) this.saveProfiles();
+  }
+
+  private saveProfiles(profiles = this.profiles): boolean {
+    return saveProfiles({ ...profiles, AI: this.aiProfile });
   }
 
   /** Minden játékos XP-jének és fejlesztéseinek törlése. */
   resetProgress(): void {
     this.profilesBeforeMatch = null;
+    this.aiProfileBeforeMatch = null;
     this.profiles = Object.fromEntries(Object.keys(this.profiles).map((id) => [id, newProfile()]));
-    saveProfiles(this.profiles);
+    this.aiProfile = newProfile();
+    this.saveProfiles();
     useCampaignStore.getState().reset();
     this.syncStore();
   }
 
-  /** Fejlesztés vásárlása; csak meccsek között (játék végén) működik. */
+  /** Fejlesztés vásárlása meccsek között vagy a lezárt meccs után. */
   buy(playerId: string, upgradeId: string): void {
-    if (this.turns.phase !== "gameOver") return;
-    if (this.multiplayer) {
+    if (this.matchActive && this.turns.phase !== "gameOver") return;
+    if (this.matchActive && this.multiplayer) {
       if (useMultiplayerStore.getState().credentials?.playerId !== playerId) return;
       void useMultiplayerStore.getState().publish("upgrade_purchased", { upgradeId });
       return;
     }
-    const next = buyUpgrade(this.profiles[playerId]!, upgradeId);
+    const profile = this.profiles[playerId];
+    if (!profile) return;
+    const next = buyUpgrade(profile, upgradeId);
     if (!next) return;
-    this.profiles[playerId] = next;
-    saveProfiles(this.profiles);
+    const profiles = { ...this.profiles, [playerId]: next };
+    if (!this.saveProfiles(profiles)) {
+      useGameStore.getState().sync({ workshopError: "workshop.saveError" });
+      return;
+    }
+    this.profiles = profiles;
+    useGameStore.getState().sync({ workshopError: null });
     this.syncStore();
   }
 
@@ -597,7 +633,7 @@ export class Game {
       this.matchActive &&
       this.aiActive &&
       !this.multiplayer &&
-      this.turns.current === "P2" &&
+      this.turns.current === this.aiId() &&
       this.turns.phase === "aiming"
     );
   }
@@ -619,7 +655,7 @@ export class Game {
   private scheduleAiTurn(): void {
     this.clearAiTimers();
     this.afterAi(AI_THINK_MS, () => {
-      const target = this.tanks.find((t) => t.id === "P1");
+      const target = this.tanks.find((t) => t.id !== this.aiId());
       if (!this.terrain || !this.aiBrain || !target) return;
       const wind = useGameStore.getState().wind;
       const steps = this.aiBrain.planMove(this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity);
@@ -638,16 +674,16 @@ export class Game {
   }
 
   private aiAimAndFire(): void {
-    const target = this.tanks.find((t) => t.id === "P1");
+    const target = this.tanks.find((t) => t.id !== this.aiId());
     if (!this.terrain || !this.aiBrain || !target) return;
     const wind = useGameStore.getState().wind;
-    const trySmartAim = this.previewAllowance.canUse("P2") && Math.random() < AI_PREVIEW_CHANCE;
+    const trySmartAim = this.previewAllowance.canUse(this.aiId()) && Math.random() < AI_PREVIEW_CHANCE;
     const precise = trySmartAim
       ? this.aiBrain.decide(this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity, true)
       : null;
     if (precise) this.activatePreview();
     const plan = precise ?? this.aiBrain.decide(this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity);
-    const angle = Math.round(plan?.angle ?? 135);
+    const angle = Math.round(plan?.angle ?? (this.aiId() === "P1" ? 45 : 135));
     const power = Math.round(plan?.power ?? this.current.stats.maxPower * 0.6);
     useGameStore.getState().setAim(angle, power);
     this.afterAi(AI_AIM_MS, () => this.launchShot(angle, power));
@@ -655,7 +691,7 @@ export class Game {
 
   /** A gép a lövés végén tanul a becsapódásból. */
   private aiObserveImpact(shooterId: string, x: number, dealt: number): void {
-    if (!this.aiActive || shooterId !== "P2") return;
+    if (!this.aiActive || shooterId !== this.aiId()) return;
     this.aiBrain?.observe(x);
     if (dealt > 0) this.aiHits++;
   }
@@ -663,19 +699,19 @@ export class Game {
   /** Meccs végén a gép rögzíti a tapasztalatot, és maga választja ki a fejlesztéseit. */
   private finishAiMatch(): void {
     if (!this.aiActive || !this.aiBrain || this.campaignMission) return;
-    const own = this.matchStats["P2"];
-    const other = this.matchStats["P1"];
+    const own = this.matchStats[this.aiId()];
+    const other = this.matchStats[this.aiId() === "P1" ? "P2" : "P1"];
     if (!own || !other) return;
-    const won = this.turns.winner === "P2";
+    const won = this.turns.winner === this.aiId();
     useAiSettings.getState().recordMatch({ won, shots: own.shots, hits: this.aiHits });
-    const { profile } = chooseUpgrades(this.profiles["P2"]!, {
+    const { profile } = chooseUpgrades(this.aiProfile, {
       shots: own.shots,
       damageDealt: own.damage,
       damageTaken: other.damage,
       won,
     });
-    this.profiles["P2"] = profile;
-    saveProfiles(this.profiles);
+    this.aiProfile = profile;
+    this.saveProfiles();
   }
 
   private syncStore(): void {
@@ -831,7 +867,7 @@ export class Game {
             { xp: profile.xp, levels: { ...profile.levels } },
           ]),
         );
-        saveProfiles(this.profiles);
+        this.saveProfiles();
         this.lastMultiplayerRevision = event.revision;
         this.restart(setup as MatchSetup);
         useGameStore.getState().setScreen("playing");
@@ -845,7 +881,7 @@ export class Game {
         const next = buyUpgrade(this.profiles[event.playerId]!, upgradeId);
         if (!next) continue;
         this.profiles[event.playerId] = next;
-        saveProfiles(this.profiles);
+        this.saveProfiles();
         this.syncStore();
         continue;
       }
@@ -900,7 +936,7 @@ export class Game {
           radius * 2,
           60 * shooter.stats.damage,
         ),
-        shooter.id === "P1" ? "PLAYER" : "AI",
+        this.aiActive && shooter.id === this.aiId() ? "AI" : "PLAYER",
       ),
     }));
     this.terrain?.carve(x, y, radius);
@@ -939,7 +975,7 @@ export class Game {
       useCommandStore.getState().log(
         `command.${objective.type}${destroyed ? "Destroyed" : "Damaged"}`,
         {
-          source: shooter.id === "P1" ? playerName(shooter.id) : `AI (${playerName(shooter.id)})`,
+          source: this.aiActive && shooter.id === this.aiId() ? `AI (${playerName(shooter.id)})` : playerName(shooter.id),
           damage: Number((before.hp - objective.hp).toFixed(2)),
           hp: Number(objective.hp.toFixed(2)),
           maxHp: objective.maxHp,
@@ -956,12 +992,12 @@ export class Game {
     this.turns.endShot(this.tanks.filter(isAlive).map((t) => t.id));
     if (this.turns.phase === "aiming") this.beginTurn();
     else {
-      if (this.matchMode === "campaign" && this.turns.winner === "P1") {
+      if (this.matchMode === "campaign" && this.turns.winner === this.campaignPlayer) {
         const routes = useCampaignStore.getState().complete(sectorById(this.sector.id).id);
         useGameStore.getState().sync({ campaignNewRoutes: routes });
       }
       if (this.campaignMission) {
-        const success = missionSucceeded(this.campaignMission, this.turns.winner, this.strategicObjectives);
+        const success = missionSucceeded(this.campaignMission, this.turns.winner, this.strategicObjectives, this.campaignPlayer);
         useGameStore.getState().sync({ missionSuccess: success });
         if (success && this.campaignEconomy)
           void useVeyloraStore.getState().complete(this.campaignMission.id, this.campaignEconomy.generation);
@@ -972,8 +1008,9 @@ export class Game {
         this.announceVictory(this.turns.winner);
       }
       if (!this.multiplayer) {
-        saveProfiles(this.profiles);
+        this.saveProfiles();
         this.profilesBeforeMatch = null;
+        this.aiProfileBeforeMatch = null;
       }
       const onlineRoom = useMultiplayerStore.getState();
       if (this.multiplayer && onlineRoom.credentials?.playerId === "P1" && onlineRoom.session?.status === "playing") {

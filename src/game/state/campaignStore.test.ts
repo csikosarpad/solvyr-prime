@@ -9,6 +9,19 @@ describe("campaign persistence", () => {
     vi.restoreAllMocks();
   });
 
+  it("keeps P1 legacy progress and P2 progress in separate saves", async () => {
+    localStorage.setItem(key, JSON.stringify({ version: 1, completed: true }));
+    const { useCampaignStore } = await import("./campaignStore");
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
+    useCampaignStore.getState().switchPlayer("P2");
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    useCampaignStore.getState().complete("forge-17");
+    useCampaignStore.getState().switchPlayer("P1");
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
+    useCampaignStore.getState().switchPlayer("P2");
+    expect(useCampaignStore.getState().completedIds).toEqual(["forge-17"]);
+  });
+
   it("starts with independent sectors, persists completion and does not write it twice", async () => {
     const { useCampaignStore } = await import("./campaignStore");
     expect(useCampaignStore.getState().completedIds).toEqual([]);

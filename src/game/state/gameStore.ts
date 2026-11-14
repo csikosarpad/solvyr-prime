@@ -5,8 +5,11 @@ import type { Phase } from "../systems/turnManager";
 import type { Profile } from "../systems/upgrades";
 import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
 import type { CampaignMission } from "../data/campaignContent";
+import type { MessageKey } from "@/i18n";
+import type { LocalPlayerId } from "./playerId";
 
-export type Screen = "menu" | "playing" | "campaignMap" | "veylora";
+export type Screen = "menu" | "playing" | "campaignMap" | "veylora" | "workshop";
+export type WorkshopOrigin = Exclude<Screen, "workshop">;
 export type MatchMode = "skirmish" | "campaign" | "operation";
 export const MIN_POWER = 100;
 export const MIN_ANGLE = 0;
@@ -54,6 +57,11 @@ export interface GameState {
   previewRemaining: number;
   previewActive: boolean;
   screen: Screen;
+  workshopOrigin: WorkshopOrigin;
+  workshopError: MessageKey | null;
+  workshopPlayer: LocalPlayerId;
+  setWorkshopPlayer: (id: LocalPlayerId) => void;
+  campaignPlayer: LocalPlayerId;
   matchMode: MatchMode;
   matchId: string | null;
   sector: Sector;
@@ -72,10 +80,12 @@ export interface GameState {
   /** A szöget a [MIN_ANGLE, MAX_ANGLE] tartományban tartva változtatja. */
   nudgeAngle: (delta: number) => void;
   setScreen: (screen: Screen) => void;
+  openWorkshop: () => void;
+  closeWorkshop: () => void;
   toggleMuted: () => void;
   /** Az engine tölti; a HUD csak olvassa. */
   sync: (
-    s: Partial<Omit<GameState, "setAim" | "nudgePower" | "nudgeAngle" | "setScreen" | "toggleMuted" | "sync">>,
+    s: Partial<Omit<GameState, "setAim" | "nudgePower" | "nudgeAngle" | "setScreen" | "openWorkshop" | "closeWorkshop" | "setWorkshopPlayer" | "toggleMuted" | "sync">>,
   ) => void;
 }
 
@@ -97,6 +107,11 @@ export const useGameStore = create<GameState>((set) => ({
   previewRemaining: 0,
   previewActive: false,
   screen: "menu",
+  workshopOrigin: "menu",
+  workshopError: null,
+  workshopPlayer: "P1",
+  campaignPlayer: "P1",
+  setWorkshopPlayer: (id) => set({ workshopPlayer: id }),
   matchMode: "skirmish",
   matchId: null,
   sector: TRAINING_SECTOR,
@@ -112,6 +127,12 @@ export const useGameStore = create<GameState>((set) => ({
   nudgePower: (delta) => set((s) => ({ power: Math.min(s.maxPower, Math.max(MIN_POWER, s.power + delta)) })),
   nudgeAngle: (delta) => set((s) => ({ angle: Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, s.angle + delta)) })),
   setScreen: (screen) => set({ screen }),
+  openWorkshop: () => set((state) => state.screen === "workshop" ? {} : {
+    workshopOrigin: state.screen,
+    workshopError: null,
+    screen: "workshop",
+  }),
+  closeWorkshop: () => set((state) => ({ screen: state.workshopOrigin, workshopError: null })),
   toggleMuted: () =>
     set((s) => {
       try {

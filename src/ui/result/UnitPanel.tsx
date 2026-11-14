@@ -5,22 +5,23 @@ import { UpgradeRow } from "./UpgradeRow";
 import { UnitIllustration } from "./UnitIllustration";
 import type { UnitPanelProps } from "./result.types";
 
-export function UnitPanel({ id, profile, presentation, editable, disabled }: UnitPanelProps) {
+export function UnitPanel({ id, profile, presentation, editable, disabled, inactive = false }: UnitPanelProps) {
   const t = useT();
   const name = usePlayerName();
 
   return (
     <section
-      className={`player-upgrades-panel unit-panel accent-${presentation.accent}`}
+      className={`player-upgrades-panel unit-panel accent-${presentation.accent}${inactive ? " is-inactive" : ""}`}
       aria-labelledby={`unit-${id}`}
     >
+      {inactive && <p className="unit-inactive-label">{t("workshop.inactivePlayer")}</p>}
       <div className="player-upgrades-header">
         <div>
           <span className="unit-domain">{presentation.displayName}</span>
           <h3 id={`unit-${id}`}>{name(id)}</h3>
         </div>
         <div className="player-earned-xp">
-          <span>{t("shop.totalXp")}</span>
+          <span>{t("workshop.availableXp")}</span>
           <strong>{profile.xp} XP</strong>
         </div>
       </div>

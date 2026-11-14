@@ -53,10 +53,12 @@ export function loadProfiles(ids: string[], storage: StorageLike = localStorage)
   return Object.fromEntries(ids.map((id) => [id, sanitize(saved[id])]));
 }
 
-export function saveProfiles(profiles: Record<string, Profile>, storage: StorageLike = localStorage): void {
+export function saveProfiles(profiles: Record<string, Profile>, storage: StorageLike = localStorage): boolean {
   try {
     storage.setItem(KEY, JSON.stringify({ version: STORAGE_VERSION, profiles }));
-  } catch {
-    // Pl. betelt a kvóta vagy privát mód: a játék mentés nélkül is működik.
+    return true;
+  } catch (error) {
+    console.error("Could not save profiles", error);
+    return false;
   }
 }

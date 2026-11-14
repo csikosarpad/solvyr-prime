@@ -7,6 +7,7 @@ import { getUnitPresentation } from "./unitPresentation";
 import { getUpgradePresentation } from "./upgradePresentation";
 import tankBodyUrl from "@/game/assets/tank-body.svg?url";
 import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
+import { DEFAULT_THEME } from "@/game/theme";
 
 describe("result presentation contract", () => {
   it("ground theme tank presentationt ad a P1/P2 accentet is megtartja", () => {
@@ -20,15 +21,16 @@ describe("result presentation contract", () => {
       accent: "cyan",
     });
     expect(p1.silhouetteAsset).toBe(tankBodyUrl);
+    expect(p1.primaryColor).toBe(DEFAULT_THEME.players[0]);
     expect(p1.secondaryAsset).toBe(tankBarrelUrl);
     expect(p1.illustrationLayout).toBe("body-barrel");
     expect(p1.detailAsset).toBeUndefined();
     expect(p1.accentAsset).toBeUndefined();
     expect(p2).toMatchObject({
       domain: "ground",
-      primaryColor: 0xffc52e,
-      secondaryColor: 0xb86a12,
-      accent: "gold",
+      primaryColor: DEFAULT_THEME.players[1],
+      secondaryColor: 0xa5352a,
+      accent: "red",
     });
   });
 
@@ -43,7 +45,9 @@ describe("result presentation contract", () => {
       accent: "cyan",
     });
     expect(p1.silhouetteAsset).toBeUndefined();
-    expect(p2.accent).toBe("gold");
+    expect(p2.accent).toBe("red");
+    expect(p1.primaryColor).toBe(DEFAULT_THEME.players[0]);
+    expect(p2.primaryColor).toBe(DEFAULT_THEME.players[1]);
     expect(p2.iconSet).toBe("space-combat");
   });
 

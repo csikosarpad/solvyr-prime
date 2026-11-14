@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { MessageKey } from "@/i18n";
 import { VEYLORA, missionAvailable, missionById } from "../data/campaignContent";
 import { campaignTransaction, CampaignDataError, LEGACY_VEYLORA_KEY } from "./campaignDatabase";
+import type { LocalPlayerId } from "./playerId";
 import {
   initialSectorProgress,
   newCampaignSave,
@@ -18,6 +19,8 @@ interface VeyloraState extends SectorProgress {
   ready: boolean;
   pending: number;
   error: MessageKey | null;
+  playerId: LocalPlayerId;
+  switchPlayer: (id: LocalPlayerId) => Promise<boolean>;
   refresh: () => Promise<boolean>;
   select: (id: string) => Promise<boolean>;
   complete: (id: string, generation: string) => Promise<boolean>;
@@ -36,15 +39,20 @@ class EconomyRuleError extends Error {
   }
 }
 
-export const useVeyloraStore = create<VeyloraState>((set) => {
+export const useVeyloraStore = create<VeyloraState>((set, get) => {
+  let playerRevision = 0;
   const write = async (change?: (save: CampaignSave) => CampaignSave, reset = false): Promise<boolean> => {
+    const playerId = get().playerId;
+    const revision = playerRevision;
     set((state) => ({ pending: state.pending + 1 }));
     try {
-      const economy = await campaignTransaction(change, reset);
-      set({ economy, ...economy.progress[VEYLORA.sector.id]!, ready: true, error: null });
+      const economy = await campaignTransaction(change, reset, playerId);
+      if (get().playerId === playerId && revision === playerRevision)
+        set({ economy, ...economy.progress[VEYLORA.sector.id]!, ready: true, error: null });
       return true;
     } catch (error) {
       console.error("Campaign economy transaction failed", error);
+      if (get().playerId !== playerId || revision !== playerRevision) return false;
       if (error instanceof EconomyRuleError)
         set({ economy: error.economy, ...error.economy.progress[VEYLORA.sector.id]!, ready: true });
       set({
@@ -66,6 +74,14 @@ export const useVeyloraStore = create<VeyloraState>((set) => {
     ready: false,
     pending: 0,
     error: null,
+    playerId: "P1",
+    switchPlayer: (id) => {
+      if (get().playerId !== id) {
+        playerRevision++;
+        set({ playerId: id, economy: newCampaignSave(), ...initialSectorProgress(), ready: false, error: null });
+      }
+      return write();
+    },
     refresh: () => write(),
     select: (id) => {
       const mission = missionById(id);

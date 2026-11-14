@@ -266,6 +266,12 @@ későbbi egységváltás egy helyen legyen érthető.
       utána a külön kampánykészletek és az online pajzs. Az első szakasz nem
       állíthatja, hogy az utóbbiak már működnek; a meglévő működést addig
       meg kell őrizni, és az egyes módok korlátozásait jelezni kell.
+- [x] Első helyi szelet: Fejlesztés-képernyő és belépési pontok, meglévő
+      XP-s fejlesztések és kampánypajzs kezelése, mentési hibajelzéssel.
+- [x] P1/P2 önálló helyi kampányhaladás, jutalom, készlet és pajzs; a műveleti
+      térképen választható emberi játékos, a műhelyben külön profilválasztó.
+      A régi kampánymentések P1-nél maradnak. A pajzs minden módra
+      kiterjesztése és az online profilválasztás/pajzsszinkron még hátravan.
 
 ### Gazdaság és hozzáférés
 

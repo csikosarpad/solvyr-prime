@@ -7,6 +7,7 @@ import { MainMenu } from "@/ui/main-menu/MainMenu";
 import { ResultScreen } from "@/ui/ResultScreen";
 import { CampaignMap } from "@/ui/CampaignMap";
 import { VeyloraOperations } from "@/ui/VeyloraOperations";
+import { Workshop } from "@/ui/Workshop";
 
 export function App() {
   const screen = useGameStore((s) => s.screen);
@@ -35,6 +36,7 @@ export function App() {
       {screen === "menu" && <MainMenu />}
       {screen === "campaignMap" && <CampaignMap />}
       {screen === "veylora" && <VeyloraOperations />}
+      {screen === "workshop" && <Workshop />}
       {screen === "playing" && (phase === "gameOver" ? <ResultScreen /> : <Hud />)}
     </div>
   );

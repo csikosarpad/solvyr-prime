@@ -7,12 +7,12 @@ import { useT } from "@/i18n";
 
 export function CampaignStation({ recipeIds }: { recipeIds: readonly string[] }) {
   const t = useT();
-  const { economy, ready, pending, error, buy, equipShield } = useVeyloraStore();
-  const levels = useGameStore((state) => state.profiles.P1?.levels);
+  const { economy, ready, pending, error, buy, equipShield, playerId } = useVeyloraStore();
+  const levels = useGameStore((state) => state.profiles[playerId]?.levels);
   const base = computeStats(levels ?? {});
   return (
     <div className="campaign-station">
-      <h3>{t("economy.inventory")}</h3>
+      <h3>{t("economy.inventory", { player: playerId })}</h3>
       <ul>
         {VEYLORA.resources.map((resource) => (
           <li key={resource.id}>

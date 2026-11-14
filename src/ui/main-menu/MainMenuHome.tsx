@@ -64,6 +64,9 @@ export function MainMenuHome({ onShowLobby, onShowSettings }: MainMenuHomeProps)
         <button className="btn main-menu-start" onClick={start}>
           {t("menu.start")}
         </button>
+        <button className="btn secondary" onClick={() => useGameStore.getState().openWorkshop()}>
+          {t("workshop.title")}
+        </button>
         <button className="btn secondary" onClick={onShowLobby}>
           {t("menu.online")}
         </button>

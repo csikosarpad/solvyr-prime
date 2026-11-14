@@ -14,7 +14,37 @@ describe("transactional campaign economy", () => {
     vi.restoreAllMocks();
     vi.stubGlobal("indexedDB", new IDBFactory());
     localStorage.clear();
+    await state().switchPlayer("P1");
     await state().resetEconomy();
+  });
+
+  it("isolates each player's mission claims, purchases, equipment, and resets", async () => {
+    await complete("secure-mine");
+    await complete("secure-lab");
+    await state().buy("reinforced-shield");
+    const p1 = structuredClone(state().economy);
+    await state().switchPlayer("P2");
+    expect(state().economy).toMatchObject({ resources: {}, technologies: [], claims: {}, purchases: {}, equippedShield: null });
+    expect(state().completedMissionIds).toEqual([]);
+    await complete("secure-mine");
+    expect(state().economy.resources["industrial-ore"]).toBe(20);
+    expect(state().economy.technologies).toEqual([]);
+    await state().resetEconomy();
+    await state().switchPlayer("P1");
+    expect(state().economy).toEqual(p1);
+    expect((await campaignTransaction(undefined, false, "P2")).purchases).toEqual({});
+  });
+
+  it("does not migrate the old P1 prototype into P2", async () => {
+    vi.stubGlobal("indexedDB", new IDBFactory());
+    localStorage.setItem(VEYLORA_STORAGE_KEY, JSON.stringify({
+      version: 1, contentVersion: 1, sectorId: VEYLORA.sector.id,
+      selectedMissionId: "secure-mine", completedMissionIds: ["secure-mine"],
+    }));
+    await state().switchPlayer("P2");
+    expect(state().completedMissionIds).toEqual([]);
+    await state().switchPlayer("P1");
+    expect(state().completedMissionIds).toEqual(["secure-mine"]);
   });
 
   it("atomically persists progress, 20 ore and one permanent blueprint, never granting repeats", async () => {

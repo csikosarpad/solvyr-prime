@@ -4,9 +4,11 @@ import type { HudFrame } from "../pixi/HudFrame";
 import type { GlowLine } from "../pixi/GlowLine";
 import { accentColor, PIXI_UI_THEME } from "../pixi/PixiUiTheme";
 import type { ResultBackgroundEffects } from "../pixi/ResultBackgroundEffects";
+import type { PixiUiAccent } from "../pixi/PixiUiTheme";
+import { DEFAULT_THEME } from "@/game/theme";
 
 interface ResultDecorCanvasProps {
-  accent?: "cyan" | "gold" | "orange";
+  accent?: PixiUiAccent;
 }
 
 function drawGrid(graphics: Graphics, width: number, height: number) {
@@ -119,7 +121,7 @@ function drawDecorations(
   const panelY = 102;
   const panelHeight = Math.max(100, height - panelY - 14);
   const panelWidth = Math.max(100, (width - panelGap * 3) / 2);
-  drawPanelFill(GraphicsClass, container, panelGap, panelY, panelWidth, panelHeight, PIXI_UI_THEME.colors.cyan);
+  drawPanelFill(GraphicsClass, container, panelGap, panelY, panelWidth, panelHeight, DEFAULT_THEME.players[0]!);
   drawPanelFill(
     GraphicsClass,
     container,
@@ -127,7 +129,7 @@ function drawDecorations(
     panelY,
     panelWidth,
     panelHeight,
-    PIXI_UI_THEME.colors.gold,
+    DEFAULT_THEME.players[1]!,
   );
   drawVictoryFrame(GraphicsClass, HudFrameClass, container, width, PIXI_UI_THEME.colors.gold);
 

@@ -1,4 +1,5 @@
 import type { UnitPresentation } from "./result.types";
+import { DEFAULT_THEME } from "@/game/theme";
 import tankBodyUrl from "@/game/assets/tank-body.svg?url";
 import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
 
@@ -8,7 +9,7 @@ const GROUND_PRESENTATION: UnitPresentation = {
   silhouetteAsset: tankBodyUrl,
   secondaryAsset: tankBarrelUrl,
   illustrationLayout: "body-barrel",
-  primaryColor: 0x24d8ff,
+  primaryColor: DEFAULT_THEME.players[0]!,
   secondaryColor: 0x087fa7,
   iconSet: "ground-combat",
   accent: "cyan",
@@ -17,7 +18,7 @@ const GROUND_PRESENTATION: UnitPresentation = {
 const SPACE_PRESENTATION: UnitPresentation = {
   domain: "space",
   displayName: "Space fighter",
-  primaryColor: 0x24d8ff,
+  primaryColor: DEFAULT_THEME.players[0]!,
   secondaryColor: 0x087fa7,
   iconSet: "space-combat",
   accent: "cyan",
@@ -27,9 +28,9 @@ const PRESENTATIONS: Record<string, UnitPresentation> = {
   P1: GROUND_PRESENTATION,
   P2: {
     ...GROUND_PRESENTATION,
-    primaryColor: 0xffc52e,
-    secondaryColor: 0xb86a12,
-    accent: "gold",
+    primaryColor: DEFAULT_THEME.players[1]!,
+    secondaryColor: 0xa5352a,
+    accent: "red",
   },
 };
 
@@ -37,9 +38,9 @@ const SPACE_PRESENTATIONS: Record<string, UnitPresentation> = {
   P1: SPACE_PRESENTATION,
   P2: {
     ...SPACE_PRESENTATION,
-    primaryColor: 0xffc52e,
-    secondaryColor: 0xb86a12,
-    accent: "gold",
+    primaryColor: DEFAULT_THEME.players[1]!,
+    secondaryColor: 0xa5352a,
+    accent: "red",
   },
 };
 

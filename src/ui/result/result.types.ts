@@ -1,7 +1,7 @@
 import type { Profile } from "@/game/systems/upgrades";
 
 export type UnitDomain = "ground" | "space" | "air" | "mech";
-export type UnitAccent = "cyan" | "gold" | "orange";
+export type UnitAccent = "cyan" | "gold" | "orange" | "red";
 
 export interface UnitPresentation {
   domain: UnitDomain;
@@ -23,4 +23,5 @@ export interface UnitPanelProps {
   presentation: UnitPresentation;
   editable: boolean;
   disabled: boolean;
+  inactive?: boolean;
 }

@@ -14,11 +14,12 @@ Csökkentett mozgás beállítás mellett nem animálódik. Kis kijelzőn a men�
 - **Offline AI:** a Beállításokban a „Gép (AI)” ellenfél választható; P1 az ember, P2 a gép.
   Az ellenfélválasztás a következő meccstől érvényes.
 - **Online:** két ember külön böngészőből, szobakódos lobbyval.
-- **Műveleti térkép:** külön menügomb, mindig P1 ember vs P2 AI, a gyorscsata
+- **Műveleti térkép:** külön menügomb, a térképen P1 vagy P2 saját kampánya
+  választható; a kiválasztott emberi játékos a másik oldalon álló AI ellen játszik, a gyorscsata
   ellenfélbeállításától függetlenül. Az öt C3-harctér mellett a VEYLORA-03
   szektor is elérhető; az ALPHA-01 teljesítése nyitja meg.
 - **VEYLORA-03:** a térkép második szintje, két bolygóval és egy orbitális
-  dokkal. Mindig P1 ember vs rögzített AI-ellenfél; a két bolygóküldetés
+  dokkal. A kiválasztott játékos rögzített AI-ellenféllel küzd; a két bolygóküldetés
   szabad sorrendben indítható, a dokk biztosítása ezek után nyílik meg.
 
 A régi kampányban öt seed alapján változó, tükrözött terepprofil van;
@@ -33,8 +34,9 @@ Online szektorválasztás, környezeti modifikátorok, orbitális képességek, 
 ### A műveleti térkép használata
 
 Főmenü → Műveleti térkép → szektor kijelölése → Művelet indítása → Csata → Eredmény → Műveleti térkép.
-P1 győzelme teljesíti az adott szektort; vereség és döntetlen nem.
-A teljesítés és az elérhető aktuális művelet helyileg mentett, újratöltés után is megmarad.
+A kiválasztott játékos győzelme teljesíti az adott szektort; vereség és döntetlen nem.
+A teljesítés és az elérhető aktuális művelet játékosonként külön mentett,
+újratöltés után is megmarad. A régi kampánymentés P1-é, P2 saját haladással indul.
 
 | Szektor | Harctér | Elérés |
 | --- | --- | --- |
@@ -58,8 +60,9 @@ Nincs külön kampányjutalom, a megszokott harci XP és +50 győzelmi XP jár.
 A gyorscsata győzelme nem teljesít térképes szektort.
 
 Harc közben a „Vissza a térképre” megerősítés után elhagyja a csatát.
-Az addig szerzett XP megmarad, de a szektor nem teljesül. Meccsvégi boltban
-csak P1 fejleszthető; P2 AI maga vásárol. A profilok és az AI-tapasztalat a
+Az addig szerzett XP megmarad, de a szektor nem teljesül. A meccsvégi Fejlesztésben
+csak az aktuális emberi játékos fejleszthető. Az AI külön profilban kap és
+költ XP-t, nem használja egyik emberi profil egyenlegét sem. A profilok és az AI-tapasztalat a
 gyorscsatával közösek, külön kampánynehézség még nincs.
 
 A térképen a „Kampányhaladás törlése” csak a teljesítést törli.
@@ -84,7 +87,7 @@ teljesítése után nyílik meg. Az utazás és az újrapróbálás ingyenes.
 - **Kutatóbolygó:** kékesszürke völgyek és központi fennsík. A közepes
   küldetéshez tankgyőzelem és legalább 20/100 kutatóépület-HP szükséges.
   Mindkét fél épületsebzése számít. Minden új próbálkozás teljes épület-HP-val indul.
-- **Orbitális dokk:** a közös P1-kampánykészlet és a fejlesztésvásárlás
+- **Orbitális dokk:** az aktuális játékos kampánykészlete és a fejlesztésvásárlás
   mellett külön harci küldetésben kell felszabadítani az ellenséges őrségtől.
   Ez a harmadik, szektorzáró művelet.
 
@@ -103,8 +106,8 @@ a szektorhaladás törlése nem kerülheti meg a sérült gazdasági mentést.
   megvehető a **Megerősített pajzs**. Csak az érc fogy el.
 - A megvett pajzs automatikusan felszerelődik, és az állomáson levehető vagy
   újra felszerelhető. Az XP-alaphoz **20 pajzspontot ad**, majd a teljes összeget
-  **10%-kal növeli**: nulla XP-alappal 22 pajzspontot ad. P1 következő, új
-  rendszerű kampánycsatáiban hat; a régi kampány, gyorscsata és PvP változatlan.
+  **10%-kal növeli**: nulla XP-alappal 22 pajzspontot ad. A következő, új
+  rendszerű kampánycsatáiban hat a tulajdonosnak; a régi kampány, gyorscsata és PvP változatlan.
   A korábban megvásárolt pajzs is felszerelve marad.
 - Az újrajátszás nem ad újabb gazdasági jutalmat, a megszokott XP viszont jár.
   A küldetés teljesítése és a jutalom elszámolása külön látszik.
@@ -121,7 +124,7 @@ az érintett küldetést. Az eredeti prototípusmentés biztonsági másolatkén
 Az IndexedDB elérhetősége szükséges; böngészőadat-törlés a készletet is törli.
 
 **Build nélküli tartalomfrissítés még nem érhető el.** Az új ellenfelek
-nem öröklik és nem fejlesztik a gyorscsata P2-profilját vagy az AI-memóriát.
+nem öröklik és nem fejlesztik a másik játékos profilját vagy az AI-memóriát.
 A jelenlegi cél a stabil működés; a nehézség és a látvány még finomhangolható.
 
 ## A csata menete
@@ -171,7 +174,7 @@ még hátravan; az emulált mobilnézet nem garantál minden telefonon azonos m�
 A sebzés sorrendben az **erőtér pajzsot → páncélt → HP-t** csökkenti.
 A pajzs a saját kör kezdetén a maximum 20%-ával töltődik vissza, kivéve ha a tankot
 a legutóbbi köre kezdete óta találat érte. A páncél nem regenerálódik.
-Pajzs és páncél alapból nincs; a boltban fejleszthetők.
+Pajzs és páncél alapból nincs; a Fejlesztés menüben fejleszthetők.
 
 A HUD gyűrűmérőket, a tank fölötti kijelzés vékony állapotsávokat használ.
 Pajzs és páncél kijelzése csak akkor látszik, ha az egység rendelkezik velük.
@@ -180,19 +183,28 @@ A Célzástámogatás alapból játékosonként **1 töltet meccsenként**.
 A fejlesztés szintenként +1-et ad, maximum 4 töltetig. Egy aktiválás az aktuális
 kör végéig mutatja a várható röppályát; a töltetek új meccsben visszaállnak.
 
-## XP, bolt és rendfokozat
+## XP, Fejlesztés és rendfokozat
+
+A **Fejlesztés** a főmenüből, a műveleti térképről, VEYLORA nézetéből és
+az eredményképernyőről érhető el. A Vissza gomb az előző képernyőre visz.
+Itt a kiválasztott játékos XP-fejlesztései mellett a saját megvásárolt kampánypajzsa
+is levehető vagy felszerelhető; a vásárlás továbbra is a VEYLORA-állomáson
+történik. Mindkét játékos fejlesztési panelje látható, de a nem kijelölt oldal
+elsötétítve és zárolva jelenik meg. P1 és P2 kampányhaladása, jutalmai és felszerelése különállók.
+A pajzs jelenleg csak tulajdonosa új rendszerű kampánycsatáiban hat; online
+pajzsszinkron még nincs.
 
 - Az ellenfél pajzsának, páncéljának és HP-jának okozott sebzésért XP jár.
 - A győzelem további **50 XP-t** ad.
-- XP-ből meccs után páncél, pajzs, sebzés, robbanási sugár, lőtávolság, motor és
+- XP-ből csaták között páncél, pajzs, sebzés, robbanási sugár, lőtávolság, motor és
   célzástámogatás fejleszthető.
 - A hét fejlesztés összesen 31 szintje nulláról **3768 XP-be** kerül.
 - A fejlesztések együtt érvényesülnek, nincs egymást kizáró specializáció.
-- A bolt XP-je **elkölthető egyenleg**, vásárláskor csökken. Az összes megszerzett
-  XP-re utaló felirat jelenleg félrevezető; életút-XP összesítő nincs.
+- A kijelzett XP **elkölthető egyenleg**, vásárláskor csökken; életút-XP
+  összesítő nincs. Sikertelen profilmentésnél a vásárlás nem történik meg.
 - A maximális fejlesztések után az XP tovább nő, de nincs újabb vásárlási lehetőség.
 
-Hot-seat módban mindkét profil fejleszthető. AI-meccsen csak P1 vásárolhat kézzel:
+Hot-seat módban mindkét profil fejleszthető. AI-meccsen csak az emberi fél vásárolhat kézzel:
 a gép a csata statisztikái alapján maga költi el XP-jét. Online csak a saját profil
 módosítható, a vásárlás a meccsvége szinkronizálásáig zárolt.
 

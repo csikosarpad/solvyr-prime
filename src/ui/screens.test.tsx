@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Game } from "@/game/engine/Game";
 import { useGameStore } from "@/game/state/gameStore";
@@ -9,6 +9,9 @@ import { useCampaignStore } from "@/game/state/campaignStore";
 import { gameRef } from "./gameRef";
 import { MainMenu } from "./main-menu/MainMenu";
 import { ResultScreen } from "./ResultScreen";
+import { Workshop } from "./Workshop";
+import { IDBFactory } from "fake-indexeddb";
+import { useVeyloraStore } from "@/game/state/veyloraStore";
 
 const mockGame = (overrides: Partial<Record<keyof Game, unknown>>) => {
   gameRef.current = { leaveBattle: vi.fn(), ...overrides } as unknown as Game;
@@ -291,7 +294,8 @@ describe("ResultScreen", () => {
     expect(useGameStore.getState().screen).toBe("menu");
   });
 
-  it("lezárt online meccs után a host új meccset indíthat és csak a saját tankját fejlesztheti", () => {
+  it("lezárt online meccs után a host új meccset indíthat és csak a saját tankját fejlesztheti", async () => {
+    vi.stubGlobal("indexedDB", new IDBFactory());
     const requestMultiplayerRematch = vi.fn();
     const buy = vi.fn();
     mockGame({ requestMultiplayerRematch, buy });
@@ -305,13 +309,24 @@ describe("ResultScreen", () => {
         players: { P1: "Ada", P2: "Grace" },
       },
     });
-    render(<ResultScreen />);
+    const result = render(<ResultScreen />);
 
     expect(screen.getByRole("button", { name: "Visszavágó" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "P1: Páncél" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Fejlesztés" }));
+    expect(useGameStore.getState().screen).toBe("workshop");
+    result.unmount();
+    const workshop = render(<Workshop />);
+    await waitFor(() => expect(useVeyloraStore.getState().pending).toBe(0));
     expect(screen.getByRole("button", { name: "P1: Páncél" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "P2: Páncél" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "P2: Páncél" }).closest(".unit-panel")).toHaveClass("is-inactive");
     fireEvent.click(screen.getByRole("button", { name: "P1: Páncél" }));
     expect(buy).toHaveBeenCalledWith("P1", "armor");
+    fireEvent.click(screen.getByRole("button", { name: "Vissza" }));
+    expect(useGameStore.getState().screen).toBe("playing");
+    workshop.unmount();
+    render(<ResultScreen />);
     fireEvent.click(screen.getByRole("button", { name: "Visszavágó" }));
     expect(requestMultiplayerRematch).toHaveBeenCalledOnce();
   });

@@ -8,6 +8,7 @@ import { useMultiplayerStore } from "../state/multiplayerStore";
 import { tankContains, type Tank } from "../entities/tank";
 import { TRAINING_SECTOR, sectorById } from "../data/sectors";
 import { loadProfiles, saveProfiles } from "../systems/profileStorage";
+import type { Profile } from "../systems/upgrades";
 import { Texture } from "pixi.js";
 import { GlowFilter } from "pixi-filters";
 import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
@@ -26,9 +27,11 @@ describe("Game campaign lifecycle", () => {
     vi.stubGlobal("indexedDB", new IDBFactory());
     localStorage.removeItem("ballistic-front:profiles");
     localStorage.removeItem("ballistic-front:profiles:v1");
+    await useVeyloraStore.getState().switchPlayer("P1");
     await useVeyloraStore.getState().resetEconomy();
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
     useMultiplayerStore.getState().leave();
+    useCampaignStore.getState().switchPlayer("P1");
     useCampaignStore.getState().reset();
     useAiSettings.getState().setEnabled(false);
     useGameStore.setState({ screen: "playing", muted: true, sector: TRAINING_SECTOR, campaignNewRoutes: [],
@@ -62,6 +65,107 @@ describe("Game campaign lifecycle", () => {
     expect(game.startCampaign("forge-17")).toBe(true);
     game.restart({ seed: 42, starterIndex });
   };
+
+  it("lets P2 fight their own operation as the human and awards only P2's campaign", async () => {
+    useCampaignStore.getState().switchPlayer("P2");
+    await useVeyloraStore.getState().switchPlayer("P2");
+    expect(await game.startOperation("secure-mine")).toBe(true);
+    game.restart({ seed: 42, starterIndex: 1 });
+    expect(useGameStore.getState()).toMatchObject({ campaignPlayer: "P2", currentId: "P2", canControl: true });
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    tanks[0]!.hp = 0;
+    game.fire();
+    Reflect.get(game, "explode").call(game, 640, 100);
+    expect(useGameStore.getState()).toMatchObject({ winner: "P2", missionSuccess: true });
+    await vi.waitFor(() => expect(useVeyloraStore.getState().completedMissionIds).toContain("secure-mine"));
+    expect(useVeyloraStore.getState().economy.resources["industrial-ore"]).toBe(20);
+    await useVeyloraStore.getState().switchPlayer("P1");
+    expect(useVeyloraStore.getState().completedMissionIds).toEqual([]);
+    expect(useVeyloraStore.getState().economy.resources).toEqual({});
+  });
+
+  it.each(["P1", "P2"] as const)("keeps %s campaign AI XP out of the other human profile", (player) => {
+    useCampaignStore.getState().switchPlayer(player);
+    game.startCampaign("alpha-01");
+    const aiId = player === "P1" ? "P2" : "P1";
+    const humanProfile = structuredClone(Reflect.get(game, "profiles")[aiId]);
+    Reflect.get(game, "award").call(game, aiId, 120);
+    expect(Reflect.get(game, "profiles")[aiId]).toEqual(humanProfile);
+    expect(Reflect.get(game, "aiProfile").xp).toBe(120);
+    game.leaveBattle();
+    expect(Reflect.get(game, "aiProfile").xp).toBe(0);
+  });
+
+  it("persists an AI victory separately from both human profiles", () => {
+    useAiSettings.getState().setEnabled(true);
+    const humanProfiles = structuredClone(Reflect.get(game, "profiles"));
+    endBattle("P2");
+    const aiProfile: Profile = Reflect.get(game, "aiProfile");
+    expect(aiProfile.xp + Object.values(aiProfile.levels).reduce((sum, level) => sum + level, 0)).toBeGreaterThan(0);
+    expect(loadProfiles(["P1", "P2", "AI"])).toEqual({ ...humanProfiles, AI: aiProfile });
+    const reloaded = new Game();
+    expect(Reflect.get(reloaded, "aiProfile")).toEqual(aiProfile);
+    reloaded.destroy();
+  });
+
+  it("credits a P2 victory only to P2's legacy campaign", () => {
+    useCampaignStore.getState().switchPlayer("P2");
+    game.startCampaign("alpha-01");
+    game.restart({ seed: 42, starterIndex: 1 });
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    tanks[0]!.hp = 0;
+    game.fire();
+    Reflect.get(game, "explode").call(game, 640, 100);
+    expect(useGameStore.getState()).toMatchObject({ winner: "P2", campaignPlayer: "P2" });
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
+    useCampaignStore.getState().switchPlayer("P1");
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+  });
+
+  it("uses only P2's purchased shield in a P2 operation", async () => {
+    const state = useVeyloraStore.getState;
+    await state().complete("secure-mine", state().economy.generation);
+    await state().complete("secure-lab", state().economy.generation);
+    await state().buy("reinforced-shield");
+    useCampaignStore.getState().switchPlayer("P2");
+    await state().switchPlayer("P2");
+    expect(await game.startOperation("secure-mine")).toBe(true);
+    expect(Reflect.get(game, "tanks")[1].stats.maxEnergyShield).toBe(0);
+    await state().complete("secure-mine", state().economy.generation);
+    await state().complete("secure-lab", state().economy.generation);
+    await state().buy("reinforced-shield");
+    expect(await game.startOperation("secure-mine")).toBe(true);
+    expect(Reflect.get(game, "tanks")[1].stats.maxEnergyShield).toBeCloseTo(22);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(0);
+  });
+
+  it("purchases upgrades between matches, persists them, and keeps both player profiles", () => {
+    game.restart({ seed: 42, starterIndex: 0 });
+    game.leaveBattle();
+    Reflect.get(game, "profiles").P1.xp = 100;
+    Reflect.get(game, "profiles").P2.xp = 100;
+    useGameStore.setState({ screen: "workshop", workshopOrigin: "menu" });
+    game.buy("P1", "armor");
+    game.buy("P2", "shield");
+    expect(loadProfiles(["P1", "P2"])).toEqual({
+      P1: { xp: 60, levels: { armor: 1 } },
+      P2: { xp: 50, levels: { shield: 1 } },
+    });
+    game.startOffline();
+    expect(Reflect.get(game, "tanks")[0].stats.maxArmor).toBe(20);
+    expect(Reflect.get(game, "tanks")[1].stats.maxEnergyShield).toBe(20);
+  });
+
+  it("does not charge XP or change profiles if a workshop purchase cannot be persisted", () => {
+    game.restart({ seed: 42, starterIndex: 0 });
+    game.leaveBattle();
+    Reflect.get(game, "profiles").P1.xp = 100;
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("quota"); });
+    game.buy("P1", "armor");
+    expect(Reflect.get(game, "profiles").P1).toEqual({ xp: 100, levels: {} });
+    expect(useGameStore.getState().workshopError).toBe("workshop.saveError");
+  });
 
   it("starts fixed VEYLORA opponents independently of P2 profile and AI memory", async () => {
     Reflect.get(game, "profiles").P2.levels = { armor: 5, shield: 5, warhead: 5 };
@@ -487,6 +591,28 @@ describe("Game campaign lifecycle", () => {
     expect(loadProfiles(["P1"]).P1?.xp).toBe(125);
     game.leaveBattle();
     expect(useGameStore.getState().profiles.P1?.xp).toBe(125);
+  });
+
+  it("publishes only the local player's post-match upgrade while the workshop is open", () => {
+    useMultiplayerStore.setState({
+      credentials: { roomCode: "ABC123", playerId: "P2", token: "token" },
+    });
+    const originalPublish = useMultiplayerStore.getState().publish;
+    const publish = vi.fn(async () => {});
+    useMultiplayerStore.setState({ publish });
+    game.startMultiplayer(
+      { seed: 42, starterIndex: 0 },
+      { P1: { xp: 100, levels: {} }, P2: { xp: 100, levels: {} } },
+      0,
+    );
+    Reflect.set(Reflect.get(game, "turns"), "phase", "gameOver");
+    useGameStore.setState({ screen: "workshop", workshopOrigin: "playing" });
+    game.buy("P1", "armor");
+    game.buy("P2", "armor");
+    expect(publish).toHaveBeenCalledOnce();
+    expect(publish).toHaveBeenCalledWith("upgrade_purchased", { upgradeId: "armor" });
+    expect(Reflect.get(game, "profiles").P2).toEqual({ xp: 100, levels: {} });
+    useMultiplayerStore.setState({ publish: originalPublish });
   });
 
   it("forces campaign AI but preserves quick-battle preference, including rematch", () => {
