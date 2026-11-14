@@ -4,6 +4,7 @@ import { TerrainBloomFilter } from "./TerrainBloomFilter";
 import { bloomSettings } from "./bloomQuality";
 import tankBodyUrl from "../assets/tank-body.svg?url";
 import tankBarrelUrl from "../assets/tank-barrel.svg?url";
+import tankMarkingsUrl from "../assets/tank-markings.svg?url";
 import { kick, stepBarrel, type BarrelState } from "../systems/barrelAnimation";
 import {
   DEFAULT_WORLD,
@@ -98,6 +99,8 @@ const PREVIEW_GAP = 4;
 const SELF_HIT_GRACE = 30;
 /** A cső forgáspontja a tank talajszintje fölött (px); egyezik a tank.ts-ben lévővel. */
 const BARREL_PIVOT_HEIGHT = 10;
+/** Csak a megjelenítés nagyobb; a löveg hossza és a találati terület nem változik. */
+const TANK_VISUAL_SCALE = 1.25;
 /** Ekkora (képernyő-px) sugarú körben a tank körül indított húzás célzást jelent. */
 const DRAG_GRAB_RADIUS = 64;
 
@@ -118,7 +121,7 @@ export class Game {
   private tankLayer = new Container();
   private battlefieldLayers = new BattlefieldLayers();
   private tankViews = new Map<string, TankView>();
-  private tankTextures: { body: Texture; barrel: Texture } | null = null;
+  private tankTextures: { body: Texture; barrel: Texture; markings: Texture } | null = null;
   private shellGfx = new Graphics();
   private shellGlow = new Sprite();
   private trailGfx = new Graphics();
@@ -178,9 +181,10 @@ export class Game {
     host.appendChild(this.app.canvas);
     this.setupDragAim(this.app.canvas);
 
-    const [body, barrel, fxTextures] = await Promise.all([
+    const [body, barrel, markings, fxTextures] = await Promise.all([
       Assets.load<Texture>({ src: tankBodyUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankBarrelUrl, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: tankMarkingsUrl, data: { resolution: 3 } }),
       loadFxTextures(),
       this.battlefieldLayers.loadAssets(),
     ]);
@@ -192,7 +196,7 @@ export class Game {
         this.lockTarget();
       }
     });
-    this.tankTextures = { body, barrel };
+    this.tankTextures = { body, barrel, markings };
     this.fx = new FxRenderer(fxTextures);
     this.shellGlow.texture = fxTextures.glow;
     this.shellGlow.anchor.set(0.5);
@@ -477,7 +481,7 @@ export class Game {
     return this.matchMode !== "skirmish" && this.campaignPlayer === "P2" ? "P1" : "P2";
   }
 
-  /** Tankonként egy sprite-pár: a cső a test mögött forog a saját forgáspontja körü. */
+  /** A cső a test mögött forog, a játékosszínű jelzések a testet követik. */
   private buildTankViews(): void {
     if (!this.tankTextures) return;
     this.destroyTankViews();
@@ -485,11 +489,16 @@ export class Game {
     for (const t of this.tanks) {
       const barrel = new Sprite(this.tankTextures.barrel);
       barrel.anchor.set(0, 0.5);
+      barrel.scale.y = TANK_VISUAL_SCALE;
       const body = new Sprite(this.tankTextures.body);
       body.anchor.set(0.5, 1);
-      body.tint = tankTint(t.color);
+      body.scale.set(TANK_VISUAL_SCALE);
+      const markings = new Sprite(this.tankTextures.markings);
+      markings.anchor.set(0.5, 1);
+      markings.scale.set(TANK_VISUAL_SCALE);
+      markings.tint = tankTint(t.color);
       const root = new Container();
-      root.addChild(barrel, body);
+      root.addChild(barrel, body, markings);
       const glow = new GlowFilter({
         color: playerAccent(t.color),
         distance: coarsePointer ? 3 : 4,
@@ -922,6 +931,10 @@ export class Game {
   private explode(x: number, y: number): void {
     const shooter = this.current;
     const radius = shooter.stats.blastRadius;
+    const mask = this.terrain?.mask;
+    const surface = mask?.surfaceY(x);
+    const terrainImpact = mask !== undefined && surface !== undefined && surface < mask.height &&
+      (mask.isSolid(x, y) || Math.abs(surface - y) <= radius);
     const objectivesBefore = this.strategicObjectives;
     this.battlefieldLayers.reactToImpact(Math.min(1, radius / 80));
     this.strategicObjectives = this.strategicObjectives.map((objective) => ({
@@ -945,6 +958,7 @@ export class Game {
       }));
     }
     this.particles.spawnExplosion(x, y, radius);
+    if (terrainImpact && this.shakeEnabled) this.particles.spawnGroundImpact(x, y, radius);
     this.audio?.play("explosion", { rate: 0.9 + Math.random() * 0.2 });
     // XP: az ellenfélnek okozott sérülés (1 HP, pajzs- vagy páncélpont = 1 XP).
     let dealt = 0;
@@ -1128,7 +1142,7 @@ export class Game {
   }
 
   private draw(dt: number): void {
-    if (this.terrain) this.objectiveGraphics.draw(this.strategicObjectives, this.terrain.mask, dt, this.shakeEnabled);
+    if (this.terrain) this.objectiveGraphics.draw(this.strategicObjectives, this.terrain.mask, dt, this.shakeEnabled, this.sector.id === "forge-17");
     const aiming = this.turns.phase === "aiming";
     const aimAngle = useGameStore.getState().angle;
     for (const t of this.tanks) {

@@ -103,6 +103,36 @@ páncélzatú vagy akár más működési tartományú platformok is tartozhatna
 - A csatolt terveken szereplő **Siege Platform A-1 / B-2** koncepció vizuális referencia,
   nem végleges modell- vagy osztálynév-döntés.
 
+## Gameplay-látvány modernizálása
+
+Az első Solvyr Prime koncepciókép hangulata a cél, nem a teljes kép változatlan
+átvétele: a terep, az egységek és a HUD továbbra is működő, dinamikus elemek.
+A meglévő hegy-, köd- és porrendszerre építünk, nem készítünk párhuzamos atmoszférát.
+
+1. **Terepprototípus, ALPHA-01:** ismétlődő sziklaminta és lefelé sötétedő
+   árnyalás a meglévő rombolható textúrában. A mintát a terep alakja határolja;
+   a kráterek és a leváló darabok látványa az ütközési maszkot követi.
+   Más szektorokra csak a prototípus értékelése után terjesszük ki.
+2. **Kráterek:** tartós perzselés finom peremrészletekkel és rövid talajbecsapódási
+   törmelék; csökkentett mozgásnál az új törmelékeffekt kikapcsol.
+3. **Épületek:** a FORGE-17 energiareaktorának Pixi-rajzokból készített
+   látványpróbája ép, sérült és megsemmisült állapottal; a státuszjelzés megmarad.
+   A további részletes assetek az első változat értékelése után következhetnek.
+4. **Egységek:** a kráter- és reaktorlátvány jóváhagyása után Siege Platform
+   assetek külön testtel és csővel. A jelenlegi ostromplatform semleges testet és
+   külön játékosszínű jelzésréteget kapott a harctéren és az egységpaneleken;
+   a csőforgás, lövedék kiindulópontja és találati terület változatlan.
+   A harctéri test és a jelzések 25%-kal nagyobbak, a löveg vastagabb, de a
+   hossza változatlan: a nagyobb látvány szélei túlnyúlnak a fizikai találati területen.
+5. **HUD és atmoszféra:** jóváhagyás után olvashatóság és szektoronkénti középtér javítása; a
+   felső középső HUD kontrasztja és szövegmérete javult, az elrendezés változatlan.
+   A minitérkép hasznosságáról és a vezérlők átrendezéséről külön döntés szükséges.
+
+Minden ütem vizuális változtatás: a ballisztika, mozgás, terrain-maszk, mentés és
+online protokoll nem változik. Saját vagy megfelelően licencelt asseteket használunk.
+Ellenőrizni kell a rombolást, a teljesítményt és olvashatóságot mobilon, valamint a
+csökkentett mozgás beállítást; a prototípus nem jelenti e próbák lezárását.
+
 ## Designirány – Tipográfia
 
 Megvalósított döntés: önállóan hosztolt **Oxanium + Rajdhani** (SIL OFL 1.1).

@@ -8,30 +8,55 @@ vi.hoisted(() => {
 });
 
 describe("strategic objective graphics", () => {
-  it.each(["ENERGY_NODE", "CIVIL_HABITAT", "RESEARCH_LAB"] as const)("draws distinct %s states without changing logic", (type) => {
+  it("uses the FORGE reactor prototype in all three states only when enabled", () => {
     const graphics = new StrategicObjectiveGraphics();
+    const reactor = vi.spyOn(graphics, "circle");
     const terrain = TerrainMask.fromHeightmap(new Array(1280).fill(550), 720);
-    const objective: PlacedStrategicObjective = {
-      ...createStrategicObjective("test-01", type),
+    const objective = {
+      ...createStrategicObjective("energy-node-01", "ENERGY_NODE"),
       worldX: 1040,
       worldY: 550,
       width: 48,
       height: 44,
     };
-    for (const hp of [100, 40, 15]) {
-      const state = { ...objective, hp };
-      const before = structuredClone(state);
-      graphics.draw([state], terrain, 1 / 60, true);
-      expect(graphics.context.instructions.length).toBeGreaterThan(0);
-      expect(state).toEqual(before);
-      const bounds = graphics.getLocalBounds();
-      expect(bounds.minY).toBeLessThan(550);
-      expect(bounds.maxY).toBeGreaterThanOrEqual(550);
-    }
-    graphics.draw([], terrain, 0, false);
-    expect(graphics.context.instructions).toHaveLength(0);
+    graphics.draw([objective], terrain, 0, false);
+    expect(reactor).not.toHaveBeenCalled();
+    graphics.draw([objective], terrain, 0, false, true);
+    expect(reactor).toHaveBeenCalledTimes(1);
+    graphics.draw([{ ...objective, hp: 40 }], terrain, 0, false, true);
+    expect(reactor).toHaveBeenCalledTimes(4);
+    graphics.draw([{ ...objective, hp: 15 }], terrain, 0, false, true);
+    expect(reactor).toHaveBeenCalledTimes(4);
     graphics.destroy();
   });
+
+  it.each(["ENERGY_NODE", "CIVIL_HABITAT", "RESEARCH_LAB"] as const)(
+    "draws distinct %s states without changing logic",
+    (type) => {
+      const graphics = new StrategicObjectiveGraphics();
+      const terrain = TerrainMask.fromHeightmap(new Array(1280).fill(550), 720);
+      const objective: PlacedStrategicObjective = {
+        ...createStrategicObjective("test-01", type),
+        worldX: 1040,
+        worldY: 550,
+        width: 48,
+        height: 44,
+      };
+      for (const hp of [100, 40, 15]) {
+        const state = { ...objective, hp };
+        const before = structuredClone(state);
+        graphics.draw([state], terrain, 1 / 60, true);
+        expect(graphics.context.instructions.length).toBeGreaterThan(0);
+        expect(state).toEqual(before);
+        const bounds = graphics.getLocalBounds();
+        expect(bounds.minY).toBeLessThan(550);
+        expect(bounds.maxY).toBeGreaterThanOrEqual(550);
+      }
+      graphics.draw([], terrain, 0, false);
+      expect(graphics.context.instructions).toHaveLength(0);
+      graphics.destroy();
+    },
+  );
 
   it("does not advance damage animation with reduced motion", () => {
     const graphics = new StrategicObjectiveGraphics();

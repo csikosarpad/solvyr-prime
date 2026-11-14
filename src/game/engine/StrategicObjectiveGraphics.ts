@@ -1,5 +1,5 @@
 import { Graphics } from "pixi.js";
-import { structureState, type PlacedStrategicObjective } from "../systems/strategicObjectives";
+import { structureState, type PlacedStrategicObjective, type StructureState } from "../systems/strategicObjectives";
 import type { TerrainMask } from "../terrain/mask";
 
 export class StrategicObjectiveGraphics extends Graphics {
@@ -10,6 +10,7 @@ export class StrategicObjectiveGraphics extends Graphics {
     terrain: TerrainMask,
     dt: number,
     motionEnabled: boolean,
+    forgeReactor = false,
   ): void {
     this.clear();
     if (motionEnabled) this.elapsed += dt;
@@ -31,7 +32,9 @@ export class StrategicObjectiveGraphics extends Graphics {
         );
       }
 
-      if (destroyed) {
+      if (forgeReactor && objective.type === "ENERGY_NODE") {
+        this.drawReactor(left, top, width, height, state, alpha);
+      } else if (destroyed) {
         this.poly([left, y - 4, left + 8, y - 12, x - 3, y - 7, x + 8, y - 16, left + width, y - 4])
           .fill(0x262c36)
           .stroke({ color, width: 2 });
@@ -92,5 +95,63 @@ export class StrategicObjectiveGraphics extends Graphics {
         destroyed ? 0xff6464 : damaged ? 0xffb454 : color,
       );
     }
+  }
+
+  private drawReactor(
+    left: number,
+    top: number,
+    width: number,
+    height: number,
+    state: StructureState,
+    alpha: number,
+  ): void {
+    const x = (fraction: number) => left + width * fraction;
+    const y = (fraction: number) => top + height * fraction;
+    if (state === "DESTROYED") {
+      this.poly([
+        x(0),
+        y(0.9),
+        x(0.13),
+        y(0.6),
+        x(0.32),
+        y(0.7),
+        x(0.46),
+        y(0.48),
+        x(0.64),
+        y(0.75),
+        x(0.82),
+        y(0.58),
+        x(1),
+        y(0.9),
+      ])
+        .fill(0x29303b)
+        .stroke({ color: 0x66707b, width: 1 });
+      this.moveTo(x(0.17), y(0.84))
+        .lineTo(x(0.38), y(0.67))
+        .lineTo(x(0.53), y(0.79))
+        .stroke({ color: 0x101923, width: 2 });
+      this.rect(x(0.7), y(0.72), width * 0.12, height * 0.12).fill({ color: 0x8b542f, alpha: 0.6 });
+      return;
+    }
+
+    this.poly([x(0.04), y(0.84), x(0.1), y(0.3), x(0.25), y(0.2), x(0.75), y(0.2), x(0.9), y(0.3), x(0.96), y(0.84)])
+      .fill(0x263e50)
+      .stroke({ color: 0x7293a3, width: 1 });
+    this.poly([x(0.1), y(0.34), x(0.26), y(0.26), x(0.26), y(0.77), x(0.1), y(0.84)]).fill(0x192c3c);
+    this.poly([x(0.74), y(0.26), x(0.9), y(0.34), x(0.9), y(0.84), x(0.74), y(0.77)]).fill(0x122432);
+    this.roundRect(x(0.3), y(0.31), width * 0.4, height * 0.42, 3)
+      .fill(0x071c2a)
+      .stroke({ color: 0x4abaff, width: 1 });
+    this.circle(x(0.5), y(0.52), width * 0.11)
+      .fill({ color: state === "DAMAGED" ? 0xffaa55 : 0x5bdcff, alpha })
+      .stroke({ color: 0xd5f8ff, alpha: 0.8, width: 1 });
+    this.rect(x(0.27), y(0.08), width * 0.46, height * 0.14).fill(0x455b69);
+    this.rect(x(0.36), y(0.02), width * 0.28, height * 0.08).fill(0x8aafbd);
+    this.rect(x(0.02), y(0.82), width * 0.96, height * 0.12).fill(0x172b39);
+    this.moveTo(x(0.15), y(0.42))
+      .lineTo(x(0.15), y(0.7))
+      .moveTo(x(0.85), y(0.42))
+      .lineTo(x(0.85), y(0.7))
+      .stroke({ color: 0x75b9ca, alpha: 0.65, width: 1 });
   }
 }

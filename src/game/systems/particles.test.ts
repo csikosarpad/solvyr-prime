@@ -64,6 +64,17 @@ describe("ParticleSystem", () => {
     expect(ps.particles[0]!.opacity).toBeLessThan(0.5);
   });
 
+  it("a talajbecsapódás rövid, mindkét oldalra szóródó törmeléket ad", () => {
+    const ps = make();
+    ps.spawnGroundImpact(10, 20, 30);
+    expect(ps.particles).toHaveLength(6);
+    expect(ps.particles.every((p) => p.kind === "debris" && p.life <= 0.45 && p.vy < 0)).toBe(true);
+    expect(ps.particles.some((p) => p.vx < 0)).toBe(true);
+    expect(ps.particles.some((p) => p.vx > 0)).toBe(true);
+    ps.update(0.5);
+    expect(ps.particles).toHaveLength(0);
+  });
+
   it("a lejárt részecskék törlődnek", () => {
     const ps = make();
     ps.spawnExplosion(0, 0, 30);

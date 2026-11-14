@@ -591,17 +591,19 @@ A megvalósíthatóságot ezek a meglévő felületek támasztják alá:
 A harctéri olvashatóság következő próbája statikus, játékosszínű Pixi `GlowFilter`
 a teljes test–löveg konténeren: desktopon 4, érintőeszközön 3 képpontos fényudvar,
 visszafogott belső élkiemeléssel. Nincs pulzálás, a reduced-motion nézetben is statikus.
-A filterek újraindításkor és az engine megsemmisítésekor felszabadulnak; a fizika és
-a tank színezése változatlan. Ez nem a külön emissive/team-color assetréteg megvalósítása.
+A filterek újraindításkor és az engine megsemmisítésekor felszabadulnak; a fizika
+változatlan. A fényudvar nem önálló emissive assetréteg.
 
 Első harctéri assetpróba: a body/barrel SVG szögletes ostromplatform-sziluettet,
 szegmentált járószerkezetet, páncélpaneleket és sínágyús löveget kapott. A logikai
-méret 24×12 / 16×4, a sprite anchorok, a teljes test játékosszín-tintje és a fizika
+méret 24×12 / 16×4, a sprite anchorok és a fizika
 változatlan. Ez SP1 vizuális próba, nem a teljes munkacsomag elfogadása: külön
-team-color/glow réteg, új töltési animáció, terrain shader és VFX még nem készült.
+emissive réteg, új töltési animáció és terrain shader még nem készült.
 Az eredményképernyő következő vizuális próbája ugyanezt a két SVG-t használja:
 `body-barrel` illustration layout, 20°-os löveg, egymás felé forduló P1/P2 és
-SVG-s szorzó színezés a presentation cyan/arany színével. A korábbi részlet- és
+semleges test fölötti, külön SVG-s szorzóval játékosszínre színezett jelzésréteg.
+Ugyanez a réteg a harctéri testen is megjelenik; a fekete választás látható szürke
+jelzést és világos körvonalat használ. A korábbi részlet- és
 accent-assetek nincsenek bekötve ehhez az összeállításhoz; a generikus réteges
 megjelenítés más presentationök számára megmarad.
 

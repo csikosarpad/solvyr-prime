@@ -105,8 +105,8 @@
 }
 
 .wind-indicator-label {
-  color: #83b9d1;
-  font-size: 13px;
+  color: #b6dce9;
+  font-size: 14px;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -172,9 +172,9 @@
   gap: 6px;
   min-width: 180px;
   padding: 8px 14px;
-  border: 1px solid rgba(73, 208, 255, 0.4);
+  border: 1px solid rgba(73, 208, 255, 0.55);
   border-radius: 2px 10px;
-  background: rgba(4, 22, 42, 0.88);
+  background: rgba(3, 15, 30, 0.96);
   box-shadow: 0 0 16px rgba(0, 170, 255, 0.12);
   text-align: center;
 }
@@ -185,8 +185,8 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 6px;
-  color: #b8d7e5;
-  font-size: 13px;
+  color: #d3eaf3;
+  font-size: 14px;
   letter-spacing: 0.45px;
   text-transform: uppercase;
 }
@@ -711,19 +711,19 @@
 }
 
 .hud-sector .sector-code {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1px;
 }
 
 .hud-sector strong {
   display: block;
   color: var(--bf-text);
-  font: 600 13px var(--bf-font-data);
+  font: 600 15px var(--bf-font-data);
 }
 
 .hud-objectives {
   color: var(--bf-text);
-  font: 600 12px var(--bf-font-data);
+  font: 600 14px var(--bf-font-data);
   overflow-wrap: anywhere;
 }
 
@@ -2479,7 +2479,7 @@
   }
 
   .wind-indicator-label {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .wind-indicator-arrow {
@@ -2492,6 +2492,11 @@
 
   .hud-sector strong {
     font-size: 12px;
+  }
+
+  .hud-sector .sector-code,
+  .hud-objectives {
+    font-size: 11px;
   }
 
   .hud-command-dock {

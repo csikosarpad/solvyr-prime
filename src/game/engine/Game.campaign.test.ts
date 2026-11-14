@@ -64,21 +64,35 @@ describe("Game campaign lifecycle", () => {
 
   it("applies both selected colors to the tank and HUD on a new battle", () => {
     usePlayerColors.setState({ colors: { P1: "green", P2: "purple" } });
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    Reflect.set(game, "tankTextures", { body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY });
     game.restart({ seed: 42, starterIndex: 0 });
     const tanks: Tank[] = Reflect.get(game, "tanks");
     expect(tanks.map((tank) => tank.color)).toEqual([PLAYER_COLORS.green, PLAYER_COLORS.purple]);
     expect(useGameStore.getState().tanks.map((tank) => tank.color)).toEqual([PLAYER_COLORS.green, PLAYER_COLORS.purple]);
+    const layer = Reflect.get(game, "tankLayer");
+    for (const [index, color] of [PLAYER_COLORS.green, PLAYER_COLORS.purple].entries()) {
+      const [barrel, body, markings] = layer.children[index].children;
+      expect(body.tint).toBe(0xffffff);
+      expect(markings.tint).toBe(color);
+      expect(markings.anchor.x).toBe(body.anchor.x);
+      expect(markings.anchor.y).toBe(body.anchor.y);
+      expect([body.scale.x, body.scale.y, markings.scale.x, markings.scale.y]).toEqual([1.25, 1.25, 1.25, 1.25]);
+      expect([barrel.scale.x, barrel.scale.y]).toEqual([1, 1.25]);
+    }
+    vi.unstubAllGlobals();
   });
 
   it("renders a black tank with visible shading and outline without changing its saved color", () => {
     usePlayerColors.setState({ colors: { P1: "black", P2: "white" } });
     vi.stubGlobal("matchMedia", () => ({ matches: false }));
-    Reflect.set(game, "tankTextures", { body: Texture.EMPTY, barrel: Texture.EMPTY });
+    Reflect.set(game, "tankTextures", { body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY });
     game.restart({ seed: 42, starterIndex: 0 });
     const layer = Reflect.get(game, "tankLayer");
-    expect(layer.children[0].children[1].tint).toBe(0x777777);
+    expect(layer.children[0].children[1].tint).toBe(0xffffff);
+    expect(layer.children[0].children[2].tint).toBe(0x777777);
     expect(layer.children[0].filters[0].color).toBe(0xb9c7d6);
-    expect(layer.children[1].children[1].tint).toBe(0xffffff);
+    expect(layer.children[1].children[2].tint).toBe(0xffffff);
     expect(useGameStore.getState().tanks[0]!.color).toBe(0);
     vi.unstubAllGlobals();
   });
@@ -449,7 +463,7 @@ describe("Game campaign lifecycle", () => {
   it.each([false, true])("adds team-colored glow and releases filters on restart (touch: %s)", (touch) => {
     vi.stubGlobal("matchMedia", () => ({ matches: touch }));
     try {
-      Reflect.set(game, "tankTextures", { body: Texture.EMPTY, barrel: Texture.EMPTY });
+      Reflect.set(game, "tankTextures", { body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY });
       game.startOffline();
       const layer = Reflect.get(game, "tankLayer");
       const glows: GlowFilter[] = layer.children.map((root: { filters: GlowFilter[] }) => root.filters[0]);

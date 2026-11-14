@@ -40,7 +40,10 @@ export function UnitIllustration({ presentation, facing = "right" }: UnitIllustr
               transform="rotate(-20 16 6)"
             />
           )}
-          <image href={presentation.silhouetteAsset} x="4" y="4" width="24" height="12" filter={`url(#${tintId})`} />
+          <image href={presentation.silhouetteAsset} x="4" y="4" width="24" height="12" />
+          {presentation.accentAsset && (
+            <image href={presentation.accentAsset} x="4" y="4" width="24" height="12" filter={`url(#${tintId})`} />
+          )}
         </svg>
       </div>
     );

@@ -7,6 +7,7 @@ import { getUnitPresentation } from "./unitPresentation";
 import { getUpgradePresentation } from "./upgradePresentation";
 import tankBodyUrl from "@/game/assets/tank-body.svg?url";
 import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
+import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
 import { DEFAULT_THEME } from "@/game/theme";
 
 describe("result presentation contract", () => {
@@ -25,7 +26,7 @@ describe("result presentation contract", () => {
     expect(p1.secondaryAsset).toBe(tankBarrelUrl);
     expect(p1.illustrationLayout).toBe("body-barrel");
     expect(p1.detailAsset).toBeUndefined();
-    expect(p1.accentAsset).toBeUndefined();
+    expect(p1.accentAsset).toBe(tankMarkingsUrl);
     expect(p2).toMatchObject({
       domain: "ground",
       primaryColor: DEFAULT_THEME.players[1],
@@ -108,9 +109,10 @@ describe("UnitPanel and Shop presentation contract", () => {
     const illustrations = document.querySelectorAll(".unit-illustration-platform");
     expect(illustrations).toHaveLength(2);
     illustrations.forEach((illustration) => {
-      expect(illustration.querySelectorAll("image")).toHaveLength(2);
+      expect(illustration.querySelectorAll("image")).toHaveLength(3);
       expect(illustration.querySelector("image")?.getAttribute("href")).toBe(tankBarrelUrl);
-      expect(illustration.querySelector("image[filter]")?.getAttribute("href")).toBe(tankBodyUrl);
+      expect(illustration.querySelectorAll("image")[1]?.getAttribute("href")).toBe(tankBodyUrl);
+      expect(illustration.querySelector("image[filter]")?.getAttribute("href")).toBe(tankMarkingsUrl);
     });
     const filters = [...document.querySelectorAll(".unit-illustration-platform filter")];
     expect(new Set(filters.map((filter) => filter.id)).size).toBe(2);

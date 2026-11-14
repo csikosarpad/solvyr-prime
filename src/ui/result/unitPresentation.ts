@@ -2,12 +2,14 @@ import type { UnitPresentation } from "./result.types";
 import { DEFAULT_THEME } from "@/game/theme";
 import tankBodyUrl from "@/game/assets/tank-body.svg?url";
 import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
+import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
 
 const GROUND_PRESENTATION: UnitPresentation = {
   domain: "ground",
   displayName: "Tank",
   silhouetteAsset: tankBodyUrl,
   secondaryAsset: tankBarrelUrl,
+  accentAsset: tankMarkingsUrl,
   illustrationLayout: "body-barrel",
   primaryColor: DEFAULT_THEME.players[0]!,
   secondaryColor: 0x087fa7,

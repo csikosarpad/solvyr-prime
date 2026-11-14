@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Graphics, type Renderer } from "pixi.js";
+import { Container, Graphics, TilingSprite, type Renderer, type Texture } from "pixi.js";
 import { Terrain } from "./Terrain";
 import { TerrainMask } from "./mask";
 import { DEFAULT_THEME } from "../theme";
@@ -14,6 +14,31 @@ vi.hoisted(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Terrain collapse", () => {
+  it("bakes the masked material into ALPHA-01 terrain and releases its temporary tile", () => {
+    let tile: Texture | undefined;
+    let masked = false;
+    const render = vi.fn(({ container }: { container: Container }) => {
+      for (const child of container.children) {
+        if (!(child instanceof Container)) continue;
+        const sprite = child.children.find((item) => item instanceof TilingSprite);
+        if (sprite instanceof TilingSprite) {
+          tile = sprite.texture;
+          masked = child.mask !== null;
+        }
+      }
+    });
+    const terrain = new Terrain({ render } as unknown as Renderer);
+    terrain.build(1280, 720, 42, sectorById("alpha-01"));
+    expect(tile).toBeDefined();
+    expect(masked).toBe(true);
+    expect(tile!.destroyed).toBe(true);
+    expect(render).toHaveBeenCalledTimes(2);
+    render.mockClear();
+    terrain.carve(640, terrain.mask.surfaceY(640), 20);
+    expect(render).toHaveBeenCalledTimes(2);
+    terrain.destroy();
+  });
+
   it.each([...SECTORS, ...VEYLORA.battlefields])("adds rocky details to $id without changing its collision mask", (sector) => {
     const terrain = new Terrain({ render: vi.fn() } as unknown as Renderer);
     const poly = vi.spyOn(Graphics.prototype, "poly");
