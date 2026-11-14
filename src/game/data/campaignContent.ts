@@ -24,7 +24,7 @@ export interface CampaignRecipe {
   name: MessageKey;
   cost: Record<string, number>;
   technologies: string[];
-  effect: { maxEnergyShieldMultiplier: number };
+  effect: { maxEnergyShieldBonus: number; maxEnergyShieldMultiplier: number };
 }
 
 export interface CampaignLocation {
@@ -181,13 +181,16 @@ export function parseCampaignContent(value: unknown): CampaignContent {
   const recipes = list(raw.recipes).map((value): CampaignRecipe => {
     const entry = record(value);
     const effect = record(entry.effect);
-    if (Object.keys(effect).length !== 1) throw new Error("Unsupported campaign upgrade effect");
+    if (Object.keys(effect).length !== 2) throw new Error("Unsupported campaign upgrade effect");
     return {
       id: identifier(entry.id),
       name: message(entry.name),
       cost: quantities(entry.cost),
       technologies: list(entry.technologies).map(text),
-      effect: { maxEnergyShieldMultiplier: number(effect.maxEnergyShieldMultiplier, 1.01, 2) },
+      effect: {
+        maxEnergyShieldBonus: number(effect.maxEnergyShieldBonus, 0, 1000),
+        maxEnergyShieldMultiplier: number(effect.maxEnergyShieldMultiplier, 1.01, 2),
+      },
     };
   });
   const checkReferences = (amounts: Record<string, number>, techIds: string[]) => {

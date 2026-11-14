@@ -69,6 +69,7 @@ describe("campaign content", () => {
   it("validates reward amounts, economic references and station recipes", () => {
     expect(VEYLORA.missions[0]!.rewards.resources["industrial-ore"]).toBe(20);
     expect(VEYLORA.recipes[0]!.effect.maxEnergyShieldMultiplier).toBe(1.1);
+    expect(VEYLORA.recipes[0]!.effect.maxEnergyShieldBonus).toBe(20);
     for (const amount of [-1, 0, 0.5, Infinity, NaN]) {
       const content = structuredClone(VEYLORA);
       content.missions[0]!.rewards.resources["industrial-ore"] = amount;
@@ -82,6 +83,9 @@ describe("campaign content", () => {
     expect(() => parseCampaignContent(station)).toThrow("station");
     const effect = structuredClone(VEYLORA);
     effect.recipes[0]!.effect.maxEnergyShieldMultiplier = 10;
+    expect(() => parseCampaignContent(effect)).toThrow("number");
+    effect.recipes[0]!.effect.maxEnergyShieldMultiplier = 1.1;
+    effect.recipes[0]!.effect.maxEnergyShieldBonus = -1;
     expect(() => parseCampaignContent(effect)).toThrow("number");
   });
 });

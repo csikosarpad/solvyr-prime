@@ -19,7 +19,7 @@ function migratePrototype(): CampaignSave {
     !("version" in raw) ||
     raw.version !== 1 ||
     !("contentVersion" in raw) ||
-    (raw.contentVersion !== 1 && raw.contentVersion !== VEYLORA.contentVersion) ||
+    (raw.contentVersion !== 1 && raw.contentVersion !== 2 && raw.contentVersion !== VEYLORA.contentVersion) ||
     !("sectorId" in raw) ||
     raw.sectorId !== VEYLORA.sector.id ||
     !("selectedMissionId" in raw) ||

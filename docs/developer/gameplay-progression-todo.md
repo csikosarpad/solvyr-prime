@@ -236,6 +236,128 @@ Függőség: a közös meccskonfiguráció és környezeti szabályok.
 - [ ] HUD/célzás/visszajelzés és AI képességválasztás.
 - [ ] Balansz-, mentési és multiplayer-regressziótesztek.
 
+## 4.1. Fejlesztés – műhely, felszerelés és reakciólehetőségek
+
+**Státusz: tervezett irány, nem kész játékműködés.** A Fejlesztés önálló,
+a [ResultScreen](../../src/ui/ResultScreen.tsx) megjelenéséhez és egységpaneljeihez
+illeszkedő műhelynézet. A statfejlesztés, a harci eszközök kiválasztása és a
+későbbi egységváltás egy helyen legyen érthető.
+
+### Elfogadott első menüdöntések
+
+- [x] A Fejlesztés a főmenüből, a műveleti térképről és az eredményképernyőről
+      nyílik; visszalépéskor az eredeti képernyőre tér vissza. A meccs utáni
+      fejlesztés az eredményképernyőről a műhelybe kerül, ott belépőgomb marad.
+- [x] Elsőként a meglévő XP-s statfejlesztések és a megszerzett pajzs
+      felszerelése kerülnek a műhelybe; az új fegyverek későbbi lépés.
+      A pajzs megszerzés előtt is látható, az állomási vásárlás feltételével.
+- [x] A VEYLORA-pajzs meglévő gazdasági kivétel: az állomáson 20 érc és
+      a nem fogyó tervrajz ellenében megvehető, a műhelyben felszerelhető.
+      A meglévő tulajdont és felszerelést meg kell őrizni.
+- [x] Offline két ember mindkét saját profilját fejlesztheti; az AI a saját
+      profilját maga fejleszti. Online mindenki csak saját választott helyi
+      profilját módosíthatja; a meglévő szinkron és visszavágó megőrzendő.
+- [x] A felszerelt pajzs minden játékmódban hat. Helyi P1 és P2 külön
+      kampányt és kampánykészletet kap, amelyből saját pajzsot szerezhet.
+      Online mindkét fél saját pajzsát használja; a játékos belépéskor
+      helyi P1 vagy P2 profilt választ, a szobabeli P1/P2 ettől külön szerep.
+      A felek felszerelését a meccs kezdetén szinkronizálni és rögzíteni kell.
+- [x] Szakaszos megvalósítás: előbb a menü és a meglévő helyi fejlesztések,
+      utána a külön kampánykészletek és az online pajzs. Az első szakasz nem
+      állíthatja, hogy az utóbbiak már működnek; a meglévő működést addig
+      meg kell őrizni, és az egyes módok korlátozásait jelezni kell.
+
+### Gazdaság és hozzáférés
+
+- [ ] A tervezett fejlődés alapja a **megszerzett, elkölthető XP**: az új
+      fejlesztések, fegyverfeloldások és egységfejlesztések XP-hez kötöttek.
+      Más fejlesztési lehetőségek későbbi megfontolások, nem elfogadott költségek.
+- [ ] A jelenlegi VEYLORA-pajzs kivételének megőrzése és a két külön
+      kampánykészlet bevezetése során a meglévő vásárlás, felszerelés,
+      készlet és mentés ne vesszen el, és ne legyen kétszeri díj.
+- [ ] Rögzíteni, hogy egy szektor teljesítése hozzáférést vagy új fejlesztési
+      lehetőséget ad-e; a feloldási feltétel és az XP-költés külön fogalom.
+      A rendelkezésre álló XP és az összes valaha szerzett XP külön adat:
+      szükség esetén a migrációt is meg kell határozni.
+
+### Műhely és felszerelés
+
+- [ ] A műhely mutassa az aktív egységet, az elkölthető XP-t, a meglévő
+      statfejlesztéseket, valamint a megszerzett, zárolt és felszerelt tételeket.
+      A kiválasztott tételnél legyen látható a hatás, az ár vagy feltétel,
+      a kompatibilitás és a jelenlegihez képesti változás.
+- [ ] Fegyver, ágyú és pajzs cseréjéhez külön tulajdonlás/feloldás és
+      felszerelési állapot szükséges. A slotok számát, a kompatibilitást, az
+      üres slotok szabályát, a csere időpontját és esetleges költségét előbb
+      meg kell határozni. A már megszerzett felszerelés cseréje ne vesszen el.
+- [ ] A jelenlegi [állomási pajzskezelés](../../src/ui/CampaignStation.tsx),
+      a meccs utáni bolt és az új műhely ugyanazt a mentett állapotot és
+      szabályt használja; nem lehet egymástól független két „aktív pajzs”.
+      A VEYLORA-pajzs jelenleg csak új rendszerű kampánycsatákra hat; az
+      elfogadott kiterjesztés minden módra későbbi megvalósítási lépés.
+- [ ] A harci eszköz kaphasson további fegyvert, például lézert vagy
+      gránátvetőt. Rögzíteni kell, hogy ezek meglévő fegyvert váltanak-e,
+      további slotot foglalnak-e, vagy csatán belül választott eszközök.
+      Irányításuk, célzásuk, sebzésük, hatótávjuk és terephatásuk eltérhet;
+      ne csupán eltérő nevű sebzésszorzók legyenek.
+- [ ] A lövedékválasztás [4A terve](#4a-választható-lövedékek--megvalósíthatósági-javaslat)
+      külön kezeli a lövésenként választott lőszert és a felszerelt harci
+      eszközt. Az első Standard/HE/AP/Seismic csomag nem feltételez automatikusan
+      több ágyút; a lézer és gránátvető külön fegyver- és vezérlési tervezést igényel.
+- [ ] A felület legyen billentyűzettel és érintéssel használható, hu/en/de
+      fordítással, egyértelmű mentési és hibajelzéssel. A vásárlás és a csere
+      után visszatérve, újratöltés és új csata után is ugyanaz az állapot látszódjon.
+
+### Szektorhoz köthető új harci eszközök
+
+- [ ] Egyes szektorok tegyék lehetővé új tank vagy tankváltozat fejlesztését,
+      amely új taktikai képességet adhat. Dönteni kell, hogy a szektor csak
+      jogosultságot ad-e, mennyi XP kell az eszközhöz, és mikor váltható.
+- [ ] Példa egy lehetséges képességre: a lövedék lepattanása vagy eltérítése
+      csökkentheti a pajzsra jutó sebzést. Ez még nem elfogadott konkrét
+      fizikai szabály: a találati szöget, sebességet, továbbhaladó lövedéket,
+      sebzéselosztást, terep- és önsebzést, korlátokat, visszajelzést és a
+      teljesítményköltséget külön kell megtervezni és tesztelni.
+- [ ] Meg kell határozni a régi tank, XP-s szintek és megszerzett felszerelések
+      sorsát váltáskor, illetve hogy mely eszközök kompatibilisek az új tankkal.
+      Az új típus ne legyen minden helyzetben egyértelműen jobb.
+
+### Reakció az ellenfél célzására vagy lövésére
+
+Ez egy **vizsgálandó játékmeneti irány**, nem döntés a körökre osztás
+megszüntetéséről. A jelenlegi ellenfélkör alatti mozgás vagy védekezés nem
+feltételezhető kész funkciónak.
+
+- [ ] Prototípusban összehasonlítani legalább két lehetőséget: korlátozott
+      kitérő mozgás és aktiválható ideiglenes védelem. Azt is vizsgálni kell,
+      hogy a reakció célzás alatt, lövéskor vagy a lövedék repülése közben
+      lehetséges-e; a különböző időzítések eltérő szabályok.
+- [ ] Dönteni a reakcióablakról, mozgáskeretről vagy töltetről, hűtési és
+      újratöltési szabályról, tankonkénti hozzáférésről, a kihagyott reakció
+      következményéről és arról, hogy a saját kört befolyásolja-e.
+- [ ] Megvizsgálni az ellenfél célzási előnyét, táviratozást, végtelen
+      kitérés elkerülését, AI-reakciót, mobil- és billentyűzetes kezelést,
+      akadálymentességet, illetve az emberi reakcióidők közti méltányosságot.
+- [ ] Online esetén külön döntés kell az időzítésről, késleltetésről,
+      eseménysorrendről és deszinkron-kezelésről. Az egységes, verziózott
+      szabály, a fix lépésű fizika, a meccsre rögzített felszerelés és
+      a determinisztikus replay előfeltétel; az éles harcot nem szabad
+      kizárólag helyi UI-időzítőre bízni.
+
+### Végrehajtási és ellenőrzési kapuk
+
+- [ ] Előbb megvalósítani a meglévő XP-fejlesztést és pajzsot kezelő műhely
+      legkisebb helyi szeletét, majd a két kampánykészletet és az online
+      pajzs szinkronját; a további felszereléshez a slotdöntések szükségesek.
+      Ezután jöhet a 4A szerinti lövedékcsomag, a további fegyverek, majd
+      az új tankok és a reakciómechanika külön játszható próbája. Ez
+      függőségi javaslat, nem elfogadott roadmap-prioritás.
+- [ ] Mentésmigráció, vásárlás, csere, kompatibilitás, XP-egyenleg, mentési
+      hiba és meccsindítási snapshot regressziótesztje régi profilokkal is.
+- [ ] Minden új harci szabályra közös Game/AI/előnézet- és replay-ellenőrzés,
+      offline és két klienses online szinkrontesztek, majd célzott emberi
+      balansz- és kezelhetőségi játékpróba.
+
 ## 4A. Választható lövedékek – megvalósíthatósági javaslat
 
 **Státusz:** tervezési javaslat, még nem elfogadott roadmap-prioritás. A körökre
@@ -253,6 +375,13 @@ fegyverspecifikus becsapódás-feloldás mindhárom kliensoldali útvonalon
 
 ### Döntési kapuk
 
+- [x] Az első fegyvercsomag próbaárai: Standard ingyenes, High Explosive
+      100 XP, Armor Piercing 150 XP, Seismic Charge 200 XP. Smart Missile
+      későbbi bővítés.
+- [x] Armor Piercing: csak közvetlen találat sebez; a pajzs után maradó
+      sebzés 50%-a megkerüli a páncélt. A pontos sebzésérték balanszfeladat.
+- [x] Az első csomagban a meglévő Robbanófej-fejlesztés csak a Standard
+      lövedék sebzésére hat.
 - [x] Haladási modell: a játékos egy alapfegyverrel indul, a további fegyvereket
       XP-ért tartósan feloldhatja. Az MVP-ben a feloldott fegyverek lövésenként
       szabadon választhatók, nincs külön fogyó lőszer.
@@ -694,6 +823,13 @@ nem oldható meg pusztán konfigurációval.
 
 ### Elfogadott első tartalom: VEYLORA-03 / Mining Colony
 
+**Pajzsra vonatkozó későbbi módosítás:** a lentebb megőrzött D8-döntés és
+nulla pajzsra vonatkozó leírás történeti. A vásárolt Megerősített pajzs az
+állomáson felszerelhető és levehető; alapértelmezésben felszerelt. Aktívan
+az XP-alaphoz 20 pontot ad, majd a teljes összeget 10%-kal növeli. Korábbi
+vásárlások is automatikusan felszereltek. A hatás továbbra is csak a következő
+új rendszerű kampánycsatákra vonatkozik.
+
 A játékszabályok elfogadottak; a terep és az ellenfelek kezdőértékei
 játékpróbával igazolandók. A részletes döntések alább szerepelnek.
 
@@ -713,8 +849,8 @@ játékpróbával igazolandók. A részletes döntések alább szerepelnek.
 - Az érc fogyó készlet, a tervrajz tartós, nem fogyó feloldás; küldetésenként
   csak az első sikeres teljesítés ad gazdasági jutalmat. Nincs termelési,
   kutatási vagy gyártási időzítő.
-- A Megerősített pajzs egyszer megvehető, +10% maximális energiapajzsot ad
-  P1 XP-fejlesztésekkel számolt alapjához képest. VEYLORA és minden későbbi,
+- A Megerősített pajzs egyszer megvehető, felszerelve az XP-alaphoz 20 pontot
+  ad, majd a teljes értéket 10%-kal növeli. VEYLORA és minden későbbi,
   új rendszerű kampányszektor új csatáiban hat; a régi kampány, gyorscsata
   és PvP változatlan. A meglévő XP-fejlesztések nem kapnak új árat.
 - Az eredeti két küldetéses lezárást felváltotta a három küldetéses menet:

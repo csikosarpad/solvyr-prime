@@ -31,6 +31,15 @@ a [roadmap](./roadmap.md), a vizuális irányt a [játék redesign terve](./game
 A ROADMAP milestone-jai tematikus csoportok, nem ennek az ajánlott prioritásnak az
 ellentétes végrehajtási sorrendje. A meglévő játékműködés leírása a [játékosútmutató](../user/guide.md).
 
+**2026-11-14: tervezett Fejlesztés-műhely.** A ResultScreenhez illeszkedő
+önálló felületen XP-alapú fejlődés, felszereléscsere, további fegyverek és
+szektorokhoz kötött új harci eszközök tervezendők. Az ellenfél célzására vagy
+lövésére adott mozgásos/védelmi reakció külön vizsgálandó; nem elfogadott
+körszabály-módosítás. A jelenlegi ércért vásárolható VEYLORA-pajzs az
+XP-s fejlődés mellett kivételként marad. A menü, a két játékos kampánykészlete
+és az online felszerelés szakaszosan készül el. Részletek és döntési kapuk:
+[Fejlesztés-műhely](./gameplay-progression-todo.md#41-fejlesztés--műhely-felszerelés-és-reakciólehetőségek).
+
 ## 1. Összefoglaló
 
 A jelenlegi fejlődés viszonylag hamar kifut: minden fejlesztés megszerezhető, és a

@@ -124,7 +124,7 @@ describe("VEYLORA UI", () => {
     expect(useGameStore.getState().screen).toBe("veylora");
   });
 
-  it("offers a real station purchase with zero-shield warning, permanent blueprint and owned status after reload", async () => {
+  it("offers a station purchase and persists equipping or unequipping the shield", async () => {
     await complete("secure-mine");
     await complete("secure-lab");
     await renderOperations();
@@ -133,17 +133,21 @@ describe("VEYLORA UI", () => {
     expect(screen.getByRole("button", { name: "Művelet indítása" })).toBeInTheDocument();
     expect(screen.getByText(/Egyszeri nyersanyag- vagy technológiajutalom nincs/)).toBeInTheDocument();
     const recipe = screen.getByRole("region", { name: "Megerősített pajzs" });
-    expect(within(recipe).getByText(/vásárlásnak most nincs hatása/)).toBeInTheDocument();
+    expect(within(recipe).getByText(/XP-alap: 0 → felszerelve: 22/)).toBeInTheDocument();
     expect(within(recipe).getByText(/nem fogy el/)).toBeInTheDocument();
     fireEvent.click(within(recipe).getByRole("button", { name: "Fejlesztés megvásárlása" }));
     expect(await within(recipe).findByText("Már megvásárolva.")).toBeInTheDocument();
-    expect(within(recipe).getByRole("button", { name: "Fejlesztés megvásárlása" })).toBeDisabled();
+    expect(within(recipe).getByText("Felszerelve.")).toBeInTheDocument();
+    fireEvent.click(within(recipe).getByRole("button", { name: "Pajzs levétele" }));
+    expect(await within(recipe).findByText("Nincs felszerelve.")).toBeInTheDocument();
     expect(useVeyloraStore.getState().economy.resources["industrial-ore"]).toBe(0);
     expect(useVeyloraStore.getState().economy.technologies).toEqual(["materials-blueprint"]);
     await act(async () => {
       await useVeyloraStore.getState().refresh();
     });
     expect(within(recipe).getByText("Már megvásárolva.")).toBeInTheDocument();
+    fireEvent.click(within(recipe).getByRole("button", { name: "Pajzs felszerelése" }));
+    expect(await within(recipe).findByText("Felszerelve.")).toBeInTheDocument();
   });
 
   it("animates the star map and preserves the tallest location detail panel", async () => {

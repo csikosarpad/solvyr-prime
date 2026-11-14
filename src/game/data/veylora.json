@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": 2,
+  "contentVersion": 3,
   "sector": {
     "id": "veylora-03",
     "name": "veylora.title",
@@ -46,7 +46,7 @@
       "name": "economy.shield",
       "cost": { "industrial-ore": 20 },
       "technologies": ["materials-blueprint"],
-      "effect": { "maxEnergyShieldMultiplier": 1.1 }
+      "effect": { "maxEnergyShieldBonus": 20, "maxEnergyShieldMultiplier": 1.1 }
     }
   ],
   "battlefields": [

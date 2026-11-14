@@ -22,6 +22,7 @@ interface VeyloraState extends SectorProgress {
   select: (id: string) => Promise<boolean>;
   complete: (id: string, generation: string) => Promise<boolean>;
   buy: (id: string) => Promise<boolean>;
+  equipShield: (id: string | null) => Promise<boolean>;
   reset: () => Promise<boolean>;
   resetEconomy: () => Promise<boolean>;
 }
@@ -114,9 +115,17 @@ export const useVeyloraStore = create<VeyloraState>((set) => {
         for (const [resource, amount] of Object.entries(recipe.cost))
           save.resources[resource] = save.resources[resource]! - amount;
         save.purchases[id] = { contentVersion: VEYLORA.contentVersion, ...recipe.effect };
+        save.equippedShield = id;
         return save;
       });
     },
+    equipShield: (id) =>
+      write((save) => {
+        if (id !== null && !Object.hasOwn(save.purchases, id))
+          throw new EconomyRuleError("economy.notOwned", save);
+        save.equippedShield = id;
+        return save;
+      }),
     reset: () =>
       write((save) => {
         save.progress[VEYLORA.sector.id] = initialSectorProgress();

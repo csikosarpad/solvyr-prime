@@ -101,10 +101,11 @@ a szektorhaladás törlése nem kerülheti meg a sérült gazdasági mentést.
   **anyagtechnológiai tervrajzot** ad. A két jutalom azonnal használható.
 - Az állomáson **20 érc és a tervrajz megléte** ellenében egyszer
   megvehető a **Megerősített pajzs**. Csak az érc fogy el.
-- A fejlesztés az XP-ből számolt maximális energiapajzsot **10%-kal növeli**,
-  kizárólag P1 következő, új rendszerű kampánycsatáiban. A régi kampány,
-  gyorscsata és PvP változatlan. Nulla alap-pajzsnál megvehető, de még nincs
-  hatása; későbbi XP-pajzsfejlesztés után automatikusan érvényesül.
+- A megvett pajzs automatikusan felszerelődik, és az állomáson levehető vagy
+  újra felszerelhető. Az XP-alaphoz **20 pajzspontot ad**, majd a teljes összeget
+  **10%-kal növeli**: nulla XP-alappal 22 pajzspontot ad. P1 következő, új
+  rendszerű kampánycsatáiban hat; a régi kampány, gyorscsata és PvP változatlan.
+  A korábban megvásárolt pajzs is felszerelve marad.
 - Az újrajátszás nem ad újabb gazdasági jutalmat, a megszokott XP viszont jár.
   A küldetés teljesítése és a jutalom elszámolása külön látszik.
 - **VEYLORA-haladás törlése:** csak a küldetésállapot törlődik. A készlet,

@@ -85,10 +85,12 @@ describe("transactional campaign economy", () => {
     expect(saved.technologies).toEqual(["materials-blueprint"]);
     expect(saved.purchases["reinforced-shield"]).toEqual({
       contentVersion: VEYLORA.contentVersion,
+      maxEnergyShieldBonus: 20,
       maxEnergyShieldMultiplier: 1.1,
     });
-    expect(applyCampaignUpgrades(BASE_STATS, saved).maxEnergyShield).toBe(0);
-    expect(applyCampaignUpgrades({ ...BASE_STATS, maxEnergyShield: 100 }, saved).maxEnergyShield).toBeCloseTo(110);
+    expect(saved.equippedShield).toBe("reinforced-shield");
+    expect(applyCampaignUpgrades(BASE_STATS, saved).maxEnergyShield).toBeCloseTo(22);
+    expect(applyCampaignUpgrades({ ...BASE_STATS, maxEnergyShield: 100 }, saved).maxEnergyShield).toBeCloseTo(132);
     const recipe = VEYLORA.recipes[0]!;
     const mission = VEYLORA.missions[0]!;
     const originalCost = recipe.cost["industrial-ore"]!;
@@ -103,12 +105,57 @@ describe("transactional campaign economy", () => {
       expect(state().economy.claims[rewardKey("secure-mine")]!.rewards.resources["industrial-ore"]).toBe(20);
       expect(
         applyCampaignUpgrades({ ...BASE_STATS, maxEnergyShield: 100 }, state().economy).maxEnergyShield,
-      ).toBeCloseTo(110);
+      ).toBeCloseTo(132);
     } finally {
       recipe.effect.maxEnergyShieldMultiplier = 1.1;
       recipe.cost["industrial-ore"] = originalCost;
       mission.rewards.resources["industrial-ore"] = originalReward;
     }
+  });
+
+  it("migrates purchased shields as equipped and persists equip changes without repurchasing", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await complete("secure-mine");
+    await complete("secure-lab");
+    await state().buy("reinforced-shield");
+    const saved = structuredClone(state().economy);
+    const legacy = {
+      ...saved,
+      version: 1,
+      equippedShield: undefined,
+      purchases: { "reinforced-shield": { contentVersion: 2, maxEnergyShieldMultiplier: 1.1 } },
+    };
+    const migrated = parseCampaignSave(legacy);
+    expect(migrated.equippedShield).toBe("reinforced-shield");
+    expect(applyCampaignUpgrades(BASE_STATS, migrated).maxEnergyShield).toBeCloseTo(22);
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open(CAMPAIGN_DATABASE, 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction("commander", "readwrite");
+        tx.objectStore("commander").put(legacy, "P1");
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onabort = () => {
+          db.close();
+          reject(tx.error);
+        };
+      };
+    });
+    expect(await state().refresh()).toBe(true);
+    expect(state().economy).toEqual(migrated);
+    expect(await state().equipShield(null)).toBe(true);
+    expect((await campaignTransaction()).equippedShield).toBeNull();
+    expect(applyCampaignUpgrades(BASE_STATS, state().economy).maxEnergyShield).toBe(0);
+    expect(await state().equipShield("reinforced-shield")).toBe(true);
+    expect((await campaignTransaction()).equippedShield).toBe("reinforced-shield");
+    expect(await state().equipShield("missing")).toBe(false);
+    expect(state().error).toBe("economy.notOwned");
+    expect((await campaignTransaction()).equippedShield).toBe("reinforced-shield");
+    expect(() => parseCampaignSave({ ...saved, equippedShield: "missing" })).toThrow("equipped shield");
   });
 
   it("preserves wealth, purchases and claims across sector reset; only full economic reset reopens rewards", async () => {
@@ -257,6 +304,7 @@ describe("transactional campaign economy", () => {
     const save = state().economy;
     for (const invalid of [
       { ...save, version: 99 },
+      { ...save, equippedShield: undefined },
       { ...save, resources: { "industrial-ore": -1 } },
       { ...save, resources: { "industrial-ore": 1.5 } },
       { ...save, resources: { unknown: 20 } },

@@ -163,16 +163,16 @@ describe("Game campaign lifecycle", () => {
     await state().complete("secure-lab", state().economy.generation);
     await state().buy("reinforced-shield");
     expect(await game.startOperation("secure-mine")).toBe(true);
-    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(0);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(22);
     game.leaveBattle();
     Reflect.get(game, "profiles").P1.levels.shield = 1;
     await game.startOperation("secure-mine");
-    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(22);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(44);
     expect(Reflect.get(game, "tanks")[1].stats.maxEnergyShield).toBe(0);
     game.leaveBattle();
     Reflect.get(game, "profiles").P1.levels.shield = 5;
     await game.startOperation("secure-lab");
-    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(110);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(132);
     game.startOffline();
     expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(100);
     game.startCampaign();
@@ -189,9 +189,25 @@ describe("Game campaign lifecycle", () => {
     Reflect.get(game, "profiles").P1.levels.shield = 1;
     await game.startOperation("secure-mine");
     await state().resetEconomy();
-    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(22);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(44);
     await game.startOperation("secure-mine");
     expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(20);
+  });
+
+  it("applies equipment changes only at the next operation", async () => {
+    const state = useVeyloraStore.getState;
+    await state().complete("secure-mine", state().economy.generation);
+    await state().complete("secure-lab", state().economy.generation);
+    await state().buy("reinforced-shield");
+    await game.startOperation("secure-mine");
+    expect(Reflect.get(game, "tanks")[0].shield).toBeCloseTo(22);
+    await state().equipShield(null);
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBeCloseTo(22);
+    await game.startOperation("secure-mine");
+    expect(Reflect.get(game, "tanks")[0].stats.maxEnergyShield).toBe(0);
+    await state().equipShield("reinforced-shield");
+    await game.startOperation("secure-mine");
+    expect(Reflect.get(game, "tanks")[0].shield).toBeCloseTo(22);
   });
 
   it("places the two Forge objectives on the terrain and exposes their HP", () => {
