@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { GameCanvas } from "@/ui/GameCanvas";
@@ -8,8 +8,10 @@ import { ResultScreen } from "@/ui/ResultScreen";
 import { CampaignMap } from "@/ui/CampaignMap";
 import { VeyloraOperations } from "@/ui/VeyloraOperations";
 import { Workshop } from "@/ui/Workshop";
+import { WelcomeScreen } from "@/ui/main-menu/WelcomeScreen";
 
 export function App() {
+  const [entered, setEntered] = useState(false);
   const screen = useGameStore((s) => s.screen);
   const phase = useGameStore((s) => s.phase);
   const credentials = useMultiplayerStore((s) => s.credentials);
@@ -33,7 +35,7 @@ export function App() {
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <GameCanvas />
-      {screen === "menu" && <MainMenu />}
+      {screen === "menu" && (entered ? <MainMenu /> : <WelcomeScreen onStart={() => setEntered(true)} />)}
       {screen === "campaignMap" && <CampaignMap />}
       {screen === "veylora" && <VeyloraOperations />}
       {screen === "workshop" && <Workshop />}

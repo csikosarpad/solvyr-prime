@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SECTORS, sectorById } from "@/game/data/sectors";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import { useGameStore } from "@/game/state/gameStore";
@@ -22,6 +22,11 @@ export function MainMenuHome({ onShowLobby, onShowSettings }: MainMenuHomeProps)
   const campaignError = useCampaignStore((s) => s.error);
 
   const [resetOpen, setResetOpen] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
 
   const start = () => {
     void requestLandscape();
@@ -38,7 +43,7 @@ export function MainMenuHome({ onShowLobby, onShowSettings }: MainMenuHomeProps)
   return (
     <div className="panel main-menu-panel">
       <header className="main-menu-header">
-        <h1>
+        <h1 ref={titleRef} tabIndex={-1}>
           <span>{t("menu.title")}</span>
         </h1>
         <div className="menu-sector" aria-label={t("sector.battlefield")}>

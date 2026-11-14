@@ -15,6 +15,19 @@ A részletes designlisták saját részterületük leírásai, nem párhuzamos p
 Jelölések: `[x]` megvalósított vagy dokumentált korábbi ellenőrzés; `[ ]` nyitott feladat.
 A „javaslat” külön jóváhagyást igényel, és nem kész funkció.
 
+## Nyitóképernyő és főmenü – megvalósítási terv
+
+- [x] A `plans/solvyr-prime_siege_protocol_game.png` képre épülő nyitóképernyő,
+      billentyűzettel is használható START gombbal.
+- [x] A START a jelenlegi funkciókat megtartó főmenüre lép; oda visszatérve
+      ugyanabban az oldalbetöltésben nem jelenik meg újra a nyitóképernyő.
+- [x] A főmenü a `plans/solvyr-prime_siege_protocol_open.png` kompozícióját
+      követi, de a képre rajzolt kezelőszervek helyett valódi, lokalizált gombokat
+      és valós kampányadatokat használ. A stáblista és a beállítások megmaradnak.
+- [x] Reszponzív, görgethető elrendezés, billentyűzetes használat és
+      csökkentett mozgás támogatása; célzott navigációs tesztek és emulált nézet.
+- [ ] Valós telefonos és képernyőolvasós használati próba.
+
 A fejlődési plafon kódbázis-alapú elemzése és a szektorok, környezeti modifikátorok,
 orbitális képességek, egységosztályok és kampány rangsora:
 [Játékmenet és hosszú távú fejlődés](./gameplay-progression.md).

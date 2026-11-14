@@ -82,6 +82,7 @@ export const en: Record<MessageKey, string> = {
   "menu.start": "Start game",
   "menu.online": "Play online",
   "menu.settings": "Settings",
+  "menu.players": "Players",
   "menu.sound": "Sound",
   "audio.volume": "Game volume",
   "audio.loadError": "Audio settings could not be loaded; defaults are active. Adjust the volume again.",

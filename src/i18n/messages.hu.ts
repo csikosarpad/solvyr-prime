@@ -81,6 +81,7 @@ export const hu = {
   "menu.start": "Játék indítása",
   "menu.online": "Online játék",
   "menu.settings": "Beállítások",
+  "menu.players": "Játékosok",
   "menu.sound": "Hang",
   "audio.volume": "Játék hangereje",
   "audio.loadError": "A hangbeállítások nem olvashatók; az alapértékek aktívak. Állítsd be újra a hangerőt.",

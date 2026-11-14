@@ -73,103 +73,117 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
         <h1>{t("menu.settings")}</h1>
       </header>
       <section className="main-menu-settings" aria-label={t("menu.settings")}>
-        <div className="main-menu-setting">
-          <span>{t("menu.language")}</span>
-          <LanguageSwitch />
-        </div>
-        <div className="main-menu-setting">
-          <span>{t("menu.sound")}</span>
-          <button className="btn secondary" aria-pressed={!muted} onClick={toggleMuted}>
-            {t("hud.sound", { state: muted ? t("hud.soundOff") : t("hud.soundOn") })}
-          </button>
-        </div>
-        <div className="main-menu-setting">
-          <label htmlFor="master-volume">{t("audio.volume")}</label>
-          <VolumeSlider id="master-volume" value={volume} onChange={setVolume} />
-          {audioError && <small role="alert">{t(audioError)}</small>}
-        </div>
-        <div className="main-menu-setting">
-          <span>{t("menu.audioChannels")}</span>
-          <div className="audio-channel-list">
-            {AUDIO_CHANNELS.map((channel) => (
-              <div key={channel} className="audio-channel">
-                <button
-                  type="button"
-                  role="switch"
-                  className="audio-switch"
-                  aria-checked={channels[channel]}
-                  onClick={() => setChannel(channel, !channels[channel])}
-                >
-                  <span className="audio-switch-track" aria-hidden="true">
-                    <span className="audio-switch-thumb" />
-                  </span>
-                  <span className="audio-switch-label">{t(`audio.${channel}` as MessageKey)}</span>
-                </button>
-                <VolumeSlider
-                  id={`${channel}-volume`}
-                  label={t(`audio.${channel}Volume` as MessageKey)}
-                  value={channelVolumes[channel]}
-                  onChange={(value) => setChannelVolume(channel, value)}
-                />
-              </div>
-            ))}
+        <details className="settings-group">
+          <summary>{t("menu.language")}<span className="settings-group-indicator" aria-hidden="true" /></summary>
+          <div className="settings-group-content">
+            <div className="main-menu-setting">
+              <LanguageSwitch />
+            </div>
           </div>
-        </div>
-        <div className="main-menu-setting">
-          <span>{t("menu.opponent")}</span>
-          <div className="audio-channel-buttons">
-            <button className="btn secondary" aria-pressed={aiEnabled} onClick={() => setAiEnabled(!aiEnabled)}>
-              {aiEnabled ? t("menu.opponentAi") : t("menu.opponentHuman")}
-            </button>
-            {aiEnabled && (
-              <button className="btn secondary" onClick={() => setAiResetOpen(true)} disabled={aiMatches === 0}>
-                {t("menu.aiExperience", { matches: aiMatches })}
+        </details>
+        <details className="settings-group">
+          <summary>{t("menu.sound")}<span className="settings-group-indicator" aria-hidden="true" /></summary>
+          <div className="settings-group-content">
+            <div className="main-menu-setting">
+              <span>{t("menu.sound")}</span>
+              <button className="btn secondary" aria-pressed={!muted} onClick={toggleMuted}>
+                {t("hud.sound", { state: muted ? t("hud.soundOff") : t("hud.soundOn") })}
               </button>
-            )}
-          </div>
-          <small>{t("menu.opponentHint")}</small>
-        </div>
-        <div className="main-menu-setting">
-          <span>{t("menu.playerNames")}</span>
-          <div className="player-name-fields">
-            {["P1", "P2"].map((id) => (
-              <input
-                key={id}
-                maxLength={MAX_NAME_LENGTH}
-                placeholder={id}
-                aria-label={t("menu.playerName", { id })}
-                value={names[id] ?? ""}
-                onChange={(event) => setName(id, event.target.value)}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="main-menu-setting">
-          <span>{t("colors.title")}</span>
-          <small>{t("colors.hint")}</small>
-          {(["P1", "P2"] as const).map((id) => (
-            <fieldset className="player-color-palette" key={id}>
-              <legend>{t("colors.player", { id })}</legend>
-              <div className="player-color-options">
-                {PLAYER_COLOR_OPTIONS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className="player-color-option"
-                    data-color={color}
-                    style={{ "--swatch-color": cssPlayerColor(PLAYER_COLORS[color]) } as CSSProperties}
-                    aria-label={t("colors.option", { id, color: t(`colors.${color}`) })}
-                    aria-pressed={colors[id] === color}
-                    onClick={() => setColor(id, color)}
-                  >
-                    {colors[id] === color && <span aria-hidden="true">✓</span>}
-                  </button>
+            </div>
+            <div className="main-menu-setting">
+              <label htmlFor="master-volume">{t("audio.volume")}</label>
+              <VolumeSlider id="master-volume" value={volume} onChange={setVolume} />
+            </div>
+            <div className="main-menu-setting">
+              <span>{t("menu.audioChannels")}</span>
+              <div className="audio-channel-list">
+                {AUDIO_CHANNELS.map((channel) => (
+                  <div key={channel} className="audio-channel">
+                    <button
+                      type="button"
+                      role="switch"
+                      className="audio-switch"
+                      aria-checked={channels[channel]}
+                      onClick={() => setChannel(channel, !channels[channel])}
+                    >
+                      <span className="audio-switch-track" aria-hidden="true">
+                        <span className="audio-switch-thumb" />
+                      </span>
+                      <span className="audio-switch-label">{t(`audio.${channel}` as MessageKey)}</span>
+                    </button>
+                    <VolumeSlider
+                      id={`${channel}-volume`}
+                      label={t(`audio.${channel}Volume` as MessageKey)}
+                      value={channelVolumes[channel]}
+                      onChange={(value) => setChannelVolume(channel, value)}
+                    />
+                  </div>
                 ))}
               </div>
-            </fieldset>
-          ))}
-          {colorError && <small role="alert">{t(colorError)}</small>}
-        </div>
+            </div>
+          </div>
+        </details>
+        {audioError && <small className="settings-error" role="alert">{t(audioError)}</small>}
+        <details className="settings-group">
+          <summary>{t("menu.players")}<span className="settings-group-indicator" aria-hidden="true" /></summary>
+          <div className="settings-group-content">
+            <div className="main-menu-setting">
+              <span>{t("menu.opponent")}</span>
+              <div className="audio-channel-buttons">
+                <button className="btn secondary" aria-pressed={aiEnabled} onClick={() => setAiEnabled(!aiEnabled)}>
+                  {aiEnabled ? t("menu.opponentAi") : t("menu.opponentHuman")}
+                </button>
+                {aiEnabled && (
+                  <button className="btn secondary" onClick={() => setAiResetOpen(true)} disabled={aiMatches === 0}>
+                    {t("menu.aiExperience", { matches: aiMatches })}
+                  </button>
+                )}
+              </div>
+              <small>{t("menu.opponentHint")}</small>
+            </div>
+            <div className="main-menu-setting">
+              <span>{t("menu.playerNames")}</span>
+              <div className="player-name-fields">
+                {["P1", "P2"].map((id) => (
+                  <input
+                    key={id}
+                    maxLength={MAX_NAME_LENGTH}
+                    placeholder={id}
+                    aria-label={t("menu.playerName", { id })}
+                    value={names[id] ?? ""}
+                    onChange={(event) => setName(id, event.target.value)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="main-menu-setting">
+              <span>{t("colors.title")}</span>
+              <small>{t("colors.hint")}</small>
+              {(["P1", "P2"] as const).map((id) => (
+                <fieldset className="player-color-palette" key={id}>
+                  <legend>{t("colors.player", { id })}</legend>
+                  <div className="player-color-options">
+                    {PLAYER_COLOR_OPTIONS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className="player-color-option"
+                        data-color={color}
+                        style={{ "--swatch-color": cssPlayerColor(PLAYER_COLORS[color]) } as CSSProperties}
+                        aria-label={t("colors.option", { id, color: t(`colors.${color}`) })}
+                        aria-pressed={colors[id] === color}
+                        onClick={() => setColor(id, color)}
+                      >
+                        {colors[id] === color && <span aria-hidden="true">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              ))}
+            </div>
+          </div>
+        </details>
+        {colorError && <small className="settings-error" role="alert">{t(colorError)}</small>}
       </section>
       <button className="btn secondary main-menu-back" onClick={onBack}>
         {t("lobby.back")}

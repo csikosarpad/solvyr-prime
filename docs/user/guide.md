@@ -5,7 +5,10 @@ A jelenleg elérhető funkciók leírása. Fejlesztési tervek és technikai ré
 
 ## Játékmódok
 
-A nyitóképernyőn egy kis, felfelé gördülő **Köszönet** panel sorolja fel az ismert
+A nyitóképernyő **START** gombja nyitja meg a főmenüt. A főmenübe visszatérve
+nem kell újra belépni; oldalfrissítéskor újra megjelenik a nyitóképernyő.
+
+A főmenüben egy kis, felfelé gördülő **Köszönet** panel sorolja fel az ismert
 tartalomforrásokat és alkotókat, kattintható linkekkel. Egérrel fölé állva megáll,
 a Megállítás gombbal vagy billentyűzetfókusszal kézzel görgethető listára vált.
 Csökkentett mozgás beállítás mellett nem animálódik. Kis kijelzőn a menü alatt található.
@@ -224,6 +227,9 @@ böngészőfülben tárolt sessionből a szoba és az eseménynapló visszatölt
 session és a szoba érvényes. Ez nem fiókalapú, eszközök közötti felhőmentés.
 
 ## Beállítások, hang és mentés
+
+A Beállításokban a **Nyelv**, **Hang** és **Játékosok** csoport külön nyitható
+és csukható. Az ellenfél és az AI beállításai a Játékosok csoportban találhatók.
 
 - **Nyelv:** magyar, angol és német. Mentett választás hiányában magyar vagy német
   böngészőnyelv esetén az adott nyelv, egyébként angol indul.

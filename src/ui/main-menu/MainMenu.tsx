@@ -21,7 +21,7 @@ export function MainMenu() {
   };
 
   return (
-    <div className="overlay main-menu-overlay">
+    <div className={`overlay main-menu-overlay${view === "home" ? " is-home" : ""}`}>
       {view === "lobby" ? (
         <MultiplayerLobby onBack={() => setView("home")} onStartMatch={startMultiplayer} />
       ) : view === "settings" ? (

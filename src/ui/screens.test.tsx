@@ -18,6 +18,10 @@ const mockGame = (overrides: Partial<Record<keyof Game, unknown>>) => {
   gameRef.current = { leaveBattle: vi.fn(), ...overrides } as unknown as Game;
 };
 
+const openSettingsGroup = (name: string) => {
+  fireEvent.click(screen.getByText(name, { selector: "summary" }));
+};
+
 describe("MainMenu", () => {
   beforeEach(() => {
     useGameStore.setState({ screen: "menu", muted: false, matchMode: "skirmish", aiActive: false });
@@ -44,11 +48,13 @@ describe("MainMenu", () => {
   it("a nyelvváltó angolra állítja a menüt, majd vissza magyarra", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Nyelv");
     fireEvent.click(screen.getByRole("button", { name: "English" }));
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("button", { name: "Start game" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Play online" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    openSettingsGroup("Language");
     fireEvent.click(screen.getByRole("button", { name: "Magyar" }));
     fireEvent.click(screen.getByRole("button", { name: "Vissza" }));
     expect(screen.getByRole("button", { name: "Játék indítása" })).toBeInTheDocument();
@@ -65,15 +71,38 @@ describe("MainMenu", () => {
     expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
   });
 
+  it("a beállításcsoportok külön nyithatók és becsukáskor megtartják az értékeket", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    const groups = ["Nyelv", "Hang", "Játékosok"].map((name) =>
+      screen.getByText(name, { selector: "summary" }).closest("details"),
+    );
+    groups.forEach((group) => expect(group).not.toHaveAttribute("open"));
+
+    openSettingsGroup("Hang");
+    fireEvent.change(screen.getByRole("slider", { name: "Játék hangereje" }), { target: { value: "35" } });
+    openSettingsGroup("Játékosok");
+    expect(groups[1]).toHaveAttribute("open");
+    expect(groups[2]).toHaveAttribute("open");
+    expect(screen.getByRole("button", { name: "P1: Kék" })).toBeInTheDocument();
+    openSettingsGroup("Hang");
+    expect(groups[1]).not.toHaveAttribute("open");
+    expect(groups[2]).toHaveAttribute("open");
+    openSettingsGroup("Hang");
+    expect(screen.getByRole("slider", { name: "Játék hangereje" })).toHaveValue("35");
+  });
+
   it("a beállítások megmaradnak a panelek közötti váltáskor", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     fireEvent.change(screen.getByRole("slider", { name: "Játék hangereje" }), { target: { value: "80" } });
     fireEvent.click(screen.getByRole("button", { name: "Vissza" }));
     fireEvent.click(screen.getByRole("button", { name: "Online játék" }));
     fireEvent.click(screen.getByRole("button", { name: "Vissza" }));
     expect(screen.getByRole("complementary", { name: "Köszönet" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     expect(screen.getByRole("slider", { name: "Játék hangereje" })).toHaveValue("80");
     expect(screen.getByRole("slider", { name: "Játék hangereje" })).toHaveAttribute("data-volume-high", "true");
   });
@@ -81,6 +110,7 @@ describe("MainMenu", () => {
   it("a tankszínek játékosonként választhatók és mentődnek", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékosok");
     expect(screen.getByRole("button", { name: "P1: Kék" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "P1: Zöld" }));
     fireEvent.click(screen.getByRole("button", { name: "P2: Lila" }));
@@ -92,6 +122,7 @@ describe("MainMenu", () => {
   it("a fekete és fehér palettaszínek külön választhatók", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékosok");
     fireEvent.click(screen.getByRole("button", { name: "P1: Fekete" }));
     fireEvent.click(screen.getByRole("button", { name: "P2: Fehér" }));
     expect(screen.getByRole("button", { name: "P1: Fekete" })).toHaveAttribute("aria-pressed", "true");
@@ -104,6 +135,7 @@ describe("MainMenu", () => {
     const save = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("storage"); });
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékosok");
     fireEvent.click(screen.getByRole("button", { name: "P1: Zöld" }));
     expect(screen.getByRole("alert")).toHaveTextContent("A tankszínek mentése sikertelen");
     expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
@@ -114,6 +146,7 @@ describe("MainMenu", () => {
   it("a beállításokból módosítható és visszajelzett a hang állapota", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
 
     const soundButton = screen.getByRole("button", { name: "Kommunikáció: aktív (M)" });
     expect(soundButton).toHaveAttribute("aria-pressed", "true");
@@ -133,6 +166,7 @@ describe("MainMenu", () => {
   it("a hangerőcsúszka ment és némítva is állítható a némítás feloldása nélkül", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     const slider = screen.getByRole("slider", { name: "Játék hangereje" });
     expect(slider).toHaveValue("100");
     fireEvent.change(slider, { target: { value: "35" } });
@@ -157,6 +191,7 @@ describe("MainMenu", () => {
   ])("a hangerő %i százalékánál megfelelő színt és fényküszöböt ad át", (value, whiteness, high) => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     const slider = screen.getByRole("slider", { name: "Játék hangereje" });
     fireEvent.change(slider, { target: { value: String(value) } });
     expect(slider.style.getPropertyValue("--volume-whiteness")).toBe(whiteness);
@@ -166,6 +201,7 @@ describe("MainMenu", () => {
   it("a csatornák hangereje külön állítható, ment, és nem módosítja a központi hangerőt", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     fireEvent.change(screen.getByRole("slider", { name: "Zene hangereje" }), { target: { value: "20" } });
     fireEvent.change(screen.getByRole("slider", { name: "Parancsnok hangereje" }), { target: { value: "90" } });
     fireEvent.change(screen.getByRole("slider", { name: "Effektek hangereje" }), { target: { value: "60" } });
@@ -263,6 +299,7 @@ describe("MainMenu", () => {
     useAiSettings.setState({ enabled: true, memory });
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékosok");
 
     const resetButton = screen.getByRole("button", { name: /AI tapasztalat: 4 meccs/ });
     fireEvent.click(resetButton);
