@@ -10,6 +10,7 @@ import { useVeyloraStore } from "@/game/state/veyloraStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
+import { DEFAULT_PLAYER_COLORS, PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
 
 vi.mock("./result/ResultDecorCanvas", () => ({ ResultDecorCanvas: () => null }));
 vi.mock("./CampaignStarfieldCanvas", () => ({ CampaignStarfieldCanvas: () => null }));
@@ -21,6 +22,7 @@ describe("workshop", () => {
     vi.stubGlobal("indexedDB", new IDBFactory());
     useMultiplayerStore.getState().leave();
     useAiSettings.setState({ enabled: false });
+    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, error: null });
     useCampaignStore.getState().switchPlayer("P1");
     await useVeyloraStore.getState().switchPlayer("P1");
     await useVeyloraStore.getState().resetEconomy();
@@ -88,6 +90,33 @@ describe("workshop", () => {
     await waitFor(() => expect(useVeyloraStore.getState().pending).toBe(0));
   });
 
+  it("uses each selected color for the tank panels and player buttons", () => {
+    usePlayerColors.setState({ colors: { P1: "green", P2: "purple" } });
+    render(<Workshop />);
+    expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-color")).toBe("#54d994");
+    expect(screen.getByRole("button", { name: "P2" }).style.getPropertyValue("--player-color")).toBe("#c98bff");
+    expect(screen.getByRole("region", { name: "P1" }).style.getPropertyValue("--player-color")).toBe("#54d994");
+    const p2 = screen.getByRole("region", { name: "P2" });
+    expect(p2.style.getPropertyValue("--player-color")).toBe("#c98bff");
+    expect(p2.querySelector("feColorMatrix")).toHaveAttribute(
+      "values",
+      `${((PLAYER_COLORS.purple >> 16) & 255) / 255} 0 0 0 0 0 ${((PLAYER_COLORS.purple >> 8) & 255) / 255} 0 0 0 0 0 ${(PLAYER_COLORS.purple & 255) / 255} 0 0 0 0 0 1 0`,
+    );
+  });
+
+  it("keeps a black tank and its player controls legible", () => {
+    usePlayerColors.setState({ colors: { P1: "black", P2: "white" } });
+    render(<Workshop />);
+    const p1 = screen.getByRole("region", { name: "P1" });
+    expect(p1.style.getPropertyValue("--player-color")).toBe("#000000");
+    expect(p1.style.getPropertyValue("--player-accent")).toBe("#b9c7d6");
+    expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-accent")).toBe("#b9c7d6");
+    const matrix = p1.querySelector("feColorMatrix")?.getAttribute("values");
+    const channel = 0x77 / 255;
+    expect(matrix).toBe(`${channel} 0 0 0 0 0 ${channel} 0 0 0 0 0 ${channel} 0 0 0 0 0 1 0`);
+    expect(screen.getByRole("region", { name: "P2" }).style.getPropertyValue("--player-accent")).toBe("#ffffff");
+  });
+
   it("shows how to acquire the shield and persists equipment shared with the station", async () => {
     render(<Workshop />);
     expect(await screen.findByText(/állomáson vásárolható meg/)).toBeInTheDocument();
@@ -129,8 +158,11 @@ describe("workshop", () => {
   });
 
   it("switches the campaign map to P2 without exposing P1 progression", async () => {
+    usePlayerColors.setState({ colors: { P1: "green", P2: "purple" } });
     useCampaignStore.getState().complete("alpha-01");
     render(<CampaignMap />);
+    expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-color")).toBe("#54d994");
+    expect(screen.getByRole("button", { name: "P2" }).style.getPropertyValue("--player-color")).toBe("#c98bff");
     expect(screen.getByText("Teljesítve: 1 / 6")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("button", { name: "P2" })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: "P2" }));

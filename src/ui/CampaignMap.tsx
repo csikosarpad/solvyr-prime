@@ -14,6 +14,7 @@ import { CampaignSectorCard } from "./CampaignSectorCard";
 import "./CampaignMap.css";
 import { ReadAloudButton } from "./ReadAloudButton";
 import { ReadAloudText, useReadAloud } from "./ReadAloudText";
+import { PlayerSelectorButton } from "./PlayerSelectorButton";
 
 const VEYLORA_MAP_POSITION = { x: 84, y: 85 };
 type MapNodeId = SectorId | "veylora-03";
@@ -94,7 +95,7 @@ export function CampaignMap() {
         </section>
         <div className="workshop-players" aria-label={t("workshop.player")}>
           {(["P1", "P2"] as const).map((id) => (
-            <button key={id} className={`btn secondary player-selector-${id}`} aria-pressed={id === playerId}
+            <PlayerSelectorButton key={id} playerId={id} aria-pressed={id === playerId}
               disabled={pending > 0 || starting || switching || error === "campaign.saveError"}
               onClick={async () => {
                 if (id === playerId) return;
@@ -103,7 +104,7 @@ export function CampaignMap() {
                 setInspectedId(useCampaignStore.getState().selectedId);
                 await switchVeylora(id);
                 setSwitching(false);
-              }}>{id}</button>
+              }} />
           ))}
         </div>
         <div className="campaign-layout">

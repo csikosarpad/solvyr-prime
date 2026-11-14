@@ -944,28 +944,15 @@
   max-height: none;
 }
 
-.workshop-players .btn.player-selector-P1 {
-  color: #b6d9ff;
-  background: #173c66;
-  box-shadow: inset 0 0 0 1px #4da3ff;
-}
-
-.workshop-players .btn.player-selector-P2 {
-  color: #ffd1ca;
-  background: #663029;
-  box-shadow: inset 0 0 0 1px #ff6b5a;
-}
-
-.workshop-players .btn.player-selector-P1[aria-pressed="true"] {
+.workshop-players .btn[class*="player-selector-"] {
   color: #fff;
-  background: #245c99;
-  box-shadow: inset 0 0 0 2px #4da3ff, 0 0 12px rgba(77, 163, 255, 0.5);
+  background: color-mix(in srgb, var(--player-color) 25%, #081426);
+  box-shadow: inset 0 0 0 1px var(--player-accent);
 }
 
-.workshop-players .btn.player-selector-P2[aria-pressed="true"] {
-  color: #fff;
-  background: #a53d32;
-  box-shadow: inset 0 0 0 2px #ff6b5a, 0 0 12px rgba(255, 107, 90, 0.5);
+.workshop-players .btn[class*="player-selector-"][aria-pressed="true"] {
+  background: color-mix(in srgb, var(--player-color) 50%, #081426);
+  box-shadow: inset 0 0 0 2px var(--player-accent), 0 0 12px var(--player-accent);
 }
 
 .workshop-equipment {
@@ -1040,6 +1027,11 @@
 .unit-panel.accent-orange {
   border-color: rgba(255, 133, 31, 0.78);
   box-shadow: inset 0 0 18px rgba(255, 133, 31, 0.1);
+}
+
+.unit-panel[style] {
+  border-color: var(--player-accent);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--player-accent) 16%, transparent);
 }
 
 .player-upgrades-header {
@@ -1127,6 +1119,10 @@
 
 .accent-orange .player-earned-xp strong {
   color: #ff9a42;
+}
+
+.unit-panel[style] .player-earned-xp strong {
+  color: var(--player-accent);
 }
 
 .unit-illustration {
@@ -2406,6 +2402,52 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+.player-color-palette {
+  min-width: 0;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid rgba(91, 177, 210, 0.32);
+  border-radius: 6px;
+}
+
+.player-color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.player-color-option {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  background: var(--swatch-color);
+  color: #071321;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  &:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 1);
+  }
+}
+
+.player-color-option[aria-pressed="true"] {
+  /* outline: 2px solid rgba(255, 255, 255, 0.55); */
+  outline-offset: 2px;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 1);
+}
+
+.player-color-option[data-color="black"] {
+  color: #fff;
+}
+
+.player-color-option:focus-visible {
+  outline: 3px solid #ffe27a;
+  outline-offset: 3px;
 }
 
 .player-name-fields input {

@@ -1,4 +1,6 @@
 import { UPGRADES } from "@/game/data/upgrades";
+import type { CSSProperties } from "react";
+import { cssPlayerColor, playerAccent } from "@/game/state/playerColors";
 import { useT } from "@/i18n";
 import { usePlayerName } from "@/game/state/playerNames";
 import { UpgradeRow } from "./UpgradeRow";
@@ -13,6 +15,8 @@ export function UnitPanel({ id, profile, presentation, editable, disabled, inact
     <section
       className={`player-upgrades-panel unit-panel accent-${presentation.accent}${inactive ? " is-inactive" : ""}`}
       aria-labelledby={`unit-${id}`}
+      style={{ "--player-color": cssPlayerColor(presentation.primaryColor),
+        "--player-accent": cssPlayerColor(playerAccent(presentation.primaryColor)) } as CSSProperties}
     >
       {inactive && <p className="unit-inactive-label">{t("workshop.inactivePlayer")}</p>}
       <div className="player-upgrades-header">

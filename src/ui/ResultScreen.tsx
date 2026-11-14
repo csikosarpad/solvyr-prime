@@ -1,6 +1,7 @@
 import { useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { usePlayerName } from "@/game/state/playerNames";
+import { playerAccent, playerColor, usePlayerColors } from "@/game/state/playerColors";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import { useT } from "@/i18n";
 import { gameRef } from "./gameRef";
@@ -16,6 +17,7 @@ import { useState } from "react";
 export function ResultScreen() {
   const t = useT();
   const name = usePlayerName();
+  const colors = usePlayerColors((state) => state.colors);
   const {
     winner,
     matchStats,
@@ -45,7 +47,7 @@ export function ResultScreen() {
   return (
     <div className="overlay">
       <div className="panel result-panel">
-        <ResultDecorCanvas accent={getUnitPresentation(winner ?? "P1").accent} />
+        <ResultDecorCanvas accent={winner === "P1" || winner === "P2" ? playerAccent(playerColor(winner, colors)) : getUnitPresentation("P1").accent} />
         <div className="winner-banner">
           <span className="winner-trophy" aria-hidden="true">
             ★

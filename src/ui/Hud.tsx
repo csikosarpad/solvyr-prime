@@ -4,6 +4,7 @@ import { PowerDial, UnitGauge } from "./gauges";
 import { MAX_ANGLE, MIN_ANGLE, MIN_POWER, useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { usePlayerName } from "@/game/state/playerNames";
+import { playerAccent } from "@/game/state/playerColors";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { MAX_RANK, rankStars, rankFromSkill } from "@/game/systems/ai";
 import { newProfile, profileStars } from "@/game/systems/upgrades";
@@ -15,7 +16,7 @@ import { WindIndicator } from "./WindIndicator";
 import { BattleExitDialog } from "./BattleExitDialog";
 import { structureState } from "@/game/systems/strategicObjectives";
 
-const toCss = (color?: number) => (color === undefined ? "#ffffff" : `#${color.toString(16).padStart(6, "0")}`);
+const toCss = (color?: number) => (color === undefined ? "#ffffff" : `#${playerAccent(color).toString(16).padStart(6, "0")}`);
 
 export function Hud() {
   const t = useT();

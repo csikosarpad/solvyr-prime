@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { tankTint } from "@/game/state/playerColors";
 import type { UnitPresentation } from "./result.types";
 
 interface UnitIllustrationProps {
@@ -11,7 +12,7 @@ export function UnitIllustration({ presentation, facing = "right" }: UnitIllustr
   if (!presentation.silhouetteAsset) return null;
 
   if (presentation.illustrationLayout === "body-barrel") {
-    const color = presentation.primaryColor;
+    const color = tankTint(presentation.primaryColor);
     const red = ((color >> 16) & 255) / 255;
     const green = ((color >> 8) & 255) / 255;
     const blue = (color & 255) / 255;

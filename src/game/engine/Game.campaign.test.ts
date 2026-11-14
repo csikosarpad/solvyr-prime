@@ -15,6 +15,7 @@ import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
 import { useCommandStore } from "../state/commandStore";
 import { useVeyloraStore } from "../state/veyloraStore";
 import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
+import { DEFAULT_PLAYER_COLORS, PLAYER_COLORS, usePlayerColors } from "../state/playerColors";
 
 vi.hoisted(() => {
   HTMLCanvasElement.prototype.getContext = () => null;
@@ -47,6 +48,7 @@ describe("Game campaign lifecycle", () => {
 
   afterEach(() => {
     game.destroy();
+    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, error: null });
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
@@ -59,6 +61,27 @@ describe("Game campaign lifecycle", () => {
     game.fire();
     Reflect.get(game, "explode").call(game, 640, 100);
   };
+
+  it("applies both selected colors to the tank and HUD on a new battle", () => {
+    usePlayerColors.setState({ colors: { P1: "green", P2: "purple" } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    expect(tanks.map((tank) => tank.color)).toEqual([PLAYER_COLORS.green, PLAYER_COLORS.purple]);
+    expect(useGameStore.getState().tanks.map((tank) => tank.color)).toEqual([PLAYER_COLORS.green, PLAYER_COLORS.purple]);
+  });
+
+  it("renders a black tank with visible shading and outline without changing its saved color", () => {
+    usePlayerColors.setState({ colors: { P1: "black", P2: "white" } });
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    Reflect.set(game, "tankTextures", { body: Texture.EMPTY, barrel: Texture.EMPTY });
+    game.restart({ seed: 42, starterIndex: 0 });
+    const layer = Reflect.get(game, "tankLayer");
+    expect(layer.children[0].children[1].tint).toBe(0x777777);
+    expect(layer.children[0].filters[0].color).toBe(0xb9c7d6);
+    expect(layer.children[1].children[1].tint).toBe(0xffffff);
+    expect(useGameStore.getState().tanks[0]!.color).toBe(0);
+    vi.unstubAllGlobals();
+  });
 
   const startForge = (starterIndex = 0) => {
     useCampaignStore.getState().complete("alpha-01");

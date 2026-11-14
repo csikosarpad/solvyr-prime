@@ -45,6 +45,7 @@ import { MAX_ANGLE, MIN_POWER, useGameStore } from "../state/gameStore";
 import { useMultiplayerStore } from "../state/multiplayerStore";
 import { useCommandStore } from "../state/commandStore";
 import { playerName } from "../state/playerNames";
+import { playerAccent, playerColor, tankTint, usePlayerColors } from "../state/playerColors";
 import { useAiSettings } from "../state/aiSettings";
 import { useCampaignStore } from "../state/campaignStore";
 import type { MatchMode } from "../state/gameStore";
@@ -236,11 +237,6 @@ export class Game {
     this.app.ticker.add((t) => this.update(t.deltaMS / 1000));
   }
 
-  private playerColor(index: number): number {
-    const { players } = this.theme;
-    return players[index % players.length]!;
-  }
-
   /** A pályát középre illeszti az ablakba, arányt tartva. */
   private layout(): void {
     const { width, height } = this.app.screen;
@@ -330,9 +326,10 @@ export class Game {
             worldY: this.terrain!.mask.surfaceY(placement.worldX),
           }))
         : [];
+    const colors = usePlayerColors.getState().colors;
     this.tanks = [
-      createTank("P1", width * 0.12, this.playerColor(0), 45, this.statsFor("P1")),
-      createTank("P2", width * 0.88, this.playerColor(1), 135, this.statsFor("P2")),
+      createTank("P1", width * 0.12, playerColor("P1", colors), 45, this.statsFor("P1")),
+      createTank("P2", width * 0.88, playerColor("P2", colors), 135, this.statsFor("P2")),
     ];
     this.tanks.forEach((t) => settleTank(t, this.terrain!.mask));
     this.buildTankViews();
@@ -490,11 +487,11 @@ export class Game {
       barrel.anchor.set(0, 0.5);
       const body = new Sprite(this.tankTextures.body);
       body.anchor.set(0.5, 1);
-      body.tint = t.color;
+      body.tint = tankTint(t.color);
       const root = new Container();
       root.addChild(barrel, body);
       const glow = new GlowFilter({
-        color: t.color,
+        color: playerAccent(t.color),
         distance: coarsePointer ? 3 : 4,
         outerStrength: 2,
         innerStrength: 0.4,

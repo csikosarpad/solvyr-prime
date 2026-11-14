@@ -3,6 +3,7 @@ import { MAX_NAME_LENGTH, usePlayerNamesStore } from "@/game/state/playerNames";
 import { AUDIO_CHANNELS, useAudioSettings } from "@/game/state/audioSettings";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useGameStore } from "@/game/state/gameStore";
+import { cssPlayerColor, PLAYER_COLORS, PLAYER_COLOR_OPTIONS, usePlayerColors } from "@/game/state/playerColors";
 import { useT, type MessageKey } from "@/i18n";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -52,6 +53,7 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
   const toggleMuted = useGameStore((s) => s.toggleMuted);
   const names = usePlayerNamesStore((s) => s.names);
   const setName = usePlayerNamesStore((s) => s.setName);
+  const { colors, setColor, error: colorError } = usePlayerColors();
   const channels = useAudioSettings((s) => s.channels);
   const setChannel = useAudioSettings((s) => s.setChannel);
   const volume = useAudioSettings((s) => s.volume);
@@ -141,6 +143,32 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
               />
             ))}
           </div>
+        </div>
+        <div className="main-menu-setting">
+          <span>{t("colors.title")}</span>
+          <small>{t("colors.hint")}</small>
+          {(["P1", "P2"] as const).map((id) => (
+            <fieldset className="player-color-palette" key={id}>
+              <legend>{t("colors.player", { id })}</legend>
+              <div className="player-color-options">
+                {PLAYER_COLOR_OPTIONS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className="player-color-option"
+                    data-color={color}
+                    style={{ "--swatch-color": cssPlayerColor(PLAYER_COLORS[color]) } as CSSProperties}
+                    aria-label={t("colors.option", { id, color: t(`colors.${color}`) })}
+                    aria-pressed={colors[id] === color}
+                    onClick={() => setColor(id, color)}
+                  >
+                    {colors[id] === color && <span aria-hidden="true">✓</span>}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+          {colorError && <small role="alert">{t(colorError)}</small>}
         </div>
       </section>
       <button className="btn secondary main-menu-back" onClick={onBack}>

@@ -12,6 +12,7 @@ import { ResultScreen } from "./ResultScreen";
 import { Workshop } from "./Workshop";
 import { IDBFactory } from "fake-indexeddb";
 import { useVeyloraStore } from "@/game/state/veyloraStore";
+import { DEFAULT_PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
 
 const mockGame = (overrides: Partial<Record<keyof Game, unknown>>) => {
   gameRef.current = { leaveBattle: vi.fn(), ...overrides } as unknown as Game;
@@ -22,6 +23,7 @@ describe("MainMenu", () => {
     useGameStore.setState({ screen: "menu", muted: false, matchMode: "skirmish", aiActive: false });
     useMultiplayerStore.getState().leave();
     useCampaignStore.getState().reset();
+    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, error: null });
     useAudioSettings.setState({
       channels: { music: true, voice: true, effects: true },
       volume: 1,
@@ -74,6 +76,39 @@ describe("MainMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
     expect(screen.getByRole("slider", { name: "Játék hangereje" })).toHaveValue("80");
     expect(screen.getByRole("slider", { name: "Játék hangereje" })).toHaveAttribute("data-volume-high", "true");
+  });
+
+  it("a tankszínek játékosonként választhatók és mentődnek", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    expect(screen.getByRole("button", { name: "P1: Kék" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "P1: Zöld" }));
+    fireEvent.click(screen.getByRole("button", { name: "P2: Lila" }));
+    expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "P2: Lila" })).toHaveAttribute("aria-pressed", "true");
+    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toEqual({ P1: "green", P2: "purple" });
+  });
+
+  it("a fekete és fehér palettaszínek külön választhatók", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    fireEvent.click(screen.getByRole("button", { name: "P1: Fekete" }));
+    fireEvent.click(screen.getByRole("button", { name: "P2: Fehér" }));
+    expect(screen.getByRole("button", { name: "P1: Fekete" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "P2: Fehér" })).toHaveAttribute("aria-pressed", "true");
+    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toEqual({ P1: "black", P2: "white" });
+  });
+
+  it("megjeleníti a tankszín mentési hibáját", () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const save = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("storage"); });
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    fireEvent.click(screen.getByRole("button", { name: "P1: Zöld" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("A tankszínek mentése sikertelen");
+    expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
+    save.mockRestore();
+    log.mockRestore();
   });
 
   it("a beállításokból módosítható és visszajelzett a hang állapota", () => {

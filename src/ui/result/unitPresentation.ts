@@ -44,7 +44,8 @@ const SPACE_PRESENTATIONS: Record<string, UnitPresentation> = {
   },
 };
 
-export function getUnitPresentation(id: string, domain: UnitPresentation["domain"] = "ground"): UnitPresentation {
+export function getUnitPresentation(id: string, domain: UnitPresentation["domain"] = "ground", color?: number): UnitPresentation {
   const presentations = domain === "space" ? SPACE_PRESENTATIONS : PRESENTATIONS;
-  return presentations[id] ?? (domain === "space" ? SPACE_PRESENTATION : GROUND_PRESENTATION);
+  const presentation = presentations[id] ?? (domain === "space" ? SPACE_PRESENTATION : GROUND_PRESENTATION);
+  return color === undefined ? presentation : { ...presentation, primaryColor: color };
 }

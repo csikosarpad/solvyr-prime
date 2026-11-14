@@ -229,6 +229,10 @@ session és a szoba érvényes. Ez nem fiókalapú, eszközök közötti felhőm
   böngészőnyelv esetén az adott nyelv, egyébként angol indul.
 - **Játékosnevek:** P1/P2 neve legfeljebb 16 karakter. Üres névnél az azonosító marad;
   online a lobbyban megadott név az elsődleges.
+- **Tankok színe:** P1 és P2 külön választhat a palettáról. A szín a következő csatában,
+  a Fejlesztésben és a játékosválasztókon is megjelenik; a beállítás helyben mentődik.
+  Online a színek csak a saját böngésző megjelenítését módosítják, nem szinkronizálódnak.
+  Azonos színek is választhatók, ezért a játékosazonosítókat is érdemes figyelni.
 - **Hang:** Zene, Parancsnok és Effektek külön kapcsolhatók egy-egy be/ki kapcsolóval; az M némítás mindet felülírja.
   A Beállítások **Játék hangereje** csúszkája 0–100% között szabályozza mindhárom hangcsoportot,
   és a választás megmarad újratöltés után. A 100% az eddigi hangkeverésnek felel meg;

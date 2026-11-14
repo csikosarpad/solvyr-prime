@@ -7,6 +7,7 @@ import { VEYLORA } from "@/game/data/campaignContent";
 import { useT } from "@/i18n";
 import { Shop } from "./Shop";
 import { ResultDecorCanvas } from "./result/ResultDecorCanvas";
+import { PlayerSelectorButton } from "./PlayerSelectorButton";
 
 export function Workshop() {
   const t = useT();
@@ -52,8 +53,8 @@ export function Workshop() {
         {!online && !aiOpponent && (
           <div className="workshop-players" aria-label={t("workshop.player")}>
             {(["P1", "P2"] as const).map((id) => (
-              <button key={id} className={`btn secondary player-selector-${id}`} aria-pressed={selected === id} disabled={pending > 0}
-                onClick={() => setWorkshopPlayer(id)}>{id}</button>
+              <PlayerSelectorButton key={id} playerId={id} aria-pressed={selected === id} disabled={pending > 0}
+                onClick={() => setWorkshopPlayer(id)} />
             ))}
           </div>
         )}
