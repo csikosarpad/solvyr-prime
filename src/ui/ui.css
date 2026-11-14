@@ -1,6 +1,7 @@
 @layer theme, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities) source("../");
+@import "./panels.css";
 
 /* Skin: a színeket CSS változók adják; másik kinézethez elég a :root[data-skin="…"] felülírása. */
 :root {
@@ -387,23 +388,6 @@
   font-family: inherit;
 }
 
-.panel {
-  min-width: 320px;
-  max-height: 90%;
-  overflow: auto;
-  padding: 24px 16px;
-  border-radius: 12px;
-  background: var(--bf-panel);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  text-align: center;
-  animation: pop-in 0.35s cubic-bezier(0.2, 1.3, 0.4, 1);
-
-  h1,
-  h2 {
-    margin: 0 0 12px;
-  }
-}
-
 .welcome-screen {
   box-sizing: border-box;
   align-content: end;
@@ -430,22 +414,44 @@
   padding: 12px 30px;
   border: 1px solid #ffd178;
   border-radius: 2px 12px;
-  background: linear-gradient(180deg, rgba(127, 80, 19, 0.95), rgba(37, 26, 19, 0.96));
+  background: linear-gradient(
+    135deg, 
+    rgba(37, 26, 19, 0.96) 0%, 
+    rgba(127, 80, 19, 0.95) 50%, 
+    rgba(168, 108, 28, 0.95) 75%, 
+    rgba(37, 26, 19, 0.96) 100%
+  );
+  background-size: 250% 250%;
   box-shadow: inset 0 0 16px rgba(255, 190, 75, 0.24), 0 0 24px rgba(255, 181, 60, 0.4);
   color: #fff3d4;
   font-size: 19px;
   font-weight: 700;
   letter-spacing: 4px;
   cursor: pointer;
+  animation: warmGlow 6s ease infinite;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+@keyframes warmGlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .welcome-start span {
   margin-left: 18px;
   color: #ffd178;
+  display: inline-block;
+  transition: transform 0.3s ease;
 }
 
 .welcome-start:hover {
-  filter: brightness(1.2);
+  filter: brightness(1.15);
+  box-shadow: inset 0 0 20px rgba(255, 190, 75, 0.4), 0 0 32px rgba(255, 181, 60, 0.65);
+}
+
+.welcome-start:hover span {
+  transform: translateX(4px);
 }
 
 .welcome-start:focus-visible {
@@ -653,23 +659,6 @@
   }
 }
 
-.main-menu-panel {
-  box-sizing: border-box;
-  width: min(440px, calc(100vw - 32px));
-  min-width: 0;
-  padding: clamp(24px, 5vw, 40px);
-  border: 1px solid rgba(67, 205, 255, 0.68);
-  border-radius: 2px 18px;
-  background:
-    linear-gradient(135deg, rgba(5, 28, 50, 0.97), rgba(4, 13, 30, 0.98)),
-    repeating-linear-gradient(0deg, transparent 0 7px, rgba(90, 211, 255, 0.035) 8px);
-  box-shadow:
-    0 0 0 1px rgba(0, 170, 255, 0.16),
-    0 0 34px rgba(0, 170, 255, 0.2),
-    inset 0 0 28px rgba(0, 185, 255, 0.08);
-  text-align: left;
-}
-
 .main-menu-header {
   padding-bottom: 20px;
   border-bottom: 1px solid rgba(91, 177, 210, 0.3);
@@ -756,21 +745,6 @@
   text-shadow: 0 0 8px color-mix(in srgb, var(--bf-highlight) 85%, transparent);
 }
 
-.sector-briefing-panel {
-  pointer-events: auto;
-  max-height: 100%;
-  overflow-y: auto;
-  width: min(460px, 100%);
-  box-sizing: border-box;
-  padding: clamp(16px, 4vw, 28px);
-  border: 1px solid var(--bf-shield);
-  border-radius: 2px 18px;
-  background: linear-gradient(135deg, rgba(4, 22, 42, 0.96), rgba(7, 14, 33, 0.92));
-  box-shadow: 0 0 32px color-mix(in srgb, var(--bf-shield) 25%, transparent);
-  text-align: center;
-  animation: sector-briefing-reveal 0.3s ease-out;
-}
-
 .sector-briefing-eyebrow {
   margin-bottom: 18px;
   color: var(--bf-highlight);
@@ -807,15 +781,6 @@
   flex-shrink: 0;
 }
 
-.sector-briefing-panel > .btn {
-  margin: 4px;
-}
-
-.sector-briefing-panel [role="alert"] {
-  margin-bottom: 12px;
-  color: var(--bf-danger, #ff6464);
-}
-
 @keyframes sector-briefing-reveal {
   from {
     opacity: 0;
@@ -838,47 +803,159 @@
   gap: 8px;
   margin-top: 20px;
 }
+/**
+ * Main menu actions styling
+ */
 
-.main-menu-actions .btn,
-.main-menu-actions .btn.secondary {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 42px;
-  margin: 0;
-  border: 1px solid rgba(69, 190, 231, 0.58);
-  border-radius: 2px 8px;
-  background: linear-gradient(180deg, rgba(20, 74, 103, 0.86), rgba(6, 32, 54, 0.94));
-  color: #c9f3ff;
-  text-align: left;
-  letter-spacing: 0.5px;
+.main-menu-actions {
+  /* 1. Alapértelmezett és másodlagos menügombok */
+  .btn,
+  .btn.secondary {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 42px;
+    margin: 0;
+    border: 1px solid rgba(69, 190, 231, 0.58);
+    border-radius: 2px 8px;
+    background: linear-gradient(180deg, rgba(20, 74, 103, 0.86), rgba(6, 32, 54, 0.94));
+    box-shadow: inset 0 1px 0 rgba(156, 238, 255, 0.15);
+    color: #c9f3ff;
+    text-align: left;
+    letter-spacing: 0.5px;
+    transition: all 0.25s ease;
+
+    &:hover:not(:disabled) {
+      border-color: #9ceeff;
+      background: linear-gradient(180deg, rgba(35, 115, 145, 0.94), rgba(9, 48, 73, 0.98));
+      box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 0 12px rgba(36, 216, 255, 0.2);
+    }
+  }
+
+  /* 2. Kiemelt prémium gombok (.main-menu-start) */
+  .btn.main-menu-start,
+  .main-menu-start {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(67, 218, 255, 0.85);
+    background: linear-gradient(
+      135deg, 
+      rgba(8, 51, 79, 0.96) 0%, 
+      rgba(27, 119, 153, 0.92) 50%, 
+      rgba(12, 72, 105, 0.96) 100%
+    );
+    background-size: 200% 200%;
+    color: #e4f9ff;
+    box-shadow: 
+      inset 0 1px 1px rgba(255, 255, 255, 0.35),
+      inset 0 0 18px rgba(36, 216, 255, 0.2),
+      0 4px 15px rgba(0, 0, 0, 0.45);
+    animation: coldGlow 8s ease infinite;
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+
+    /* Rámutatáskor átsuhanó fénycsík */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -120%;
+      width: 70%;
+      height: 100%;
+      background: linear-gradient(
+        90deg, 
+        transparent, 
+        rgba(156, 238, 255, 0.28), 
+        transparent
+      );
+      transform: skewX(-25deg);
+      transition: left 0.65s ease;
+      pointer-events: none;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: #aef2ff;
+      /* Fontos: megőrzi az animált gradienst, nem írja felül sima kékre */
+      background: linear-gradient(
+        135deg, 
+        rgba(12, 68, 102, 0.98) 0%, 
+        rgba(38, 145, 184, 0.95) 50%, 
+        rgba(18, 92, 130, 0.98) 100%
+      );
+      background-size: 200% 200%;
+      transform: translateY(-2px);
+      box-shadow: 
+        inset 0 1px 1px rgba(255, 255, 255, 0.5),
+        inset 0 0 22px rgba(36, 216, 255, 0.35),
+        0 6px 20px rgba(36, 216, 255, 0.3);
+
+      &::before {
+        left: 150%;
+      }
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    /* 3. Az első (fő arany) gomb egyedi stílusa */
+    &:first-child {
+      border-color: #e8bb64;
+      background: linear-gradient(
+        135deg, 
+        rgba(44, 30, 18, 0.97) 0%, 
+        rgba(127, 80, 23, 0.94) 50%, 
+        rgba(65, 42, 20, 0.97) 100%
+      );
+      background-size: 200% 200%;
+      color: #fff3d4;
+      box-shadow: 
+        inset 0 1px 1px rgba(255, 235, 180, 0.4),
+        inset 0 0 18px rgba(255, 190, 75, 0.25),
+        0 4px 16px rgba(0, 0, 0, 0.5),
+        0 0 18px rgba(255, 181, 60, 0.2);
+
+      &::before {
+        background: linear-gradient(
+          90deg, 
+          transparent, 
+          rgba(255, 226, 145, 0.32), 
+          transparent
+        );
+      }
+
+      &:hover:not(:disabled) {
+        border-color: #ffe299;
+        background: linear-gradient(
+          135deg, 
+          rgba(58, 39, 23, 0.98) 0%, 
+          rgba(153, 96, 28, 0.96) 50%, 
+          rgba(82, 53, 25, 0.98) 100%
+        );
+        background-size: 200% 200%;
+        box-shadow: 
+          inset 0 1px 1px rgba(255, 245, 210, 0.6),
+          inset 0 0 24px rgba(255, 190, 75, 0.4),
+          0 6px 24px rgba(255, 181, 60, 0.38);
+      }
+    }
+  }
 }
 
-.main-menu-actions .main-menu-start:first-child {
-  border-color: #e8bb64;
-  background: linear-gradient(180deg, rgba(117, 75, 23, 0.94), rgba(44, 30, 18, 0.97));
-  color: #fff3d4;
-  box-shadow: inset 0 0 16px rgba(255, 190, 75, 0.2), 0 0 14px rgba(255, 181, 60, 0.22);
+@keyframes coldGlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-.main-menu-actions .main-menu-start {
-  border-color: rgba(67, 218, 255, 0.9);
-  background: linear-gradient(180deg, rgba(27, 119, 153, 0.9), rgba(8, 51, 79, 0.96));
-  color: #e4f9ff;
-  box-shadow: inset 0 0 16px rgba(36, 216, 255, 0.12);
-}
-
-.main-menu-actions .btn:hover:not(:disabled) {
-  border-color: #9ceeff;
-  background: linear-gradient(180deg, rgba(35, 115, 145, 0.94), rgba(9, 48, 73, 0.98));
-  box-shadow: 0 0 12px rgba(36, 216, 255, 0.2);
-}
-
+/* Fókusz állapot billentyűzetes navigációhoz */
 .main-menu-actions .btn:focus-visible,
 .main-menu-settings .btn:focus-visible,
 .main-menu-back:focus-visible {
-  outline: 2px solid #ffe27a;
+  outline: 1px solid #ffe27a;
   outline-offset: 3px;
 }
+/* Main menu settings styling */
 
 .main-menu-settings {
   display: grid;
@@ -991,24 +1068,6 @@
   text-align: left;
 }
 
-.result-panel {
-  position: relative;
-  box-sizing: border-box;
-  width: min(1120px, calc(100vw - 32px));
-  min-width: 0;
-  max-height: 94%;
-  padding: 22px 26px 18px;
-  border: 1px solid rgba(0, 204, 255, 0.75);
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, rgba(4, 25, 45, 0.98), rgba(7, 14, 33, 0.98)),
-    radial-gradient(circle at 50% 0, rgba(255, 190, 45, 0.2), transparent 35%);
-  box-shadow:
-    0 0 0 1px rgba(0, 204, 255, 0.2),
-    0 0 28px rgba(0, 180, 255, 0.22),
-    inset 0 0 30px rgba(0, 165, 255, 0.08);
-}
-
 .result-decor-canvas {
   position: absolute;
   z-index: 0;
@@ -1022,11 +1081,6 @@
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.result-panel > :not(.result-decor-canvas) {
-  position: relative;
-  z-index: 1;
 }
 
 .winner-banner {
@@ -1102,11 +1156,6 @@
   overflow: auto;
   align-items: flex-start;
   padding: 16px;
-}
-
-.workshop-panel {
-  margin: auto;
-  max-height: none;
 }
 
 .workshop-players .btn[class*="player-selector-"] {
@@ -1880,10 +1929,6 @@
 
   .hud-stepper {
     gap: 4px;
-  }
-
-  .result-panel {
-    padding: 16px 10px;
   }
 
   .winner-banner {

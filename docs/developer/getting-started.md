@@ -114,8 +114,12 @@ A jelenlegi, rétegen kívüli saját CSS azonos tulajdonság esetén elsőbbsé
 a Tailwind utility rétegével szemben. Ha egy tulajdonságot utility class kezel,
 az ütköző saját deklarációt távolítsd el; a meglévő CSS-t nem kell átírni.
 
-A közös téma (`--bf-*` változók), alapstílusok (`overlay`, `panel`, `btn`) és a több
-képernyőn használt osztályok a globális [ui.css](../../src/ui/ui.css) fájlban maradnak.
+A közös téma (`--bf-*` változók), az `overlay`, `btn` és a több képernyőn használt
+osztályok a globális [ui.css](../../src/ui/ui.css) fájlban maradnak. A
+[panels.css](../../src/ui/panels.css) tartalmazza a fő képernyőpanelek közös alapját,
+változatait és panelspecifikus reszponzív méreteit; a `ui.css` importálja.
+A megerősítő dialógus külön [ConfirmDialog.css](../../src/ui/ConfirmDialog.css)
+stíluslapot használ, és megőrzi a veszélyes műveletek piros kiemelését.
 Az önálló komponensek saját stílusai fokozatosan melléjük emelhetők ki:
 a [CampaignMap.tsx](../../src/ui/CampaignMap.tsx) közvetlenül importálja a
 [CampaignMap.css](../../src/ui/CampaignMap.css) fájlt, a reszponzív szabályokkal és
@@ -134,7 +138,11 @@ az input 32 px magas kezelési területe ezektől független. A WebKit és Firef
 pszeudoelemei külön szabályokat kapnak, közös CSS-változókkal.
 A `MainMenuSettings` a hangerőből számítja a `--volume-whiteness` értékét: a sín 0%-nál
 semleges, 80%-ra fehérré válik. A `data-volume-high` 80%-tól fehér ragyogást kapcsol be.
-A projekt sima CSS-t használ; Sass `@mixin` / `@include` nincs beállítva.
+A projekt natív CSS-beágyazást és változókat használ; ezekhez nincs szükség SCSS-re
+vagy további fordítási függőségre. Sass akkor lehet indokolt, ha ténylegesen szükség
+lesz fordítási idejű mixinekre, ciklusokra vagy függvényekre. A natív beágyazás
+szelektorspecifikussága eltérhet a Sass-étól, ezért vegyes szelektorlistáknál ezt
+és a szabályok sorrendjét átalakításkor ellenőrizni kell.
 
 ## Csata megszakítása
 

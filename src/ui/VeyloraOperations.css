@@ -4,16 +4,6 @@
   padding: 20px;
 }
 
-.veylora-panel {
-  width: min(1100px, 100%);
-  margin: auto;
-}
-
-.veylora-panel h1,
-.veylora-panel h2 {
-  margin: 8px 0;
-}
-
 .veylora-star-map {
   min-height: 420px;
 }
@@ -28,10 +18,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-}
-
-.veylora-panel button {
-  min-height: 44px;
 }
 
 .campaign-recipe {
