@@ -7,6 +7,7 @@ export class StrategicObjectiveGraphics extends Container {
   private elapsed = 0;
   private reactorTexture: Texture | null = null;
   private habitatTexture: Texture | null = null;
+  private labTexture: Texture | null = null;
   private reactorSprites = new Map<string, Sprite>();
   private reactorOverlay = new Graphics();
 
@@ -21,6 +22,10 @@ export class StrategicObjectiveGraphics extends Container {
 
   setHabitatTexture(texture: Texture): void {
     this.habitatTexture = texture;
+  }
+
+  setLabTexture(texture: Texture): void {
+    this.labTexture = texture;
   }
 
   draw(
@@ -55,9 +60,11 @@ export class StrategicObjectiveGraphics extends Container {
       const texture = !destroyed
         ? objective.type === "CIVIL_HABITAT"
           ? this.habitatTexture
-          : forgeReactor && objective.type === "ENERGY_NODE"
-            ? this.reactorTexture
-            : null
+          : objective.type === "RESEARCH_LAB"
+            ? this.labTexture
+            : objective.type === "ENERGY_NODE"
+              ? this.reactorTexture
+              : null
         : null;
       if (texture) {
         let sprite = this.reactorSprites.get(objective.id);

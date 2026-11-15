@@ -7,6 +7,7 @@ import tankBarrelUrl from "../assets/tank-barrel.svg?url";
 import tankMarkingsUrl from "../assets/tank-markings.svg?url";
 import forgeReactorUrl from "../assets/forge-reactor.png?url";
 import habitatUrl from "../assets/buildings/habitat.png?url";
+import labUrl from "../assets/buildings/research-lab.png?url";
 import radarUrl from "../assets/buildings/radar.png?url";
 import defenseUrl from "../assets/buildings/defense.png?url";
 import foundryUrl from "../assets/buildings/foundry.png?url";
@@ -188,12 +189,13 @@ export class Game {
     host.appendChild(this.app.canvas);
     this.setupDragAim(this.app.canvas);
 
-    const [body, barrel, markings, reactor, habitat, radar, defense, foundry, fxTextures] = await Promise.all([
+    const [body, barrel, markings, reactor, habitat, lab, radar, defense, foundry, fxTextures] = await Promise.all([
       Assets.load<Texture>({ src: tankBodyUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankBarrelUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankMarkingsUrl, data: { resolution: 3 } }),
       Assets.load<Texture>(forgeReactorUrl),
       Assets.load<Texture>(habitatUrl),
+      Assets.load<Texture>(labUrl),
       Assets.load<Texture>(radarUrl),
       Assets.load<Texture>(defenseUrl),
       Assets.load<Texture>(foundryUrl),
@@ -211,6 +213,7 @@ export class Game {
     this.tankTextures = { body, barrel, markings };
     this.objectiveGraphics.setReactorTexture(reactor);
     this.objectiveGraphics.setHabitatTexture(habitat);
+    this.objectiveGraphics.setLabTexture(lab);
     this.buildingDecor.setTextures({ radar, defense, foundry });
     this.fx = new FxRenderer(fxTextures);
     this.shellGlow.texture = fxTextures.glow;

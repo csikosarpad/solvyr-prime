@@ -115,7 +115,7 @@ A meglévő hegy-, köd- és porrendszerre építünk, nem készítünk párhuza
    Más szektorokra csak a prototípus értékelése után terjesszük ki.
 2. **Kráterek:** tartós perzselés finom peremrészletekkel és rövid talajbecsapódási
    törmelék; csökkentett mozgásnál az új törmelékeffekt kikapcsol.
-3. **Épületek:** a FORGE-17 energiareaktora képes látványpróbát kapott: a
+3. **Épületek:** az energiareaktorok képes változatot kaptak minden szektorban: a
    felhasználó által ChatGPT-vel készített kép fekete hátterét eltávolítottuk és
    lekicsinyítettük. Ép és sérült állapotban a kép, megsemmisülten a korábbi
    Pixi-romhalmaz látható; a státuszjelzés és a meglévő füst megmarad.
@@ -123,7 +123,8 @@ A meglévő hegy-, köd- és porrendszerre építünk, nem készítünk párhuza
    a FORGE-17 kohója, valamint a VANGUARD-12 radarja és védelmi tornya
    háttérben maradó díszlet: csatánként 100 HP-val, robbanási sérüléssel és
    állapotjelző csíkkal. Nem akadályok, nem számítanak küldetéscélnak, és a
-   sérülésük nem marad meg a csata után. A kutatólabor a korábbi rajzot használja.
+   sérülésük nem marad meg a csata után. A kutatólabor a felhasználó által
+   készített képes változatot használja, a meglévő sérülési állapotokkal.
 4. **Egységek:** a kráter- és reaktorlátvány jóváhagyása után Siege Platform
    assetek külön testtel és csővel. A jelenlegi ostromplatform semleges testet és
    külön játékosszínű jelzésréteget kapott a harctéren és az egységpaneleken;

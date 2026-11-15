@@ -9,6 +9,32 @@ vi.hoisted(() => {
 });
 
 describe("strategic objective graphics", () => {
+  it("uses the lab image and retains its damaged and destroyed states", () => {
+    const graphics = new StrategicObjectiveGraphics();
+    graphics.setLabTexture(Texture.WHITE);
+    const terrain = TerrainMask.fromHeightmap(new Array(1280).fill(550), 720);
+    const lab = {
+      ...createStrategicObjective("lab", "RESEARCH_LAB"),
+      worldX: 640, worldY: 550, width: 64, height: 40,
+    };
+    const sprites = Reflect.get(graphics, "reactorSprites") as Map<string, Sprite>;
+    const before = structuredClone(lab);
+    graphics.draw([lab], terrain, 0, false);
+    const sprite = sprites.get("lab")!;
+    expect(sprite).toMatchObject({ tint: 0xffffff, x: 640, y: 546 });
+    expect(sprite.width).toBeLessThanOrEqual(lab.width);
+    expect(sprite.height).toBeLessThanOrEqual(lab.height - 4);
+    expect(lab).toEqual(before);
+    graphics.draw([{ ...lab, hp: 40 }], terrain, 1, false);
+    expect(sprites.get("lab")).toBe(sprite);
+    expect(sprite.tint).toBe(0x999999);
+    graphics.draw([{ ...lab, hp: 15 }], terrain, 0, false);
+    expect(sprites.size).toBe(0);
+    expect(graphics.drawing.context.instructions.length).toBeGreaterThan(0);
+    graphics.destroy({ children: true });
+    expect(Texture.WHITE.destroyed).toBe(false);
+  });
+
   it("uses the biodome image for habitats in any sector, with damage and ruin states", () => {
     const graphics = new StrategicObjectiveGraphics();
     graphics.setHabitatTexture(Texture.WHITE);
@@ -28,33 +54,36 @@ describe("strategic objective graphics", () => {
     graphics.destroy({ children: true });
   });
 
-  it("uses the image only for a living FORGE reactor and preserves the destroyed state", () => {
+  it.each([
+    ["energy-node-01", true],
+    ["prime-energy-node-01", false],
+    ["other-energy-node", false],
+  ])("uses the reactor image for %s and preserves its damage states", (id, forgeReactor) => {
     const graphics = new StrategicObjectiveGraphics();
     graphics.setReactorTexture(Texture.WHITE);
     const terrain = TerrainMask.fromHeightmap(new Array(1280).fill(550), 720);
     const objective = {
-      ...createStrategicObjective("energy-node-01", "ENERGY_NODE"),
+      ...createStrategicObjective(id, "ENERGY_NODE"),
       worldX: 1040,
       worldY: 550,
       width: 48,
       height: 44,
     };
-    graphics.draw([objective], terrain, 0, false, true);
+    graphics.draw([objective], terrain, 0, false, forgeReactor);
     const sprites = Reflect.get(graphics, "reactorSprites") as Map<string, Sprite>;
     const sprite = sprites.get(objective.id)!;
     expect(sprite).toMatchObject({ tint: 0xffffff, x: 1040, y: 546 });
     expect(sprite.width).toBeLessThanOrEqual(objective.width);
     expect(sprite.height).toBeLessThanOrEqual(objective.height - 4);
-    graphics.draw([{ ...objective, hp: 40 }], terrain, 1, false, true);
+    graphics.draw([{ ...objective, hp: 40 }], terrain, 1, false, forgeReactor);
     expect(sprites.get(objective.id)).toBe(sprite);
     expect(sprite.tint).toBe(0x999999);
-    graphics.draw([{ ...objective, hp: 15 }], terrain, 0, false, true);
+    graphics.draw([{ ...objective, hp: 15 }], terrain, 0, false, forgeReactor);
     expect(sprites.size).toBe(0);
     expect(graphics.drawing.context.instructions.length).toBeGreaterThan(0);
-    graphics.draw([objective], terrain, 0, false);
-    expect(sprites.size).toBe(0);
-    graphics.draw([objective], terrain, 0, false, true);
-    graphics.draw([], terrain, 0, false, true);
+    graphics.draw([objective], terrain, 0, false, forgeReactor);
+    expect(sprites.size).toBe(1);
+    graphics.draw([], terrain, 0, false, forgeReactor);
     expect(sprites.size).toBe(0);
     expect(Texture.WHITE.destroyed).toBe(false);
     graphics.destroy({ children: true });
