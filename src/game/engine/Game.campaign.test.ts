@@ -383,6 +383,7 @@ describe("Game campaign lifecycle", () => {
     expect(useGameStore.getState().strategicObjectives[0]).toMatchObject({
       hp: 40, playerCausedDamage: starterIndex === 0 ? 60 : 0,
     });
+
     expect(useGameStore.getState().strategicObjectives[1]?.hp).toBe(100);
     expect(useGameStore.getState().matchStats.P1?.damage).toBe(0);
     expect(useGameStore.getState().matchStats.P2?.damage).toBe(0);
@@ -394,6 +395,19 @@ describe("Game campaign lifecycle", () => {
       }),
     ]));
     expect(useCommandStore.getState().messages.at(-1)?.params?.source).toContain(starterIndex === 0 ? "P1" : "AI");
+  });
+
+  it("passes explosions to background buildings without adding them to mission objectives", () => {
+    const decor = Reflect.get(game, "buildingDecor");
+    decor.setTextures({ radar: Texture.WHITE, defense: Texture.WHITE, foundry: Texture.WHITE });
+    startForge();
+    const sprite = decor.children[0];
+    const objectives = useGameStore.getState().strategicObjectives;
+    game.fire();
+    Reflect.get(game, "explode").call(game, sprite.x, sprite.y);
+    expect(sprite.tint).toBe(0x999999);
+    expect(useGameStore.getState().strategicObjectives.map((objective) => objective.id))
+      .toEqual(objectives.map((objective) => objective.id));
   });
 
   it("uses the pre-crater center for damage then settles without fall damage", () => {

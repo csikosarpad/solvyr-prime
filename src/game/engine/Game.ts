@@ -5,6 +5,12 @@ import { bloomSettings } from "./bloomQuality";
 import tankBodyUrl from "../assets/tank-body.svg?url";
 import tankBarrelUrl from "../assets/tank-barrel.svg?url";
 import tankMarkingsUrl from "../assets/tank-markings.svg?url";
+import forgeReactorUrl from "../assets/forge-reactor.png?url";
+import habitatUrl from "../assets/buildings/habitat.png?url";
+import radarUrl from "../assets/buildings/radar.png?url";
+import defenseUrl from "../assets/buildings/defense.png?url";
+import foundryUrl from "../assets/buildings/foundry.png?url";
+import { BuildingDecor } from "./BuildingDecor";
 import { kick, stepBarrel, type BarrelState } from "../systems/barrelAnimation";
 import {
   DEFAULT_WORLD,
@@ -118,6 +124,7 @@ export class Game {
   private tanksGfx = new Graphics();
   private strategicObjectives: PlacedStrategicObjective[] = [];
   private objectiveGraphics = new StrategicObjectiveGraphics();
+  private buildingDecor = new BuildingDecor();
   private tankLayer = new Container();
   private battlefieldLayers = new BattlefieldLayers();
   private tankViews = new Map<string, TankView>();
@@ -181,10 +188,15 @@ export class Game {
     host.appendChild(this.app.canvas);
     this.setupDragAim(this.app.canvas);
 
-    const [body, barrel, markings, fxTextures] = await Promise.all([
+    const [body, barrel, markings, reactor, habitat, radar, defense, foundry, fxTextures] = await Promise.all([
       Assets.load<Texture>({ src: tankBodyUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankBarrelUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankMarkingsUrl, data: { resolution: 3 } }),
+      Assets.load<Texture>(forgeReactorUrl),
+      Assets.load<Texture>(habitatUrl),
+      Assets.load<Texture>(radarUrl),
+      Assets.load<Texture>(defenseUrl),
+      Assets.load<Texture>(foundryUrl),
       loadFxTextures(),
       this.battlefieldLayers.loadAssets(),
     ]);
@@ -197,6 +209,9 @@ export class Game {
       }
     });
     this.tankTextures = { body, barrel, markings };
+    this.objectiveGraphics.setReactorTexture(reactor);
+    this.objectiveGraphics.setHabitatTexture(habitat);
+    this.buildingDecor.setTextures({ radar, defense, foundry });
     this.fx = new FxRenderer(fxTextures);
     this.shellGlow.texture = fxTextures.glow;
     this.shellGlow.anchor.set(0.5);
@@ -220,7 +235,9 @@ export class Game {
     this.app.stage.addChild(
       backdrop,
       this.battlefieldLayers,
+      this.buildingDecor,
       this.terrain.sprite,
+      this.buildingDecor.healthBars,
       this.objectiveGraphics,
       this.previewGfx,
       this.tankLayer,
@@ -330,6 +347,7 @@ export class Game {
             worldY: this.terrain!.mask.surfaceY(placement.worldX),
           }))
         : [];
+    this.buildingDecor.draw(this.sector.id, this.terrain.mask, this.strategicObjectives);
     const colors = usePlayerColors.getState().colors;
     this.tanks = [
       createTank("P1", width * 0.12, playerColor("P1", colors), 45, this.statsFor("P1")),
@@ -937,6 +955,7 @@ export class Game {
       (mask.isSolid(x, y) || Math.abs(surface - y) <= radius);
     const objectivesBefore = this.strategicObjectives;
     this.battlefieldLayers.reactToImpact(Math.min(1, radius / 80));
+    this.buildingDecor.applyExplosion(x, y, radius * 2, 60 * shooter.stats.damage);
     this.strategicObjectives = this.strategicObjectives.map((objective) => ({
       ...objective,
       ...applyStrategicDamage(
@@ -1209,7 +1228,9 @@ export class Game {
     this.pendingMultiplayerEvents = [];
     this.audio?.destroy();
     this.destroyTankViews();
-    this.objectiveGraphics.destroy();
+    this.objectiveGraphics.destroy({ children: true });
+    this.buildingDecor.healthBars.destroy();
+    this.buildingDecor.destroy({ children: true });
     if (this.app.renderer) this.app.destroy({ removeView: true }, { children: true });
   }
 }
