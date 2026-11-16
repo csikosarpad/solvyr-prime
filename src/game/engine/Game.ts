@@ -48,6 +48,15 @@ import {
   type Tank,
 } from "../entities/tank";
 import { awardXp, buyUpgrade, computeStats, newProfile, type Profile } from "../systems/upgrades";
+import { weaponById, type WeaponDefinition, type WeaponId } from "../data/weapons";
+import {
+  buyWeapon,
+  resolveShotEffect,
+  steerHoming,
+  traceHitscan,
+  unlockedWeapons,
+  type ShotEffect,
+} from "../systems/weapons";
 import { newMatchStats, recordDamage, recordShot, recordXp, type MatchStats } from "../systems/matchStats";
 import { loadProfiles, saveProfiles } from "../systems/profileStorage";
 import { MAX_ANGLE, MIN_POWER, useGameStore } from "../state/gameStore";
@@ -112,6 +121,10 @@ const PREVIEW_DASH = 2;
 const PREVIEW_GAP = 4;
 /** Ennyi ideig nem találhatja el a lövedék a lövő tankot (tick). */
 const SELF_HIT_GRACE = 30;
+/** A lézersugár visszajelzésének hossza (s). */
+const LASER_BEAM_TTL = 0.35;
+/** Eddig a tickig él a célkövető rávezetés; utána a lövedék szabadon repül (nincs végtelen körözés). */
+const HOMING_GUIDANCE_MAX_TICKS = 900;
 /** A cső forgáspontja a tank talajszintje fölött (px); egyezik a tank.ts-ben lévővel. */
 const BARREL_PIVOT_HEIGHT = 10;
 /** Csak a megjelenítés nagyobb; a löveg hossza és a találati terület nem változik. */
@@ -187,6 +200,17 @@ export class Game {
   private aiHits = 0;
   private shell: BallisticBody | null = null;
   private shellAge = 0;
+  /** Az úton lévő lövés fegyvere és feloldott hatása; a tesztbeli közvetlen robbantásnál standard. */
+  private activeShot: { weapon: WeaponDefinition; effect: ShotEffect } | null = null;
+  /** Játékosonként kiválasztott fegyver; a meccs alatt megmarad, új meccsnél ürül. */
+  private selectedWeapons: Record<string, WeaponId> = {};
+  /** Égő talajzónák (gyújtólövedék); körkezdetkor sebeznek és öregszenek. */
+  private burnZones: { x: number; radius: number; turnsLeft: number; damagePerTurn: number; ownerId: string }[] = [];
+  private burnGfx = new Graphics();
+  private burnTime = 0;
+  /** A lézersugár rövid, halványuló visszajelzése. */
+  private laserBeam: { from: Vec2; to: Vec2; ttl: number } | null = null;
+  private beamGfx = new Graphics();
   private acc = 0;
   private destroyed = false;
 
@@ -231,6 +255,8 @@ export class Game {
     this.shellGlow.blendMode = "add";
     this.shellGlow.visible = false;
     this.trailGfx.blendMode = "add";
+    this.burnGfx.blendMode = "add";
+    this.beamGfx.blendMode = "add";
 
     this.terrain = new Terrain(this.app.renderer, this.theme.terrain);
     const bloom = bloomSettings(window.matchMedia("(pointer: coarse)").matches);
@@ -250,11 +276,13 @@ export class Game {
       this.terrain.sprite,
       this.buildingDecor.healthBars,
       this.objectiveGraphics,
+      this.burnGfx,
       this.previewGfx,
       this.tankLayer,
       this.tanksGfx,
       this.shellGfx,
       this.trailGfx,
+      this.beamGfx,
       this.shellGlow,
       this.fx.layer,
     );
@@ -376,6 +404,10 @@ export class Game {
     this.matchStats = newMatchStats(this.tanks.map((t) => t.id));
     this.previewAllowance.reset(Object.fromEntries(this.tanks.map((tank) => [tank.id, tank.stats.previewCharges])));
     this.shell = null;
+    this.activeShot = null;
+    this.selectedWeapons = {};
+    this.burnZones = [];
+    this.laserBeam = null;
     useGameStore.getState().sync({
       matchSequence: useGameStore.getState().matchSequence + 1,
       matchId: crypto.randomUUID(),
@@ -405,7 +437,14 @@ export class Game {
     this.aiProfileBeforeMatch = null;
     this.matchProfiles = profiles;
     this.profiles = Object.fromEntries(
-      Object.entries(profiles).map(([id, profile]) => [id, { xp: profile.xp, levels: { ...profile.levels } }]),
+      Object.entries(profiles).map(([id, profile]) => {
+        // A fegyverfeloldás helyi profiladat; az online meccs nem törölheti.
+        const weapons = profile.weapons ?? this.profiles[id]?.weapons;
+        return [
+          id,
+          { xp: profile.xp, levels: { ...profile.levels }, ...(weapons && weapons.length > 0 ? { weapons } : {}) },
+        ];
+      }),
     );
     this.saveProfiles();
     this.lastMultiplayerRevision = revision;
@@ -649,6 +688,8 @@ export class Game {
     // A kör elején beállított szög/erő még nem játékos-beavatkozás.
     this.targetLocked = true;
     const tank = this.current;
+    // Az égő talaj a kör elején sebez; a találat a pajzsregenerációt is kihagyatja.
+    if (this.applyBurnZones(tank)) return;
     regenTankShield(tank);
     tank.moveLeft = tank.stats.moveBudget;
     this.previewActive = false;
@@ -660,6 +701,39 @@ export class Game {
     this.syncStore();
     this.targetLocked = false;
     if (this.isAiTurn()) this.scheduleAiTurn();
+  }
+
+  /** Égő zónák sebzése és öregítése a kör elején; igaz, ha a meccs ezzel véget ért. */
+  private applyBurnZones(tank: Tank): boolean {
+    if (this.burnZones.length === 0) return false;
+    let total = 0;
+    let lastOwner: string | null = null;
+    for (const zone of this.burnZones) {
+      if (Math.abs(tank.x - zone.x) > zone.radius) continue;
+      const before = tank.hp + tank.shield + tank.armor;
+      applyDamage(tank, zone.damagePerTurn);
+      const dealt = before - (tank.hp + tank.shield + tank.armor);
+      if (dealt <= 0) continue;
+      total += dealt;
+      lastOwner = zone.ownerId;
+      if (zone.ownerId !== tank.id) {
+        this.award(zone.ownerId, dealt);
+        this.matchStats = recordDamage(this.matchStats, zone.ownerId, dealt);
+      }
+    }
+    this.burnZones = this.burnZones
+      .map((zone) => ({ ...zone, turnsLeft: zone.turnsLeft - 1 }))
+      .filter((zone) => zone.turnsLeft > 0);
+    if (total > 0) {
+      useCommandStore
+        .getState()
+        .announce("command.burning", { id: playerName(tank.id), damage: total }, "warning", tank.id);
+    }
+    if (isAlive(tank)) return false;
+    if (lastOwner) useCommandStore.getState().announce("command.destroyed", undefined, "critical", lastOwner);
+    this.turns.resolveElimination(this.tanks.filter(isAlive).map((t) => t.id));
+    this.concludeMatch();
+    return true;
   }
 
   private isAiTurn(): boolean {
@@ -763,6 +837,8 @@ export class Game {
         this.pendingMultiplayerEvents.length === 0,
       winner: this.turns.winner,
       canDodge: dodger !== null && dodger.moveLeft > 0,
+      weapon: this.weaponFor(this.turns.current).id,
+      weaponOptions: this.weaponOptionsFor(this.turns.current),
       tanks: this.tanks.map((t) => ({
         id: t.id,
         hp: t.hp,
@@ -869,15 +945,70 @@ export class Game {
     tank.power = power;
     useGameStore.getState().setAim(angle, power);
     this.matchStats = recordShot(this.matchStats, tank.id);
+    const weapon = this.weaponFor(tank.id);
+    this.activeShot = { weapon, effect: resolveShotEffect(weapon, tank.stats) };
     const tip = barrelTip(tank);
     this.particles.spawnMuzzleFlash(tip.x, tip.y, angle);
     this.audio?.play("shot", { rate: 0.95 + Math.random() * 0.1 });
-    this.shell = { pos: tip, vel: launchVelocity(angle, power) };
     const view = this.tankViews.get(tank.id);
     if (view) view.anim = kick(angle);
+    if (weapon.kind === "hitscan") {
+      this.fireHitscan(tank, angle, tip);
+      return;
+    }
+    this.shell = { pos: tip, vel: launchVelocity(angle, power) };
     this.shellAge = 0;
     this.shellTrail.clear();
     this.scheduleAiDodge(tank, angle, power, tip);
+    this.syncStore();
+  }
+
+  /** Lézer: azonnali, egyenes vonalú találat; nincs röppálya, szél- és kitérési ablak. */
+  private fireHitscan(tank: Tank, angle: number, tip: Vec2): void {
+    if (!this.terrain) return;
+    const targets = this.tanks.filter((t) => isAlive(t) && t.id !== tank.id);
+    const result = traceHitscan(tip, angle, this.terrain.mask, targets, WORLD_HEIGHT);
+    this.laserBeam = { from: tip, to: result.pos, ttl: LASER_BEAM_TTL };
+    this.explode(result.pos.x, result.pos.y, result.hit);
+  }
+
+  /** Az adott játékos lövéshez használt fegyvere; online és gépi játékosnál standard. */
+  private weaponFor(id: string): WeaponDefinition {
+    const selected = this.selectedWeapons[id] ?? "standard";
+    return weaponById(this.weaponOptionsFor(id).includes(selected) ? selected : "standard");
+  }
+
+  /** A játékos által választható fegyverek; online mód és a gép egyelőre standardot használ. */
+  private weaponOptionsFor(id: string): WeaponId[] {
+    if (this.multiplayer) return ["standard"];
+    if (this.aiActive && id === this.aiId()) return ["standard"];
+    return unlockedWeapons(this.profiles[id]);
+  }
+
+  /** Lövésenkénti fegyverválasztás a soron lévő játékosnak; csak feloldott fegyver választható. */
+  selectWeapon(id: WeaponId): void {
+    if (!this.matchActive || this.turns.inputLocked || this.isAiTurn() || this.multiplayer) return;
+    if (!this.canControlCurrentTurn()) return;
+    if (!this.weaponOptionsFor(this.turns.current).includes(id)) return;
+    this.selectedWeapons[this.turns.current] = id;
+    this.syncStore();
+  }
+
+  /** Fegyver tartós feloldása XP-ért a profilban; online feloldás később érkezik. */
+  buyWeapon(playerId: string, weaponId: string): void {
+    if (this.matchActive && this.turns.phase !== "gameOver") return;
+    if (this.matchActive && this.multiplayer) return;
+    const profile = this.profiles[playerId];
+    if (!profile) return;
+    const next = buyWeapon(profile, weaponId);
+    if (!next) return;
+    const profiles = { ...this.profiles, [playerId]: next };
+    if (!this.saveProfiles(profiles)) {
+      useGameStore.getState().sync({ workshopError: "workshop.saveError" });
+      return;
+    }
+    this.profiles = profiles;
+    useGameStore.getState().sync({ workshopError: null });
     this.syncStore();
   }
 
@@ -953,10 +1084,14 @@ export class Game {
         this.pendingMultiplayerEvents.shift();
         this.matchProfiles = profiles as Record<string, Profile>;
         this.profiles = Object.fromEntries(
-          Object.entries(this.matchProfiles).map(([id, profile]) => [
-            id,
-            { xp: profile.xp, levels: { ...profile.levels } },
-          ]),
+          Object.entries(this.matchProfiles).map(([id, profile]) => {
+            // A fegyverfeloldás helyi profiladat; az online meccs nem törölheti.
+            const weapons = profile.weapons ?? this.profiles[id]?.weapons;
+            return [
+              id,
+              { xp: profile.xp, levels: { ...profile.levels }, ...(weapons && weapons.length > 0 ? { weapons } : {}) },
+            ];
+          }),
         );
         this.saveProfiles();
         this.lastMultiplayerRevision = event.revision;
@@ -1013,16 +1148,20 @@ export class Game {
     if (changed && !this.turns.inputLocked) this.syncStore();
   }
 
-  private explode(x: number, y: number): void {
+  private explode(x: number, y: number, direct: Tank | null = null): void {
     const shooter = this.current;
-    const radius = shooter.stats.blastRadius;
+    const shot =
+      this.activeShot ?? { weapon: weaponById("standard"), effect: resolveShotEffect(weaponById("standard"), shooter.stats) };
+    const { effect } = shot;
+    // Épület- és látványhatásokhoz használt sugár; a csak direkt találatú fegyvereknek is van kis hatása.
+    const radius = Math.max(effect.blastRadius, effect.carveRadius, 6);
     const mask = this.terrain?.mask;
     const surface = mask?.surfaceY(x);
     const terrainImpact = mask !== undefined && surface !== undefined && surface < mask.height &&
       (mask.isSolid(x, y) || Math.abs(surface - y) <= radius);
     const objectivesBefore = this.strategicObjectives;
     this.battlefieldLayers.reactToImpact(Math.min(1, radius / 80));
-    this.buildingDecor.applyExplosion(x, y, radius * 2, 60 * shooter.stats.damage);
+    this.buildingDecor.applyExplosion(x, y, radius * 2, effect.damage);
     this.strategicObjectives = this.strategicObjectives.map((objective) => ({
       ...objective,
       ...applyStrategicDamage(
@@ -1030,12 +1169,12 @@ export class Game {
         strategicExplosionDamage(
           Math.hypot(objective.worldX - x, objective.worldY - objective.height / 2 - y),
           radius * 2,
-          60 * shooter.stats.damage,
+          effect.damage,
         ),
         this.aiActive && shooter.id === this.aiId() ? "AI" : "PLAYER",
       ),
     }));
-    this.terrain?.carve(x, y, radius);
+    this.terrain?.carve(x, y, effect.carveRadius);
     if (this.terrain) {
       const mask = this.terrain.mask;
       this.strategicObjectives = this.strategicObjectives.map((objective) => ({
@@ -1054,7 +1193,12 @@ export class Game {
       const shieldBefore = t.shield;
       const armorBefore = t.armor;
       const hpBefore = t.hp;
-      applyDamage(t, explosionDamage(t, x, y, radius, shooter.stats.damage));
+      const damage = effect.directOnly
+        ? t === direct
+          ? Math.round(effect.damage)
+          : 0
+        : explosionDamage(t, x, y, effect.blastRadius, 1, effect.damage);
+      applyDamage(t, damage, effect.armorPierce);
       if (t !== shooter) dealt += before - (t.hp + t.shield + t.armor);
       if (before === t.hp + t.shield + t.armor) continue;
       hurt.push({
@@ -1085,53 +1229,80 @@ export class Game {
     this.matchStats = recordDamage(this.matchStats, shooter.id, dealt);
     this.shake.trigger(Math.min(1, radius / 80) * 0.75 + (dealt > 0 ? 0.25 : 0));
     for (const t of this.tanks) if (this.terrain) settleTank(t, this.terrain.mask);
+    // Gyújtólövedék: a becsapódás körül égő zóna marad, amely körkezdetkor sebez.
+    if (effect.burn) {
+      this.burnZones.push({
+        x,
+        radius: effect.burn.radius,
+        turnsLeft: effect.burn.turns,
+        damagePerTurn: effect.burn.damagePerTurn,
+        ownerId: shooter.id,
+      });
+    }
     this.shell = null;
+    this.activeShot = null;
     this.turns.endShot(this.tanks.filter(isAlive).map((t) => t.id));
     if (this.turns.phase === "aiming") this.beginTurn();
-    else {
-      if (this.matchMode === "campaign" && this.turns.winner === this.campaignPlayer) {
-        const routes = useCampaignStore.getState().complete(sectorById(this.sector.id).id);
-        useGameStore.getState().sync({ campaignNewRoutes: routes });
-      }
-      if (this.campaignMission) {
-        const success = missionSucceeded(this.campaignMission, this.turns.winner, this.strategicObjectives, this.campaignPlayer);
-        useGameStore.getState().sync({ missionSuccess: success });
-        if (success && this.campaignEconomy)
-          void useVeyloraStore.getState().complete(this.campaignMission.id, this.campaignEconomy.generation);
-      }
-      if (this.turns.winner) {
-        this.award(this.turns.winner, WIN_BONUS_XP);
-        this.finishAiMatch();
-        this.announceVictory(this.turns.winner);
-      }
-      if (!this.multiplayer) {
-        this.saveProfiles();
-        this.profilesBeforeMatch = null;
-        this.aiProfileBeforeMatch = null;
-      }
-      const onlineRoom = useMultiplayerStore.getState();
-      if (this.multiplayer && onlineRoom.credentials?.playerId === "P1" && onlineRoom.session?.status === "playing") {
-        void useMultiplayerStore.getState().publish("match_finished", { winner: this.turns.winner });
-      }
-      this.syncStore();
+    else this.concludeMatch();
+  }
+
+  /** A meccs lezárása (kampányteljesítés, győzelmi jutalom, mentés, online zárás). */
+  private concludeMatch(): void {
+    if (this.matchMode === "campaign" && this.turns.winner === this.campaignPlayer) {
+      const routes = useCampaignStore.getState().complete(sectorById(this.sector.id).id);
+      useGameStore.getState().sync({ campaignNewRoutes: routes });
     }
+    if (this.campaignMission) {
+      const success = missionSucceeded(this.campaignMission, this.turns.winner, this.strategicObjectives, this.campaignPlayer);
+      useGameStore.getState().sync({ missionSuccess: success });
+      if (success && this.campaignEconomy)
+        void useVeyloraStore.getState().complete(this.campaignMission.id, this.campaignEconomy.generation);
+    }
+    if (this.turns.winner) {
+      this.award(this.turns.winner, WIN_BONUS_XP);
+      this.finishAiMatch();
+      this.announceVictory(this.turns.winner);
+    }
+    if (!this.multiplayer) {
+      this.saveProfiles();
+      this.profilesBeforeMatch = null;
+      this.aiProfileBeforeMatch = null;
+    }
+    const onlineRoom = useMultiplayerStore.getState();
+    if (this.multiplayer && onlineRoom.credentials?.playerId === "P1" && onlineRoom.session?.status === "playing") {
+      void useMultiplayerStore.getState().publish("match_finished", { winner: this.turns.winner });
+    }
+    this.syncStore();
   }
 
   private stepShell(): void {
     if (!this.shell || !this.terrain) return;
+    // Célkövető rakéta: korlátozott fordulás a cél felé, erőnövelés és találatgarancia nélkül.
+    const guidance = this.activeShot?.weapon.homing;
+    if (guidance && this.shellAge <= HOMING_GUIDANCE_MAX_TICKS) {
+      const target = this.tanks.find((t) => isAlive(t) && t.id !== this.turns.current);
+      if (target) {
+        this.shell = {
+          pos: this.shell.pos,
+          vel: steerHoming(this.shell.pos, this.shell.vel, { x: target.x, y: target.y - 6 }, guidance),
+        };
+      }
+    }
     this.shell = stepBody(this.shell, { ...DEFAULT_WORLD, wind: useGameStore.getState().wind }, FIXED_DT);
     this.shellAge++;
     const { x, y } = this.shell.pos;
     this.shellTrail.push(x, y);
     if (this.shellAge % 3 === 0) this.particles.spawnTrail(x, y);
-    const hitTank = this.tanks.some(
-      (t) => isAlive(t) && (t.id !== this.turns.current || this.shellAge > SELF_HIT_GRACE) && tankContains(t, x, y),
-    );
-    if (hitTank || this.terrain.mask.isSolid(x, y)) this.explode(x, y);
+    const direct =
+      this.tanks.find(
+        (t) => isAlive(t) && (t.id !== this.turns.current || this.shellAge > SELF_HIT_GRACE) && tankContains(t, x, y),
+      ) ?? null;
+    if (direct || this.terrain.mask.isSolid(x, y)) this.explode(x, y, direct);
     else if (x < 0 || x > this.terrain.mask.width || y > WORLD_HEIGHT) {
       // Pályán kívül: nincs robbanás, a kör véget ér.
       this.aiObserveImpact(this.turns.current, x, 0);
       this.shell = null;
+      this.activeShot = null;
       this.turns.endShot(this.tanks.filter(isAlive).map((t) => t.id));
       this.beginTurn();
     }
@@ -1160,6 +1331,19 @@ export class Game {
     const { angle, power, wind } = useGameStore.getState();
     const mask = this.terrain.mask;
     const target = this.tanks.find((t) => t.id !== tank.id && isAlive(t));
+    // Lézernél az előnézet is egyenes sugár: azonos szabály, mint a lövésnél.
+    if (this.weaponFor(tank.id).kind === "hitscan") {
+      const ray = traceHitscan(barrelTip({ ...tank, angle }), angle, mask, target ? [target] : [], WORLD_HEIGHT);
+      const locked = ray.hit !== null;
+      if (locked && !this.previewLocked) {
+        useCommandStore.getState().announce("command.aimed", undefined, "info", this.turns.current);
+      }
+      this.previewLocked = locked;
+      for (const [a, b] of dashPolyline([barrelTip({ ...tank, angle }), ray.pos], PREVIEW_DASH, PREVIEW_GAP))
+        g.moveTo(a.x, a.y).lineTo(b.x, b.y);
+      g.stroke({ width: 1.5, color: this.theme.hud.previewLine, alpha: 0.68 });
+      return;
+    }
     const impact = target
       ? simulateImpact(
           barrelTip({ ...tank, angle }),
@@ -1190,6 +1374,39 @@ export class Game {
     );
     for (const [a, b] of dashPolyline(points, PREVIEW_DASH, PREVIEW_GAP)) g.moveTo(a.x, a.y).lineTo(b.x, b.y);
     g.stroke({ width: 1.5, color: this.theme.hud.previewLine, alpha: 0.68 });
+  }
+
+  /** Vibráló lángnyelvek az égő talajzónák felszínén. */
+  private drawBurnZones(dt: number): void {
+    this.burnTime += dt;
+    const g = this.burnGfx.clear();
+    const mask = this.terrain?.mask;
+    if (!mask || this.burnZones.length === 0) return;
+    for (const zone of this.burnZones) {
+      for (let i = -3; i <= 3; i++) {
+        const fx = zone.x + (zone.radius * i) / 3.2;
+        if (fx < 0 || fx > mask.width) continue;
+        const fy = mask.surfaceY(fx);
+        const flicker = 0.5 + 0.5 * Math.sin(this.burnTime * 9 + i * 1.7);
+        g.ellipse(fx, fy - 4 - flicker * 4, 4, 6 + flicker * 5).fill({ color: 0xff7a26, alpha: 0.26 + flicker * 0.3 });
+        g.ellipse(fx, fy - 3, 3, 4).fill({ color: 0xffc14d, alpha: 0.38 });
+      }
+    }
+  }
+
+  /** A lézersugár rövid, halványuló csíkja. */
+  private drawLaserBeam(dt: number): void {
+    const g = this.beamGfx.clear();
+    if (!this.laserBeam) return;
+    this.laserBeam.ttl -= dt;
+    if (this.laserBeam.ttl <= 0) {
+      this.laserBeam = null;
+      return;
+    }
+    const { from, to, ttl } = this.laserBeam;
+    const alpha = Math.min(1, ttl / LASER_BEAM_TTL);
+    g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ width: 6, color: 0xff2e4d, alpha: alpha * 0.25, cap: "round" });
+    g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ width: 2, color: 0xff8296, alpha: alpha * 0.9, cap: "round" });
   }
 
   /** Vékony (3 px) csík a tank fölött; a háttér a hiányzó részt jelzi. */
@@ -1271,6 +1488,8 @@ export class Game {
     }
 
     this.fx?.render(this.particles.particles);
+    this.drawBurnZones(dt);
+    this.drawLaserBeam(dt);
     this.shellGfx.clear();
     this.trailGfx.clear();
     if (!this.shell) this.shellTrail.shrink();

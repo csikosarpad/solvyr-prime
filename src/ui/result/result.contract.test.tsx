@@ -84,7 +84,8 @@ describe("UnitPanel and Shop presentation contract", () => {
 
     expect(screen.getByText("Space fighter")).toBeInTheDocument();
     expect(screen.getByText("P1")).toBeInTheDocument();
-    expect(screen.getAllByRole("button")).toHaveLength(7);
+    // 7 fejlesztés + a fegyvertár 4 feloldható fegyvere.
+    expect(screen.getAllByRole("button")).toHaveLength(11);
     expect(screen.getByText("1/5")).toBeInTheDocument();
   });
 

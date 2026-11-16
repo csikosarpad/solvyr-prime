@@ -7,6 +7,7 @@ import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
 import type { CampaignMission } from "../data/campaignContent";
 import type { MessageKey } from "@/i18n";
 import type { LocalPlayerId } from "./playerId";
+import type { WeaponId } from "../data/weapons";
 
 export type Screen = "menu" | "playing" | "campaignMap" | "veylora" | "workshop";
 export type WorkshopOrigin = Exclude<Screen, "workshop">;
@@ -49,6 +50,9 @@ export interface GameState {
   canControl: boolean;
   /** A lövedék repülése alatt a védekező emberi tank még kitérhet a maradék keretéből. */
   canDodge: boolean;
+  /** A soron lévő játékos kiválasztott fegyvere és választható fegyverei. */
+  weapon: WeaponId;
+  weaponOptions: WeaponId[];
   winner: string | null;
   tanks: TankView[];
   strategicObjectives: readonly PlacedStrategicObjective[];
@@ -101,6 +105,8 @@ export const useGameStore = create<GameState>((set) => ({
   currentId: "P1",
   canControl: true,
   canDodge: false,
+  weapon: "standard",
+  weaponOptions: ["standard"],
   winner: null,
   tanks: [],
   strategicObjectives: [],

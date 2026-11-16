@@ -8,7 +8,7 @@ import { playerAccent } from "@/game/state/playerColors";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { MAX_RANK, rankStars, rankFromSkill } from "@/game/systems/ai";
 import { newProfile, profileStars } from "@/game/systems/upgrades";
-import { useT } from "@/i18n";
+import { useT, type MessageKey } from "@/i18n";
 import { gameRef } from "./gameRef";
 import { RepeatButton } from "./RepeatButton";
 import { CommandConsole } from "./CommandConsole";
@@ -37,6 +37,8 @@ export function Hud() {
     muted,
     toggleMuted,
     setAim,
+    weapon,
+    weaponOptions,
     profiles,
     matchSequence,
     matchMode,
@@ -85,6 +87,16 @@ export function Hud() {
         return;
       }
       if (phase !== "aiming" || !canControl) return;
+      // 1–5: fegyverválasztás a feloldott készletből.
+      const digit = Number(e.key);
+      if (Number.isInteger(digit) && digit >= 1 && digit <= 9) {
+        const weaponId = useGameStore.getState().weaponOptions[digit - 1];
+        if (weaponId) {
+          gameRef.current?.selectWeapon(weaponId);
+          e.preventDefault();
+        }
+        return;
+      }
       const step = e.shiftKey ? 50 : 10;
       const angleStep = e.shiftKey ? 5 : 1;
       switch (e.key) {
@@ -205,6 +217,23 @@ export function Hud() {
       </div>
       {matchSequence > 0 && <SectorBriefing key={matchSequence} />}
       <div className="hud-command-dock">
+        {weaponOptions.length > 1 && (
+          <div className="hud-weapons" role="group" aria-label={t("hud.weapons")}>
+            <span className="hud-weapons-label">{t("hud.weapons")}</span>
+            {weaponOptions.map((id, index) => (
+              <button
+                key={id}
+                aria-pressed={weapon === id}
+                disabled={locked}
+                title={t(`weapon.${id}.desc` as MessageKey)}
+                onClick={() => gameRef.current?.selectWeapon(id)}
+              >
+                <span className="hud-weapon-key" aria-hidden="true">{index + 1}</span>
+                {t(`weapon.${id}.name` as MessageKey)}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="hud-controls">
           <div className="hud-control">
             <span id="hud-angle-label">{t("hud.angle", { value: angle })}</span>

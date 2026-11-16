@@ -203,6 +203,67 @@
   text-transform: uppercase;
 }
 
+.hud-weapons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+}
+
+.hud-weapons-label {
+  color: #9ed5e8;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.hud-weapons button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid rgba(73, 208, 255, 0.4);
+  border-radius: 3px 9px;
+  background: rgba(9, 32, 54, 0.85);
+  color: #d3eaf3;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.hud-weapons button[aria-pressed="true"] {
+  border-color: #49d0ff;
+  background: rgba(0, 170, 255, 0.22);
+  box-shadow: 0 0 10px rgba(0, 170, 255, 0.35);
+}
+
+.hud-weapons button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.hud-weapon-key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  border: 1px solid rgba(158, 213, 232, 0.55);
+  border-radius: 3px;
+  font-size: 10px;
+  color: #9ed5e8;
+}
+
+.weapon-list-title {
+  margin: 10px 0 4px;
+  color: #9ed5e8;
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
 .hud-command-dock {
   display: grid;
   gap: 8px;

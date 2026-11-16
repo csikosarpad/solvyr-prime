@@ -13,14 +13,21 @@ type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
 function sanitize(raw: unknown): Profile {
   if (typeof raw !== "object" || raw === null) return newProfile();
-  const { xp, levels } = raw as Partial<Profile>;
+  const { xp, levels, weapons } = raw as Partial<Profile>;
   const safeLevels: Record<string, number> = {};
   if (typeof levels === "object" && levels !== null) {
     for (const [id, lvl] of Object.entries(levels)) {
       if (Number.isInteger(lvl) && lvl > 0) safeLevels[id] = lvl;
     }
   }
-  return { xp: Number.isFinite(xp) && xp! >= 0 ? Math.floor(xp!) : 0, levels: safeLevels };
+  const safeWeapons = Array.isArray(weapons)
+    ? [...new Set(weapons.filter((id): id is string => typeof id === "string"))]
+    : [];
+  return {
+    xp: Number.isFinite(xp) && xp! >= 0 ? Math.floor(xp!) : 0,
+    levels: safeLevels,
+    ...(safeWeapons.length > 0 ? { weapons: safeWeapons } : {}),
+  };
 }
 
 function readJson(storage: StorageLike, key: string): unknown {

@@ -80,14 +80,14 @@ export function tankContains(tank: Tank, x: number, y: number): boolean {
 }
 
 /** Lineárisan csökkenő sebzés a robbanás közepétől 2*radius távolságig. */
-export function explosionDamage(tank: Tank, ex: number, ey: number, radius: number, multiplier = 1): number {
+export function explosionDamage(tank: Tank, ex: number, ey: number, radius: number, multiplier = 1, base = 60): number {
   const d = Math.hypot(tank.x - ex, tank.y - 6 - ey);
-  return Math.max(0, Math.round(60 * multiplier * (1 - d / (radius * 2))));
+  return Math.max(0, Math.round(base * multiplier * (1 - d / (radius * 2))));
 }
 
 /** A sebzés előbb a pajzsot, majd a páncélt koptatja, végül a HP-t (lásd systems/damage). */
-export function applyDamage(tank: Tank, dmg: number): void {
-  const result = resolveDamage({ hp: tank.hp, shield: tank.shield, armor: tank.armor }, dmg);
+export function applyDamage(tank: Tank, dmg: number, armorPierce = 0): void {
+  const result = resolveDamage({ hp: tank.hp, shield: tank.shield, armor: tank.armor }, dmg, armorPierce);
   if (result.hp !== tank.hp || result.shield !== tank.shield || result.armor !== tank.armor) tank.hitSinceTurn = true;
   tank.hp = result.hp;
   tank.shield = result.shield;

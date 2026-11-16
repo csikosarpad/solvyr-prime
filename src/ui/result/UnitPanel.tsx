@@ -1,9 +1,11 @@
 import { UPGRADES } from "@/game/data/upgrades";
+import { WEAPONS } from "@/game/data/weapons";
 import type { CSSProperties } from "react";
 import { cssPlayerColor, playerAccent } from "@/game/state/playerColors";
 import { useT } from "@/i18n";
 import { usePlayerName } from "@/game/state/playerNames";
 import { UpgradeRow } from "./UpgradeRow";
+import { WeaponRow } from "./WeaponRow";
 import { UnitIllustration } from "./UnitIllustration";
 import type { UnitPanelProps } from "./result.types";
 
@@ -40,6 +42,19 @@ export function UnitPanel({ id, profile, presentation, editable, disabled, inact
             editable={editable}
             disabled={disabled}
             iconSet={presentation.iconSet}
+          />
+        ))}
+      </div>
+      <h4 className="weapon-list-title">{t("shop.weapons")}</h4>
+      <div className="upgrade-list">
+        {WEAPONS.filter((definition) => definition.cost > 0).map((definition) => (
+          <WeaponRow
+            key={definition.id}
+            playerId={id}
+            profile={profile}
+            definition={definition}
+            editable={editable}
+            disabled={disabled}
           />
         ))}
       </div>

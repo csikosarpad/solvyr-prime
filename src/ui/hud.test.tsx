@@ -246,6 +246,29 @@ describe("Hud billentyűk", () => {
     expect(screen.getByRole("button", { name: "Átcsoportosítás balra" })).toBeDisabled();
   });
 
+  it("a fegyverválasztó gombbal és számbillentyűvel vált, egyetlen fegyvernél rejtett", () => {
+    const selectWeapon = vi.fn();
+    gameRef.current = { selectWeapon } as unknown as Game;
+    act(() =>
+      useGameStore.setState({
+        phase: "aiming",
+        canControl: true,
+        weapon: "standard",
+        weaponOptions: ["standard", "laser"],
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Lézer/ }));
+    expect(selectWeapon).toHaveBeenCalledWith("laser");
+    fireEvent.keyDown(window, { key: "2" });
+    expect(selectWeapon).toHaveBeenCalledTimes(2);
+    expect(selectWeapon).toHaveBeenLastCalledWith("laser");
+    // Nem létező sorszám nem vált.
+    fireEvent.keyDown(window, { key: "5" });
+    expect(selectWeapon).toHaveBeenCalledTimes(2);
+    act(() => useGameStore.setState({ weaponOptions: ["standard"] }));
+    expect(screen.queryByRole("group", { name: "Fegyver" })).toBeNull();
+  });
+
   it("a szög a [0, 180] tartományban marad", () => {
     act(() => useGameStore.setState({ angle: 2 }));
     fireEvent.keyDown(window, { key: "ArrowRight", ctrlKey: true, shiftKey: true });

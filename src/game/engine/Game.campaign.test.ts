@@ -742,6 +742,131 @@ describe("Game campaign lifecycle", () => {
     expect(useGameStore.getState().canDodge).toBe(false);
   });
 
+  it("unlocked weapons are selectable per shot and the laser resolves instantly in a straight line", () => {
+    Reflect.set(game, "profiles", { P1: { xp: 0, levels: {}, weapons: ["laser"] }, P2: { xp: 0, levels: {} } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    expect(useGameStore.getState().weaponOptions).toEqual(["standard", "laser"]);
+    game.selectWeapon("laser");
+    expect(useGameStore.getState().weapon).toBe("laser");
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const target = tanks[1]!;
+    useGameStore.getState().setAim(0, 400);
+    game.fire();
+    // Nincs repülési fázis: a lövés azonnal feloldódik, és a kör a célponté.
+    expect(useGameStore.getState().phase).toBe("aiming");
+    expect(useGameStore.getState().currentId).toBe("P2");
+    expect(target.hp).toBe(100 - 34);
+  });
+
+  it("a weapon that is not unlocked cannot be selected and the shot stays standard", () => {
+    game.restart({ seed: 42, starterIndex: 0 });
+    game.selectWeapon("ap");
+    expect(useGameStore.getState().weapon).toBe("standard");
+    expect(useGameStore.getState().weaponOptions).toEqual(["standard"]);
+  });
+
+  it("armor piercing damages only on direct hit and half the damage bypasses armor", () => {
+    Reflect.set(game, "profiles", { P1: { xp: 0, levels: {}, weapons: ["ap"] }, P2: { xp: 0, levels: { armor: 5 } } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    game.selectWeapon("ap");
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const target = tanks[1]!;
+    expect(target.armor).toBe(100);
+    game.fire();
+    // Terepbecsapódás a célpont mellett: nincs repeszsebzés.
+    Reflect.get(game, "explode").call(game, target.x + 20, target.y - 6, null);
+    expect(target.hp).toBe(100);
+    expect(target.armor).toBe(100);
+    // Második lövés: a célpont (P2) után ismét P1 jön, közvetlen találattal.
+    useGameStore.getState().setAim(45, 200);
+    game.fire();
+    Reflect.get(game, "explode").call(game, 200, 100, null);
+    game.selectWeapon("ap");
+    game.fire();
+    Reflect.get(game, "explode").call(game, target.x, target.y - 6, target);
+    // 70 sebzés, pajzs nincs: 35 átüti a páncélt, 35 a páncélon kopik.
+    expect(target.hp).toBe(65);
+    expect(target.armor).toBe(65);
+  });
+
+  it("incendiary shells leave burning ground that damages at turn start, then expires", () => {
+    Reflect.set(game, "profiles", { P1: { xp: 0, levels: {}, weapons: ["incendiary"] }, P2: { xp: 0, levels: {} } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    game.selectWeapon("incendiary");
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const target = tanks[1]!;
+    game.fire();
+    // A robbanás 40 px-re ér földet: kis repeszsebzés + égő zóna a célpont alatt.
+    Reflect.get(game, "explode").call(game, target.x + 40, target.y, null);
+    // Repesz (6) + az első égési tick (8) a P2 körének elején.
+    expect(target.hp).toBe(100 - 6 - 8);
+    expect(useGameStore.getState().currentId).toBe("P2");
+    // P2 messzire lő: P1 körén nincs égés, a zóna öregszik.
+    useGameStore.getState().setAim(45, 200);
+    game.fire();
+    Reflect.get(game, "explode").call(game, 200, 100, null);
+    expect(tanks[0]!.hp).toBe(100);
+    // P1 messzire lő: P2 újra ég, ez a zóna utolsó érvényes tickje.
+    game.fire();
+    Reflect.get(game, "explode").call(game, 640, 100, null);
+    expect(target.hp).toBe(100 - 6 - 16);
+    // Következő teljes körpár után már nem ég.
+    useGameStore.getState().setAim(45, 200);
+    game.fire();
+    Reflect.get(game, "explode").call(game, 200, 100, null);
+    game.fire();
+    Reflect.get(game, "explode").call(game, 640, 100, null);
+    expect(target.hp).toBe(100 - 6 - 16);
+  });
+
+  it("burning ground can finish the match at turn start", () => {
+    Reflect.set(game, "profiles", { P1: { xp: 0, levels: {}, weapons: ["incendiary"] }, P2: { xp: 0, levels: {} } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    game.selectWeapon("incendiary");
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const target = tanks[1]!;
+    target.hp = 10;
+    game.fire();
+    Reflect.get(game, "explode").call(game, target.x + 40, target.y, null);
+    // Repesz (6) után az égési tick (8) a kör elején végez vele.
+    expect(useGameStore.getState()).toMatchObject({ phase: "gameOver", winner: "P1" });
+  });
+
+  it("homing shells steer toward the defender during flight", () => {
+    Reflect.set(game, "profiles", { P1: { xp: 0, levels: {}, weapons: ["homing"] }, P2: { xp: 0, levels: {} } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    game.selectWeapon("homing");
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const target = tanks[1]!;
+    game.fire();
+    // A lövedéket a célfelvételi sugáron belülre helyezzük, vízszintes sebességgel.
+    Reflect.set(game, "shell", { pos: { x: target.x - 150, y: target.y - 100 }, vel: { x: 100, y: 0 } });
+    Reflect.get(game, "stepShell").call(game);
+    const shell = Reflect.get(game, "shell") as { vel: { x: number; y: number } };
+    // Rávezetés nélkül vy = gravitáció/60 = 10 lenne; a kormányzás lefelé fordít.
+    expect(shell.vel.y).toBeGreaterThan(10.5);
+  });
+
+  it("buying a weapon spends XP, persists in the profile and appears among the options", () => {
+    Reflect.set(game, "profiles", { P1: { xp: 400, levels: {} }, P2: { xp: 0, levels: {} } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    // Meccs közben nincs vásárlás.
+    game.buyWeapon("P1", "ap");
+    expect(loadProfiles(["P1"]).P1!.weapons).toBeUndefined();
+    // Valódi meccslezárás: a győztes P1 +50 XP-t kap, a profilok mentésre kerülnek.
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    tanks[1]!.hp = 0;
+    game.fire();
+    Reflect.get(game, "explode").call(game, 640, 100, null);
+    expect(useGameStore.getState().phase).toBe("gameOver");
+    game.buyWeapon("P1", "ap");
+    expect(loadProfiles(["P1"]).P1).toMatchObject({ xp: 300, weapons: ["ap"] });
+    game.restart({ seed: 42, starterIndex: 0 });
+    expect(useGameStore.getState().weaponOptions).toEqual(["standard", "ap"]);
+    game.selectWeapon("ap");
+    expect(useGameStore.getState().weapon).toBe("ap");
+  });
+
   it("the AI dodges a guaranteed player hit during flight based on its predicted impact", () => {
     useAiSettings.getState().setEnabled(true);
     game.restart({ seed: 42, starterIndex: 0 });
