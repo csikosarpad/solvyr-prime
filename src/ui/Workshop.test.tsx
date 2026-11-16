@@ -78,6 +78,32 @@ describe("workshop", () => {
     expect(within(p1Panel).getByText("Nem kijelölt játékos")).toBeInTheDocument();
   });
 
+  it("filters both players' upgrades and weapons while keeping both panels visible", () => {
+    render(<Workshop />);
+    const p1Panel = screen.getByRole("region", { name: "P1" });
+    const p2Panel = screen.getByRole("region", { name: "P2" });
+    const stats = screen.getByRole("button", { name: "Statisztika" });
+    const armory = screen.getByRole("button", { name: "Fegyvertár" });
+    const special = screen.getByRole("button", { name: "Különleges" });
+
+    fireEvent.click(stats);
+    expect(stats).toHaveAttribute("aria-pressed", "true");
+    expect(within(p1Panel).getByRole("button", { name: "P1: Páncél" })).toBeInTheDocument();
+    expect(within(p2Panel).getByRole("button", { name: "P2: Páncél" })).toBeInTheDocument();
+    expect(within(p1Panel).queryByRole("button", { name: "P1: Páncéltörő" })).not.toBeInTheDocument();
+
+    fireEvent.click(armory);
+    expect(within(p1Panel).queryByRole("button", { name: "P1: Páncél" })).not.toBeInTheDocument();
+    expect(within(p1Panel).getByRole("button", { name: "P1: Páncéltörő" })).toBeInTheDocument();
+    expect(within(p2Panel).getByRole("button", { name: "P2: Páncéltörő" })).toBeInTheDocument();
+    expect(within(p1Panel).getByRole("region", { name: /fejlesztések és fegyverek/i })).toHaveClass("unit-inventory");
+
+    fireEvent.click(special);
+    expect(screen.getByRole("heading", { name: "Megerősített pajzs" })).toBeInTheDocument();
+    expect(within(p1Panel).queryByRole("button", { name: "P1: Páncél" })).not.toBeInTheDocument();
+    expect(within(p2Panel).queryByRole("button", { name: "P2: Páncéltörő" })).not.toBeInTheDocument();
+  });
+
   it("keeps the other panel inactive when opened for P2's campaign", async () => {
     useCampaignStore.getState().switchPlayer("P2");
     useGameStore.setState({ workshopOrigin: "campaignMap", campaignPlayer: "P2" });

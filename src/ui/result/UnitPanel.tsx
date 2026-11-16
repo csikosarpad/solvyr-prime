@@ -9,7 +9,7 @@ import { WeaponRow } from "./WeaponRow";
 import { UnitIllustration } from "./UnitIllustration";
 import type { UnitPanelProps } from "./result.types";
 
-export function UnitPanel({ id, profile, presentation, editable, disabled, inactive = false }: UnitPanelProps) {
+export function UnitPanel({ id, profile, presentation, filter = "all", editable, disabled, inactive = false }: UnitPanelProps) {
   const t = useT();
   const name = usePlayerName();
 
@@ -32,31 +32,53 @@ export function UnitPanel({ id, profile, presentation, editable, disabled, inact
         </div>
       </div>
       <UnitIllustration presentation={presentation} facing={id === "P2" ? "left" : "right"} />
-      <div className="upgrade-list">
-        {UPGRADES.map((definition) => (
-          <UpgradeRow
-            key={definition.id}
-            playerId={id}
-            profile={profile}
-            definition={definition}
-            editable={editable}
-            disabled={disabled}
-            iconSet={presentation.iconSet}
-          />
-        ))}
-      </div>
-      <h4 className="weapon-list-title">{t("shop.weapons")}</h4>
-      <div className="upgrade-list">
-        {WEAPONS.filter((definition) => definition.cost > 0).map((definition) => (
-          <WeaponRow
-            key={definition.id}
-            playerId={id}
-            profile={profile}
-            definition={definition}
-            editable={editable}
-            disabled={disabled}
-          />
-        ))}
+      <div
+        className="unit-inventory"
+        role="region"
+        aria-label={`${name(id)} · ${t("workshop.inventoryLabel")}`}
+        tabIndex={0}
+      >
+        {filter === "special" ? (
+          <p className="workshop-special-filter-note">{t("workshop.specialFilterNote")}</p>
+        ) : (
+          <>
+            {filter !== "armory" && (
+              <section className="unit-inventory-section">
+                <h4 className="weapon-list-title">{t("workshop.statsTitle")}</h4>
+                <div className="upgrade-list">
+                  {UPGRADES.map((definition) => (
+                    <UpgradeRow
+                      key={definition.id}
+                      playerId={id}
+                      profile={profile}
+                      definition={definition}
+                      editable={editable}
+                      disabled={disabled}
+                      iconSet={presentation.iconSet}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+            {filter !== "stats" && (
+              <section className="unit-inventory-section">
+                <h4 className="weapon-list-title">{t("shop.weapons")}</h4>
+                <div className="upgrade-list weapon-upgrade-list">
+                  {WEAPONS.filter((definition) => definition.cost > 0).map((definition) => (
+                    <WeaponRow
+                      key={definition.id}
+                      playerId={id}
+                      profile={profile}
+                      definition={definition}
+                      editable={editable}
+                      disabled={disabled}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
       </div>
     </section>
   );

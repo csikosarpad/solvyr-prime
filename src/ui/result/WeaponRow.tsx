@@ -22,7 +22,7 @@ export function WeaponRow({ playerId, profile, definition, editable, disabled }:
   const name = t(`weapon.${definition.id}.name` as MessageKey);
 
   return (
-    <div className={`upgrade-row${unaffordable ? " is-unaffordable" : ""}`}>
+    <div className={`upgrade-row weapon-upgrade-row${unaffordable ? " is-unaffordable" : ""}`}>
       <UpgradeIcon upgradeId={definition.id} />
       <div className="upgrade-label">
         <strong>{name}</strong>

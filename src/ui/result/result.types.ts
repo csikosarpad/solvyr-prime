@@ -2,6 +2,7 @@ import type { Profile } from "@/game/systems/upgrades";
 
 export type UnitDomain = "ground" | "space" | "air" | "mech";
 export type UnitAccent = "cyan" | "gold" | "orange" | "red";
+export type WorkshopFilter = "all" | "stats" | "armory" | "special";
 
 export interface UnitPresentation {
   domain: UnitDomain;
@@ -21,6 +22,7 @@ export interface UnitPanelProps {
   id: string;
   profile: Profile;
   presentation: UnitPresentation;
+  filter?: WorkshopFilter;
   editable: boolean;
   disabled: boolean;
   inactive?: boolean;
