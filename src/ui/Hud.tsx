@@ -73,10 +73,6 @@ export function Hud() {
         return;
       }
       const { phase, canControl, nudgePower, nudgeAngle } = useGameStore.getState();
-      if (e.key === "m" || e.key === "M") {
-        useGameStore.getState().toggleMuted();
-        return;
-      }
       if (phase !== "aiming" || !canControl) return;
       const step = e.shiftKey ? 50 : 10;
       const angleStep = e.shiftKey ? 5 : 1;

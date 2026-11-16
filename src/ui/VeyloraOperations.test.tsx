@@ -75,7 +75,7 @@ describe("VEYLORA UI", () => {
     expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
   });
 
-  it("shows a secured but replayable sector, with a confirmed separate progress reset", async () => {
+  it("shows a secured but replayable sector", async () => {
     await act(async () => {
       await complete("secure-mine");
       await complete("secure-lab");
@@ -92,18 +92,9 @@ describe("VEYLORA UI", () => {
     expect(screen.getByRole("button", { name: "Művelet újrajátszása" })).toBeInTheDocument();
     selectLocation("VEYLORA-B");
     expect(screen.getByRole("button", { name: "Művelet újrajátszása" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "VEYLORA-haladás törlése" }));
-    const dialog = screen.getByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Mégse" }));
-    expect(useVeyloraStore.getState().completedMissionIds).toHaveLength(3);
-    fireEvent.click(screen.getByRole("button", { name: "VEYLORA-haladás törlése" }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Törlés" }));
-    await waitFor(() => expect(useVeyloraStore.getState().completedMissionIds).toEqual([]));
-    expect(useVeyloraStore.getState().economy.resources["industrial-ore"]).toBe(20);
-    expect(Object.keys(useVeyloraStore.getState().economy.claims)).toHaveLength(3);
   });
 
-  it("blocks start on a load error and requires full economic reset rather than deleting wealth implicitly", async () => {
+  it("blocks start on a load error and keeps the original save", async () => {
     vi.stubGlobal("indexedDB", new IDBFactory());
     localStorage.setItem(VEYLORA_STORAGE_KEY, "broken");
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -112,7 +103,6 @@ describe("VEYLORA UI", () => {
     expect(
       screen.getAllByRole("button", { name: "Művelet indítása" }).every((button) => button.hasAttribute("disabled")),
     ).toBe(true);
-    expect(screen.getByRole("button", { name: "VEYLORA-haladás törlése" })).toBeDisabled();
   });
 
   it("reports failed start and stays on the operations screen", async () => {
@@ -182,32 +172,6 @@ describe("VEYLORA UI", () => {
       await complete("secure-station");
     });
     expect(screen.getByRole("button", { name: /^VEYLORA-STATION,.*Teljesített/ })).toHaveClass("is-completed");
-  });
-
-  it("confirms full economic reset separately and preserves XP and legacy progress", async () => {
-    await complete("secure-mine");
-    await complete("secure-lab");
-    await useVeyloraStore.getState().buy("reinforced-shield");
-    useCampaignStore.getState().complete("alpha-01");
-    const profiles = { P1: { xp: 123, levels: { shield: 2 } } };
-    useGameStore.setState({ profiles });
-    await renderOperations();
-    fireEvent.click(screen.getByRole("button", { name: "Teljes kampánygazdaság törlése" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent("XP-fejlesztések");
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Mégse" }));
-    expect(useVeyloraStore.getState().economy.purchases["reinforced-shield"]).toBeDefined();
-    fireEvent.click(screen.getByRole("button", { name: "Teljes kampánygazdaság törlése" }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Törlés" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(useVeyloraStore.getState().economy).toMatchObject({
-      resources: {},
-      technologies: [],
-      purchases: {},
-      claims: {},
-    });
-    expect(useVeyloraStore.getState().completedMissionIds).toEqual([]);
-    expect(useGameStore.getState().profiles).toEqual(profiles);
-    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
   });
 
   it("shows a failed reward transaction on results and retries the original battle generation", async () => {

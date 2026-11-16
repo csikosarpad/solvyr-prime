@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { SECTORS, sectorById } from "@/game/data/sectors";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import { useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useT } from "@/i18n";
-import { ConfirmDialog } from "../ConfirmDialog";
 import { gameRef } from "../gameRef";
 import { requestLandscape } from "../orientation";
 
@@ -21,9 +20,7 @@ export function MainMenuHome({ onShowLobby, onShowSettings }: MainMenuHomeProps)
   const operation = sectorById(selectedId);
   const campaignError = useCampaignStore((s) => s.error);
 
-  const [resetOpen, setResetOpen] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
-
   useEffect(() => {
     titleRef.current?.focus();
   }, []);
@@ -33,11 +30,6 @@ export function MainMenuHome({ onShowLobby, onShowSettings }: MainMenuHomeProps)
     useMultiplayerStore.getState().leave();
     gameRef.current?.startOffline();
     setScreen("playing");
-  };
-
-  const confirmReset = () => {
-    setResetOpen(false);
-    gameRef.current?.resetProgress();
   };
 
   return (
@@ -78,25 +70,11 @@ export function MainMenuHome({ onShowLobby, onShowSettings }: MainMenuHomeProps)
         <button className="btn secondary" onClick={onShowSettings}>
           {t("menu.settings")}
         </button>
-        <button className="btn secondary" onClick={() => setResetOpen(true)}>
-          {t("menu.reset")}
-        </button>
       </nav>
       {campaignError && (
         <p className="lobby-error" role="alert">
           {t(campaignError)}
         </p>
-      )}
-      {resetOpen && (
-        <ConfirmDialog
-          destructive
-          title={t("menu.resetTitle")}
-          message={t("menu.resetConfirm")}
-          cancelLabel={t("dialog.cancel")}
-          confirmLabel={t("dialog.delete")}
-          onCancel={() => setResetOpen(false)}
-          onConfirm={confirmReset}
-        />
       )}
     </div>
   );

@@ -6,7 +6,6 @@ import { useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useVeyloraStore } from "@/game/state/veyloraStore";
 import { useT } from "@/i18n";
-import { ConfirmDialog } from "./ConfirmDialog";
 import { gameRef } from "./gameRef";
 import { requestLandscape } from "./orientation";
 import { CampaignStarfieldCanvas } from "./CampaignStarfieldCanvas";
@@ -21,7 +20,7 @@ type MapNodeId = SectorId | "veylora-03";
 
 export function CampaignMap() {
   const t = useT();
-  const { completedIds, selectedId, select, error, reset, playerId, switchPlayer } = useCampaignStore();
+  const { completedIds, selectedId, select, error, playerId, switchPlayer } = useCampaignStore();
   const { completedMissionIds, refresh: refreshVeylora, switchPlayer: switchVeylora, pending } = useVeyloraStore();
   const [inspectedId, setInspectedId] = useState<MapNodeId>(selectedId);
   const setScreen = useGameStore((s) => s.setScreen);
@@ -29,7 +28,6 @@ export function CampaignMap() {
   const [switching, setSwitching] = useState(false);
   const [startError, setStartError] = useState(false);
   const [warpSequence, setWarpSequence] = useState(0);
-  const [resetOpen, setResetOpen] = useState(false);
   const [departingId, setDepartingId] = useState<SectorId | null>(null);
   useEffect(() => {
     void refreshVeylora();
@@ -214,26 +212,7 @@ export function CampaignMap() {
           <button className="btn secondary" onClick={() => setScreen("menu")}>
             {t("result.mainMenu")}
           </button>
-          <button className="btn secondary" onClick={() => setResetOpen(true)}>
-            {t("campaign.reset")}
-          </button>
         </footer>
-        {resetOpen && (
-          <ConfirmDialog
-            destructive
-            title={t("campaign.resetTitle")}
-            message={t("campaign.resetConfirm")}
-            cancelLabel={t("dialog.cancel")}
-            confirmLabel={t("dialog.delete")}
-            onCancel={() => setResetOpen(false)}
-            onConfirm={() => {
-              setResetOpen(false);
-              reset();
-              setInspectedId("alpha-01");
-              setStartError(false);
-            }}
-          />
-        )}
       </main>
     </div>
   );

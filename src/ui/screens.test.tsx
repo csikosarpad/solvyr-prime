@@ -148,12 +148,12 @@ describe("MainMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
     openSettingsGroup("Hang");
 
-    const soundButton = screen.getByRole("button", { name: "Kommunikáció: aktív (M)" });
-    expect(soundButton).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(soundButton);
+    const soundSwitch = screen.getByRole("switch", { name: "Kommunikáció: aktív (M)" });
+    expect(soundSwitch).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(soundSwitch);
 
     expect(useGameStore.getState().muted).toBe(true);
-    expect(screen.getByRole("button", { name: "Kommunikáció: némítva (M)" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "Kommunikáció: némítva (M)" })).toHaveAttribute("aria-checked", "false");
   });
 
   it("az online játék gomb megnyitja a szobalobbyt", () => {
@@ -174,10 +174,10 @@ describe("MainMenu", () => {
     expect(screen.getByText("35%")).toBeInTheDocument();
     expect(useAudioSettings.getState().volume).toBe(0.35);
     expect(JSON.parse(localStorage.getItem("ballistic-front:audio-settings")!).volume).toBe(0.35);
-    fireEvent.click(screen.getByRole("button", { name: "Kommunikáció: aktív (M)" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Kommunikáció: aktív (M)" }));
     fireEvent.change(slider, { target: { value: "0" } });
     expect(useGameStore.getState().muted).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "Kommunikáció: némítva (M)" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Kommunikáció: némítva (M)" }));
     expect(slider).toHaveValue("0");
     expect(useAudioSettings.getState().volume).toBe(0);
   });
@@ -273,49 +273,68 @@ describe("MainMenu", () => {
     expect(useGameStore.getState().screen).toBe("playing");
   });
 
-  it("a haladás törlése csak megerősítés után fut le", () => {
+  it("a játékmenet kijelölt összetevői csak megerősítés után törlődnek", async () => {
     const resetProgress = vi.fn();
     mockGame({ resetProgress });
+    useAiSettings.setState({ memory: { matches: 4, wins: 2, shots: 30, hits: 9 } });
+    useCampaignStore.getState().complete("alpha-01");
+    const originalResetEconomyAll = useVeyloraStore.getState().resetEconomyAll;
+    const resetEconomyAll = vi.fn().mockResolvedValue(true);
+    useVeyloraStore.setState({ resetEconomyAll });
     const confirm = vi.spyOn(window, "confirm");
     render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékmenet");
 
-    fireEvent.click(screen.getByRole("button", { name: /mentés törlése/i }));
-    const dialog = screen.getByRole("dialog", { name: "Törlöd a mentést?" });
+    // A VEYLORA-ág kikapcsolva kimarad a törlésből.
+    const veyloraSwitch = screen.getByRole("switch", { name: "VEYLORA-haladás és kampánygazdaság" });
+    fireEvent.click(veyloraSwitch);
+    expect(veyloraSwitch).toHaveAttribute("aria-checked", "false");
+
+    fireEvent.click(screen.getByRole("button", { name: "Kijelöltek törlése" }));
+    const dialog = screen.getByRole("dialog", { name: "Törlöd a kijelölt játékmenet-adatokat?" });
     expect(dialog).toHaveAccessibleDescription(/nem vonható vissza/);
     fireEvent.click(within(dialog).getByRole("button", { name: "Mégse" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(resetProgress).not.toHaveBeenCalled();
+    expect(useAiSettings.getState().memory.matches).toBe(4);
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
 
-    fireEvent.click(screen.getByRole("button", { name: /mentés törlése/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Kijelöltek törlése" }));
     fireEvent.click(screen.getByRole("button", { name: "Törlés" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(resetProgress).toHaveBeenCalledOnce();
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    expect(useAiSettings.getState().memory.matches).toBe(0);
+    expect(resetEconomyAll).not.toHaveBeenCalled();
     expect(confirm).not.toHaveBeenCalled();
     confirm.mockRestore();
+    useVeyloraStore.setState({ resetEconomyAll: originalResetEconomyAll });
   });
 
-  it("az AI tapasztalat törlése csak megerősítés után fut le", () => {
-    const memory = { matches: 4, wins: 2, shots: 30, hits: 9 };
-    useAiSettings.setState({ enabled: true, memory });
+  it("üres kijelölésnél a törlés tiltott; egyedüli VEYLORA-kijelölés csak a gazdaságot törli", async () => {
+    const resetProgress = vi.fn();
+    mockGame({ resetProgress });
+    const originalResetEconomyAll = useVeyloraStore.getState().resetEconomyAll;
+    const resetEconomyAll = vi.fn().mockResolvedValue(true);
+    useVeyloraStore.setState({ resetEconomyAll });
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
-    openSettingsGroup("Játékosok");
+    openSettingsGroup("Játékmenet");
 
-    const resetButton = screen.getByRole("button", { name: /AI tapasztalat: 4 meccs/ });
-    fireEvent.click(resetButton);
-    const dialog = screen.getByRole("dialog", { name: "Törlöd az AI tapasztalatát?" });
-    expect(dialog).toHaveAccessibleDescription(/4 meccsnyi tapasztalata/);
-    expect(within(dialog).getByRole("button", { name: "Mégse" })).toHaveFocus();
-    fireEvent.keyDown(dialog, { key: "Escape" });
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(useAiSettings.getState().memory).toEqual(memory);
+    fireEvent.click(screen.getByRole("switch", { name: "XP és fejlesztések" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Kampányhaladás" }));
+    fireEvent.click(screen.getByRole("switch", { name: "VEYLORA-haladás és kampánygazdaság" }));
+    fireEvent.click(screen.getByRole("switch", { name: /AI-tapasztalat/ }));
+    expect(screen.getByRole("button", { name: "Kijelöltek törlése" })).toBeDisabled();
 
-    fireEvent.click(resetButton);
+    fireEvent.click(screen.getByRole("switch", { name: "VEYLORA-haladás és kampánygazdaság" }));
+    fireEvent.click(screen.getByRole("button", { name: "Kijelöltek törlése" }));
     fireEvent.click(screen.getByRole("button", { name: "Törlés" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(useAiSettings.getState().memory.matches).toBe(0);
-    expect(screen.getByRole("button", { name: /AI tapasztalat: 0 meccs/ })).toBeDisabled();
-    useAiSettings.setState({ enabled: false });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(resetEconomyAll).toHaveBeenCalledOnce();
+    expect(resetProgress).not.toHaveBeenCalled();
+    useVeyloraStore.setState({ resetEconomyAll: originalResetEconomyAll });
   });
 });
 

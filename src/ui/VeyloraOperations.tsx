@@ -4,7 +4,6 @@ import { useVeyloraStore } from "@/game/state/veyloraStore";
 import { useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useT } from "@/i18n";
-import { ConfirmDialog } from "./ConfirmDialog";
 import { gameRef } from "./gameRef";
 import { requestLandscape } from "./orientation";
 import { CampaignStation } from "./CampaignStation";
@@ -23,13 +22,10 @@ export function VeyloraOperations() {
     ready,
     pending,
     error,
-    reset,
-    resetEconomy,
     refresh,
   } = useVeyloraStore();
   const [startError, setStartError] = useState(false);
   const [starting, setStarting] = useState(false);
-  const [resetOpen, setResetOpen] = useState<"progress" | "economy" | null>(null);
   const initialLocationId =
     VEYLORA.sector.locations.find((location) => location.missionIds.includes(selectedMissionId ?? ""))?.id ??
     VEYLORA.sector.locations[0]!.id;
@@ -192,34 +188,7 @@ export function VeyloraOperations() {
           >
             {t("campaign.title")}
           </button>
-          <button
-            className="btn secondary"
-            disabled={starting || pending > 0 || error === "veylora.loadError"}
-            onClick={() => setResetOpen("progress")}
-          >
-            {t("veylora.reset")}
-          </button>
-          <button className="btn secondary" disabled={starting || pending > 0} onClick={() => setResetOpen("economy")}>
-            {t("economy.reset")}
-          </button>
         </footer>
-        {resetOpen && (
-          <ConfirmDialog
-            destructive
-            title={t(resetOpen === "economy" ? "economy.reset" : "veylora.reset")}
-            message={t(resetOpen === "economy" ? "economy.resetConfirm" : "veylora.resetConfirm")}
-            cancelLabel={t("dialog.cancel")}
-            confirmLabel={t("dialog.delete")}
-            onCancel={() => setResetOpen(null)}
-            onConfirm={async () => {
-              if (
-                useVeyloraStore.getState().pending === 0 &&
-                (await (resetOpen === "economy" ? resetEconomy() : reset()))
-              )
-                setResetOpen(null);
-            }}
-          />
-        )}
       </main>
     </div>
   );

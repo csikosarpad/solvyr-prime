@@ -56,6 +56,19 @@ describe("campaign persistence", () => {
     });
   });
 
+  it("resetAll clears both players' campaign saves", async () => {
+    const { useCampaignStore } = await import("./campaignStore");
+    useCampaignStore.getState().complete("alpha-01");
+    useCampaignStore.getState().switchPlayer("P2");
+    useCampaignStore.getState().complete("forge-17");
+    useCampaignStore.getState().resetAll();
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    useCampaignStore.getState().switchPlayer("P1");
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    expect(JSON.parse(localStorage.getItem(key)!).completedIds).toEqual([]);
+    expect(JSON.parse(localStorage.getItem(`${key}:P2`)!).completedIds).toEqual([]);
+  });
+
   it.each([
     "broken json",
     '{"version":99,"completed":true}',

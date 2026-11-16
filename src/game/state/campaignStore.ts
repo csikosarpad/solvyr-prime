@@ -22,6 +22,8 @@ interface CampaignState {
   select: (id: SectorId) => boolean;
   complete: (id: SectorId) => SectorId[];
   reset: () => void;
+  /** Mindkét helyi játékos kampányhaladásának törlése. */
+  resetAll: () => void;
   switchPlayer: (id: LocalPlayerId) => void;
 }
 
@@ -131,4 +133,9 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
     return routes;
   },
   reset: () => set((state) => ({ completedIds: [], selectedId: "alpha-01", error: save([], "alpha-01", state.playerId) })),
+  resetAll: () =>
+    set((state) => {
+      const otherError = save([], "alpha-01", state.playerId === "P1" ? "P2" : "P1");
+      return { completedIds: [], selectedId: "alpha-01", error: save([], "alpha-01", state.playerId) ?? otherError };
+    }),
 }));

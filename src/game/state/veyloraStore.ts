@@ -28,6 +28,8 @@ interface VeyloraState extends SectorProgress {
   equipShield: (id: string | null) => Promise<boolean>;
   reset: () => Promise<boolean>;
   resetEconomy: () => Promise<boolean>;
+  /** Mindkét helyi játékos teljes kampánygazdaságának törlése. */
+  resetEconomyAll: () => Promise<boolean>;
 }
 
 class EconomyRuleError extends Error {
@@ -148,5 +150,18 @@ export const useVeyloraStore = create<VeyloraState>((set, get) => {
         return save;
       }),
     resetEconomy: () => write(undefined, true),
+    resetEconomyAll: async () => {
+      const other: LocalPlayerId = get().playerId === "P1" ? "P2" : "P1";
+      let otherOk = true;
+      try {
+        await campaignTransaction(undefined, true, other);
+      } catch (error) {
+        console.error("Campaign economy transaction failed", error);
+        otherOk = false;
+      }
+      const ok = await write(undefined, true);
+      if (!otherOk && get().error === null) set({ error: "veylora.saveError" });
+      return ok && otherOk;
+    },
   };
 });

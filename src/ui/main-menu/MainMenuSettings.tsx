@@ -2,15 +2,28 @@ import { useState, type CSSProperties } from "react";
 import { MAX_NAME_LENGTH, usePlayerNamesStore } from "@/game/state/playerNames";
 import { AUDIO_CHANNELS, useAudioSettings } from "@/game/state/audioSettings";
 import { useAiSettings } from "@/game/state/aiSettings";
+import { useCampaignStore } from "@/game/state/campaignStore";
 import { useGameStore } from "@/game/state/gameStore";
+import { useVeyloraStore } from "@/game/state/veyloraStore";
 import { cssPlayerColor, PLAYER_COLORS, PLAYER_COLOR_OPTIONS, usePlayerColors } from "@/game/state/playerColors";
 import { useT, type MessageKey } from "@/i18n";
 import { ConfirmDialog } from "../ConfirmDialog";
+import { gameRef } from "../gameRef";
 import { LanguageSwitch } from "./LanguageSwitch";
 
 interface MainMenuSettingsProps {
   onBack: () => void;
 }
+
+/** A játékmenet külön-külön törölhető komponenságai. */
+const RESET_COMPONENTS = ["profiles", "campaign", "veylora", "ai"] as const;
+type ResetComponent = (typeof RESET_COMPONENTS)[number];
+const RESET_COMPONENT_LABELS: Record<ResetComponent, MessageKey> = {
+  profiles: "menu.resetProfiles",
+  campaign: "menu.resetCampaign",
+  veylora: "menu.resetVeylora",
+  ai: "menu.resetAi",
+};
 
 function VolumeSlider({
   id,
@@ -65,7 +78,24 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
   const setAiEnabled = useAiSettings((s) => s.setEnabled);
   const aiMatches = useAiSettings((s) => s.memory.matches);
   const resetAiMemory = useAiSettings((s) => s.resetMemory);
-  const [aiResetOpen, setAiResetOpen] = useState(false);
+  const veyloraPending = useVeyloraStore((s) => s.pending);
+  const veyloraError = useVeyloraStore((s) => s.error);
+  const [gameResetOpen, setGameResetOpen] = useState(false);
+  const [resetSelection, setResetSelection] = useState<Record<ResetComponent, boolean>>({
+    profiles: true,
+    campaign: true,
+    veylora: true,
+    ai: true,
+  });
+  const nothingSelected = RESET_COMPONENTS.every((component) => !resetSelection[component]);
+
+  const confirmGameReset = async () => {
+    if (resetSelection.profiles) gameRef.current?.resetProgress();
+    if (resetSelection.campaign) useCampaignStore.getState().resetAll();
+    if (resetSelection.ai) resetAiMemory();
+    if (resetSelection.veylora) await useVeyloraStore.getState().resetEconomyAll();
+    setGameResetOpen(false);
+  };
 
   return (
     <div className="panel main-menu-panel">
@@ -86,8 +116,19 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
           <div className="settings-group-content">
             <div className="main-menu-setting">
               <span>{t("menu.sound")}</span>
-              <button className="btn secondary" aria-pressed={!muted} onClick={toggleMuted}>
-                {t("hud.sound", { state: muted ? t("hud.soundOff") : t("hud.soundOn") })}
+              <button
+                type="button"
+                role="switch"
+                className="audio-switch"
+                aria-checked={!muted}
+                onClick={toggleMuted}
+              >
+                <span className="audio-switch-track" aria-hidden="true">
+                  <span className="audio-switch-thumb" />
+                </span>
+                <span className="audio-switch-label">
+                  {t("hud.sound", { state: muted ? t("hud.soundOff") : t("hud.soundOn") })}
+                </span>
               </button>
             </div>
             <div className="main-menu-setting">
@@ -133,11 +174,6 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
                 <button className="btn secondary" aria-pressed={aiEnabled} onClick={() => setAiEnabled(!aiEnabled)}>
                   {aiEnabled ? t("menu.opponentAi") : t("menu.opponentHuman")}
                 </button>
-                {aiEnabled && (
-                  <button className="btn secondary" onClick={() => setAiResetOpen(true)} disabled={aiMatches === 0}>
-                    {t("menu.aiExperience", { matches: aiMatches })}
-                  </button>
-                )}
               </div>
               <small>{t("menu.opponentHint")}</small>
             </div>
@@ -184,22 +220,57 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
           </div>
         </details>
         {colorError && <small className="settings-error" role="alert">{t(colorError)}</small>}
+        <details className="settings-group">
+          <summary>{t("menu.gameplay")}<span className="settings-group-indicator" aria-hidden="true" /></summary>
+          <div className="settings-group-content">
+            <div className="main-menu-setting">
+              <small>{t("menu.resetHint")}</small>
+              <div className="audio-channel-list">
+                {RESET_COMPONENTS.map((component) => (
+                  <div key={component} className="audio-channel">
+                    <button
+                      type="button"
+                      role="switch"
+                      className="audio-switch"
+                      aria-checked={resetSelection[component]}
+                      onClick={() =>
+                        setResetSelection((selection) => ({ ...selection, [component]: !selection[component] }))
+                      }
+                    >
+                      <span className="audio-switch-track" aria-hidden="true">
+                        <span className="audio-switch-thumb" />
+                      </span>
+                      <span className="audio-switch-label">
+                        {t(RESET_COMPONENT_LABELS[component], component === "ai" ? { matches: aiMatches } : undefined)}
+                      </span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                className="btn secondary"
+                disabled={veyloraPending > 0 || nothingSelected}
+                onClick={() => setGameResetOpen(true)}
+              >
+                {t("menu.reset")}
+              </button>
+            </div>
+          </div>
+        </details>
+        {veyloraError && <small className="settings-error" role="alert">{t(veyloraError)}</small>}
       </section>
       <button className="btn secondary main-menu-back" onClick={onBack}>
         {t("lobby.back")}
       </button>
-      {aiResetOpen && (
+      {gameResetOpen && (
         <ConfirmDialog
           destructive
-          title={t("menu.aiResetTitle")}
-          message={t("menu.aiResetConfirm", { matches: aiMatches })}
+          title={t("menu.resetTitle")}
+          message={t("menu.resetConfirm")}
           cancelLabel={t("dialog.cancel")}
           confirmLabel={t("dialog.delete")}
-          onCancel={() => setAiResetOpen(false)}
-          onConfirm={() => {
-            setAiResetOpen(false);
-            resetAiMemory();
-          }}
+          onCancel={() => setGameResetOpen(false)}
+          onConfirm={() => void confirmGameReset()}
         />
       )}
     </div>

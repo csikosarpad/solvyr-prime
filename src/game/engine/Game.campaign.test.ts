@@ -706,12 +706,12 @@ describe("Game campaign lifecycle", () => {
     expect(useCampaignStore.getState().completedIds).toEqual([]);
   });
 
-  it("XP reset clears legacy campaign and XP upgrades but preserves the separate campaign economy", async () => {
+  it("XP reset clears XP upgrades but preserves campaign progress and the separate campaign economy", async () => {
     useCampaignStore.getState().complete("alpha-01");
     await useVeyloraStore.getState().complete("secure-mine", useVeyloraStore.getState().economy.generation);
     const economy = structuredClone(useVeyloraStore.getState().economy);
     game.resetProgress();
-    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
     expect(useGameStore.getState().profiles).toEqual({
       P1: { xp: 0, levels: {} },
       P2: { xp: 0, levels: {} },

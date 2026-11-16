@@ -35,6 +35,19 @@ describe("transactional campaign economy", () => {
     expect((await campaignTransaction(undefined, false, "P2")).purchases).toEqual({});
   });
 
+  it("resetEconomyAll wipes both players' economy and progress", async () => {
+    await complete("secure-mine");
+    await state().switchPlayer("P2");
+    await complete("secure-mine");
+    expect(state().economy.resources["industrial-ore"]).toBe(20);
+    expect(await state().resetEconomyAll()).toBe(true);
+    expect(state().economy.resources).toEqual({});
+    expect(state().completedMissionIds).toEqual([]);
+    await state().switchPlayer("P1");
+    expect(state().economy.resources).toEqual({});
+    expect(state().completedMissionIds).toEqual([]);
+  });
+
   it("does not migrate the old P1 prototype into P2", async () => {
     vi.stubGlobal("indexedDB", new IDBFactory());
     localStorage.setItem(VEYLORA_STORAGE_KEY, JSON.stringify({

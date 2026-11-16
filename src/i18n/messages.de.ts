@@ -28,13 +28,10 @@ export const de: Record<MessageKey, string> = {
   "veylora.missionFailure":
     "Mission nicht erfolgreich. Erneuter Versuch möglich; Kampfergebnis und XP werden getrennt gewertet.",
   "veylora.loadError":
-    "Die Kampagnenwirtschaft konnte nicht geladen werden. Der ursprüngliche Spielstand bleibt erhalten. Reparieren oder die gesamte Wirtschaft ausdrücklich zurücksetzen; ein Sektor-Reset darf kein Vermögen löschen.",
+    "Die Kampagnenwirtschaft konnte nicht geladen werden. Der ursprüngliche Spielstand bleibt erhalten. Repariere ihn oder lösche die Kampagnenwirtschaft im Bereich „Spielverlauf“ der Einstellungen.",
   "veylora.saveError":
     "Die Kampagnenwirtschaft konnte nicht gespeichert werden. Änderung, Belohnung oder Kauf wurden nicht gesichert. Browserspeicher prüfen und erneut versuchen.",
   "veylora.retrySave": "Abschluss erneut speichern",
-  "veylora.reset": "VEYLORA-Fortschritt zurücksetzen",
-  "veylora.resetConfirm":
-    "VEYLORA-Missionsfortschritt zurücksetzen? Inventar, Baupläne, Käufe und Belohnungsansprüche bleiben erhalten: bereits erhaltene Belohnungen werden nicht erneut vergeben. XP und die bisherige Kampagne bleiben unverändert.",
   "economy.ore": "Industrieerz",
   "economy.blueprint": "Materialtechnologie-Bauplan",
   "economy.shield": "Verstärkter Schild",
@@ -69,9 +66,6 @@ export const de: Record<MessageKey, string> = {
   "economy.firstReward": "Einmalige Belohnung für den ersten erfolgreichen Abschluss:",
   "economy.rewardClaimed": "Wirtschaftsbelohnung bereits gutgeschrieben; Wiederholungen vergeben sie nicht erneut:",
   "economy.saving": "Kampagnenwirtschaft wird geladen / gespeichert…",
-  "economy.reset": "Gesamte Kampagnenwirtschaft zurücksetzen",
-  "economy.resetConfirm":
-    "Missionsfortschritt aller neuen Sektoren, sämtliche Rohstoffe, Baupläne, Kampagnenverbesserungen und Belohnungsansprüche löschen? Belohnungen können erneut verdient werden. XP, XP-Verbesserungen und die bisherige Kampagne bleiben erhalten. Nicht rückgängig zu machen.",
   "economy.resetDuringBattle":
     "Die Kampagnenwirtschaft wurde in einem anderen Tab zurückgesetzt. Dieser ältere Kampf kann nicht in die neue Wirtschaft schreiben. Zum Sektor zurückkehren und einen neuen Einsatz starten; Kampf-XP bleiben erhalten.",
   "strategic.RESEARCH_LAB": "Forschungsgebäude",
@@ -89,10 +83,17 @@ export const de: Record<MessageKey, string> = {
   "audio.loadError":
     "Audioeinstellungen konnten nicht geladen werden; Standardwerte sind aktiv. Lautstärke erneut einstellen.",
   "audio.saveError": "Audioeinstellungen konnten nicht gespeichert werden; Änderungen gelten nur für diese Sitzung.",
-  "menu.reset": "Fortschritt löschen",
-  "menu.resetTitle": "Spielstand löschen?",
+  "menu.gameplay": "Spielverlauf",
+  "menu.reset": "Ausgewählte löschen",
+  "menu.resetTitle": "Ausgewählte Spieldaten löschen?",
   "menu.resetConfirm":
-    "Alle XP, XP-Verbesserungen und der bisherige Kampagnenfortschritt werden endgültig gelöscht. VEYLORA-Fortschritt und Kampagnenwirtschaft bleiben unverändert; sie können im Sektorbildschirm getrennt zurückgesetzt werden. Nicht rückgängig zu machen.",
+    "Die ausgewählten Komponenten werden für beide Spieler endgültig gelöscht. Nicht rückgängig zu machen.",
+  "menu.resetHint":
+    "Wähle mit den Schaltern die zu löschenden Komponenten aus und starte dann die Löschung. Sie gilt für beide Spieler.",
+  "menu.resetProfiles": "XP und Verbesserungen",
+  "menu.resetCampaign": "Kampagnenfortschritt",
+  "menu.resetVeylora": "VEYLORA-Fortschritt und Kampagnenwirtschaft",
+  "menu.resetAi": "KI-Erfahrung ({matches} Spiele)",
   "menu.language": "Sprache",
   "credits.title": "Danksagung",
   "credits.sources": "Verwendete Inhalte und Quellen",
@@ -137,10 +138,6 @@ export const de: Record<MessageKey, string> = {
     "Objekttest: Explosionsschaden ist aktiv; Kampagnenschäden und Vertragsbelohnungen werden noch nicht gespeichert.",
   "campaign.deploy": "Operation starten",
   "campaign.replay": "Operation wiederholen",
-  "campaign.reset": "Kampagnenfortschritt löschen",
-  "campaign.resetTitle": "Kampagnenfortschritt löschen?",
-  "campaign.resetConfirm":
-    "Die auf der Karte abgeschlossenen Sektoren werden zurückgesetzt. XP und Upgrades bleiben erhalten.",
   "dialog.cancel": "Abbrechen",
   "dialog.delete": "Löschen",
   "campaign.return": "Zurück zur Karte",
@@ -149,7 +146,7 @@ export const de: Record<MessageKey, string> = {
   "campaign.secured": "PROTOCOL COMPLETE · {code} SECURED",
   "campaign.notSecured": "Operation nicht abgeschlossen. Erneut über die Karte versuchen.",
   "campaign.loadError":
-    "Der Kampagnenspeicher ist ungültig, nicht unterstützt oder nicht lesbar. Der Start ist gesperrt. Speicher prüfen oder Kampagnenfortschritt löschen.",
+    "Der Kampagnenspeicher ist ungültig, nicht unterstützt oder nicht lesbar. Der Start ist gesperrt. Speicher prüfen oder den Kampagnenfortschritt im Bereich „Spielverlauf“ der Einstellungen löschen.",
   "campaign.saveError":
     "Kampagnenfortschritt konnte nicht gespeichert werden. Der angezeigte Fortschritt gilt nur für diese Sitzung.",
   "campaign.startError": "Die Spielengine ist noch nicht verfügbar. Bitte erneut starten.",
@@ -295,10 +292,6 @@ export const de: Record<MessageKey, string> = {
   "menu.opponent": "Gegner (offline)",
   "menu.opponentHuman": "Zweiter Spieler",
   "menu.opponentAi": "Computer (KI)",
-  "menu.aiExperience": "KI-Erfahrung: {matches} Spiele – löschen",
-  "menu.aiResetTitle": "KI-Erfahrung löschen?",
-  "menu.aiResetConfirm":
-    "Die Erfahrung der KI aus {matches} Spielen wird gelöscht, sie spielt wieder auf Anfängerniveau. Dies kann nicht rückgängig gemacht werden.",
   "menu.opponentHint": "Der Computer steuert Panzer P2 und lernt dazu. Gilt ab dem nächsten Spiel.",
   "menu.audioChannels": "Tonkanäle",
   "audio.music": "Musik",

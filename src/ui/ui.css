@@ -2752,6 +2752,9 @@
   background: var(--bf-text);
 }
 
+.audio-switch .audio-switch-label {
+  text-align: left;
+}
 .audio-switch[aria-checked="false"] .audio-switch-label {
   color: var(--bf-muted);
 }

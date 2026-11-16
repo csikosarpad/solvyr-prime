@@ -17,6 +17,23 @@ export function App() {
   const credentials = useMultiplayerStore((s) => s.credentials);
   const refreshRoom = useMultiplayerStore((s) => s.refresh);
 
+  // Az "M" billentyű minden képernyőn némítást vált; szövegmező szerkesztése közben nem aktív.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "m" && e.key !== "M") return;
+      if (e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
+      const target = e.target;
+      if (
+        target instanceof HTMLElement &&
+        (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable)
+      )
+        return;
+      useGameStore.getState().toggleMuted();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   useEffect(() => {
     if (!credentials) return;
     let active = true;

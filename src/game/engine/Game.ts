@@ -554,14 +554,13 @@ export class Game {
     return saveProfiles({ ...profiles, AI: this.aiProfile });
   }
 
-  /** Minden játékos XP-jének és fejlesztéseinek törlése. */
+  /** Minden játékos XP-jének és fejlesztéseinek törlése; a kampányhaladást nem érinti. */
   resetProgress(): void {
     this.profilesBeforeMatch = null;
     this.aiProfileBeforeMatch = null;
     this.profiles = Object.fromEntries(Object.keys(this.profiles).map((id) => [id, newProfile()]));
     this.aiProfile = newProfile();
     this.saveProfiles();
-    useCampaignStore.getState().reset();
     this.syncStore();
   }
 

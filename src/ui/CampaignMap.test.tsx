@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useGameStore } from "@/game/state/gameStore";
 import { useCampaignStore } from "@/game/state/campaignStore";
@@ -91,33 +91,12 @@ describe("Campaign Map UI", () => {
     expect(useAiSettings.getState().enabled).toBe(false);
   });
 
-  it("shows 1/6 and replay after completion, and resets with confirmation only", () => {
+  it("shows 1/6 and replay after completion", () => {
     useCampaignStore.getState().complete("alpha-01");
     render(<CampaignMap />);
     expect(screen.getByText("Teljesítve: 1 / 6")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /SECTOR ALPHA-01,/ }));
     expect(screen.getByRole("button", { name: "Művelet újrajátszása" })).toBeEnabled();
-    const confirm = vi.spyOn(window, "confirm");
-    fireEvent.click(screen.getByRole("button", { name: "Kampányhaladás törlése" }));
-    const dialog = screen.getByRole("dialog", { name: "Törlöd a kampányhaladást?" });
-    expect(dialog).toHaveAccessibleDescription(/Az XP és a fejlesztések megmaradnak/);
-    expect(within(dialog).getByRole("button", { name: "Mégse" })).toHaveFocus();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Mégse" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
-    fireEvent.click(screen.getByRole("button", { name: "Kampányhaladás törlése" }));
-    fireEvent.keyDown(screen.getByRole("button", { name: "Mégse" }), { key: "Escape" });
-    expect(screen.queryByRole("dialog")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Kampányhaladás törlése" }));
-    fireEvent(screen.getByRole("dialog"), new Event("cancel", { cancelable: true }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
-    fireEvent.click(screen.getByRole("button", { name: "Kampányhaladás törlése" }));
-    fireEvent.click(screen.getByRole("button", { name: "Törlés" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(useCampaignStore.getState().completedIds).toEqual([]);
-    expect(confirm).not.toHaveBeenCalled();
-    confirm.mockRestore();
   });
 
   it("blocks launch and displays a load error", () => {

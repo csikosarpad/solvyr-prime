@@ -27,13 +27,10 @@ export const en: Record<MessageKey, string> = {
   "veylora.missionSuccess": "Mission successful.",
   "veylora.missionFailure": "Mission unsuccessful. You can retry; the battle result and XP are counted separately.",
   "veylora.loadError":
-    "Campaign economy could not be loaded. The original save was preserved. Repair it or explicitly reset the entire economy; a sector progress reset must not delete wealth.",
+    "Campaign economy could not be loaded. The original save was preserved. Repair it or delete the campaign economy in the Settings Gameplay section.",
   "veylora.saveError":
     "Campaign economy could not be saved. The change, including any reward or purchase, has not been persisted. Check browser storage and retry.",
   "veylora.retrySave": "Retry saving completion",
-  "veylora.reset": "Reset VEYLORA progress",
-  "veylora.resetConfirm":
-    "Reset VEYLORA mission progress? Inventory, blueprints, purchases and reward claims are preserved: previously claimed rewards cannot be collected again. XP and the legacy campaign are unchanged.",
   "economy.ore": "Industrial ore",
   "economy.blueprint": "Materials blueprint",
   "economy.shield": "Reinforced Shield",
@@ -68,9 +65,6 @@ export const en: Record<MessageKey, string> = {
   "economy.firstReward": "One-time reward for the first successful completion:",
   "economy.rewardClaimed": "Economic reward already credited; replays will not grant it again:",
   "economy.saving": "Loading / saving campaign economy…",
-  "economy.reset": "Reset entire campaign economy",
-  "economy.resetConfirm":
-    "Delete mission progress across all new-system sectors, all resources, blueprints, campaign upgrades and reward claims? Rewards can be earned again. XP, XP upgrades and the legacy campaign are preserved. This cannot be undone.",
   "economy.resetDuringBattle":
     "The campaign economy was reset in another tab. This older battle cannot write to the new economy. Return to the sector and start a new operation; battle XP is preserved.",
   "strategic.RESEARCH_LAB": "Research building",
@@ -87,10 +81,16 @@ export const en: Record<MessageKey, string> = {
   "audio.volume": "Game volume",
   "audio.loadError": "Audio settings could not be loaded; defaults are active. Adjust the volume again.",
   "audio.saveError": "Audio settings could not be saved; changes apply only to this session.",
-  "menu.reset": "Reset progress",
-  "menu.resetTitle": "Delete your save?",
-  "menu.resetConfirm":
-    "All XP, XP upgrades and legacy campaign progress will be permanently deleted. VEYLORA progress and campaign economy are unchanged; reset them separately on the sector screen. This cannot be undone.",
+  "menu.gameplay": "Gameplay",
+  "menu.reset": "Delete selected",
+  "menu.resetTitle": "Delete the selected gameplay data?",
+  "menu.resetConfirm": "The selected components are permanently deleted for both players. This cannot be undone.",
+  "menu.resetHint":
+    "Use the switches to select the components to delete, then start the deletion. It applies to both players.",
+  "menu.resetProfiles": "XP and upgrades",
+  "menu.resetCampaign": "Campaign progress",
+  "menu.resetVeylora": "VEYLORA progress and campaign economy",
+  "menu.resetAi": "AI experience ({matches} matches)",
   "menu.language": "Language",
   "credits.title": "Credits",
   "credits.sources": "Assets and sources",
@@ -135,9 +135,6 @@ export const en: Record<MessageKey, string> = {
     "Objective trial: explosion damage is active; campaign damage saving and contract rewards are not yet available.",
   "campaign.deploy": "Deploy to sector",
   "campaign.replay": "Replay operation",
-  "campaign.reset": "Reset campaign progress",
-  "campaign.resetTitle": "Reset campaign progress?",
-  "campaign.resetConfirm": "Sectors completed on the map will be cleared. XP and upgrades are kept.",
   "dialog.cancel": "Cancel",
   "dialog.delete": "Delete",
   "campaign.return": "Return to map",
@@ -145,7 +142,7 @@ export const en: Record<MessageKey, string> = {
   "campaign.secured": "PROTOCOL COMPLETE · {code} SECURED",
   "campaign.notSecured": "Operation incomplete. Retry from the map.",
   "campaign.loadError":
-    "The campaign save is invalid, unsupported or unreadable. Campaign launch is blocked. Check storage or reset campaign progress.",
+    "The campaign save is invalid, unsupported or unreadable. Campaign launch is blocked. Check storage or delete campaign progress in the Settings Gameplay section.",
   "campaign.saveError": "Campaign progress could not be saved. Displayed progress is valid only for this session.",
   "campaign.startError": "The game engine is not available yet. Please try launching again.",
 
@@ -285,10 +282,6 @@ export const en: Record<MessageKey, string> = {
   "menu.opponent": "Opponent (offline)",
   "menu.opponentHuman": "Second player",
   "menu.opponentAi": "Machine (AI)",
-  "menu.aiExperience": "AI experience: {matches} matches – reset",
-  "menu.aiResetTitle": "Reset AI experience?",
-  "menu.aiResetConfirm":
-    "The AI's experience from {matches} matches will be erased and it will play at beginner level again. This cannot be undone.",
   "menu.opponentHint": "The machine controls tank P2, learns and upgrades itself. Applies from the next match.",
   "menu.audioChannels": "Sound channels",
   "audio.music": "Music",

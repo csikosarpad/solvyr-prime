@@ -26,13 +26,10 @@ export const hu = {
   "veylora.missionSuccess": "Küldetés sikeres.",
   "veylora.missionFailure": "Küldetés sikertelen. Újrapróbálható; a harci eredmény és XP külön számolódik.",
   "veylora.loadError":
-    "A kampánygazdaság nem tölthető be. Az eredeti mentést megőriztük. Javítás vagy kifejezett teljes gazdasági törlés szükséges; a szektorhaladás törlése nem törölheti a vagyont.",
+    "A kampánygazdaság nem tölthető be. Az eredeti mentést megőriztük. Javítsd a mentést, vagy töröld a kampánygazdaságot a Beállítások „Játékmenet” szakaszában.",
   "veylora.saveError":
     "A kampánygazdaság nem menthető. A változás és az esetleges jutalom vagy vásárlás nincs elmentve. Ellenőrizd a böngésző tárhelyét, majd próbáld újra.",
   "veylora.retrySave": "Teljesítés mentésének újrapróbálása",
-  "veylora.reset": "VEYLORA-haladás törlése",
-  "veylora.resetConfirm":
-    "Törlöd a VEYLORA küldetéshaladását? A készlet, tervrajzok, vásárlások és jutalomjogosultságok megmaradnak: ez nem teszi újra felvehetővé a már megszerzett jutalmakat. Az XP és a régi kampány sem változik.",
   "economy.ore": "Ipari érc",
   "economy.blueprint": "Anyagtechnológiai tervrajz",
   "economy.shield": "Megerősített pajzs",
@@ -67,9 +64,6 @@ export const hu = {
   "economy.firstReward": "Első sikeres teljesítés egyszeri jutalma:",
   "economy.rewardClaimed": "Gazdasági jutalom már elszámolva; újrajátszáskor nem jár újra:",
   "economy.saving": "Kampánygazdaság betöltése / mentése…",
-  "economy.reset": "Teljes kampánygazdaság törlése",
-  "economy.resetConfirm":
-    "Minden új rendszerű szektor küldetéshaladása, teljes nyersanyagkészlete, tervrajzai, kampányfejlesztései és jutalomnyilvántartása törlődik. A jutalmak újra megszerezhetők. Az XP, az XP-fejlesztések és a régi kampány megmaradnak. Nem vonható vissza.",
   "economy.resetDuringBattle":
     "Másik lapon törölték a kampánygazdaságot. Ez a korábbi csata már nem írhat bele az új gazdaságba. Térj vissza a szektorhoz és indíts új bevetést; a harci XP megmarad.",
   "strategic.RESEARCH_LAB": "Kutatóépület",
@@ -86,10 +80,17 @@ export const hu = {
   "audio.volume": "Játék hangereje",
   "audio.loadError": "A hangbeállítások nem olvashatók; az alapértékek aktívak. Állítsd be újra a hangerőt.",
   "audio.saveError": "A hangbeállítások mentése sikertelen; a módosítás csak ebben a munkamenetben érvényes.",
-  "menu.reset": "Mentés törlése",
-  "menu.resetTitle": "Törlöd a mentést?",
+  "menu.gameplay": "Játékmenet",
+  "menu.reset": "Kijelöltek törlése",
+  "menu.resetTitle": "Törlöd a kijelölt játékmenet-adatokat?",
   "menu.resetConfirm":
-    "Az összes XP, XP-fejlesztés és a régi kampány haladása véglegesen törlődik. A VEYLORA-haladás és kampánygazdaság nem változik; azok külön törölhetők a szektorképernyőn. Ez nem vonható vissza.",
+    "A kijelölt összetevők adatai mindkét játékosnál véglegesen törlődnek. Ez nem vonható vissza.",
+  "menu.resetHint":
+    "A kapcsolókkal jelöld ki a törlendő összetevőket, majd indítsd a törlést. A törlés mindkét játékosra érvényes.",
+  "menu.resetProfiles": "XP és fejlesztések",
+  "menu.resetCampaign": "Kampányhaladás",
+  "menu.resetVeylora": "VEYLORA-haladás és kampánygazdaság",
+  "menu.resetAi": "AI-tapasztalat ({matches} meccs)",
   "menu.language": "Nyelv",
   "credits.title": "Köszönet",
   "credits.sources": "Felhasznált tartalmak és források",
@@ -133,9 +134,6 @@ export const hu = {
   "strategic.trial": "Objektumpróba: robbanási sebzés aktív; kampánykár-mentés és szerződéses jutalom még nincs.",
   "campaign.deploy": "Művelet indítása",
   "campaign.replay": "Művelet újrajátszása",
-  "campaign.reset": "Kampányhaladás törlése",
-  "campaign.resetTitle": "Törlöd a kampányhaladást?",
-  "campaign.resetConfirm": "A térképen teljesített szektorok törlődnek. Az XP és a fejlesztések megmaradnak.",
   "dialog.cancel": "Mégse",
   "dialog.delete": "Törlés",
   "campaign.return": "Vissza a térképre",
@@ -143,7 +141,7 @@ export const hu = {
   "campaign.secured": "PROTOCOL COMPLETE · {code} SECURED",
   "campaign.notSecured": "A művelet nem teljesült. Próbáld újra a térképről.",
   "campaign.loadError":
-    "A kampánymentés hibás, nem támogatott vagy nem olvasható. A kampány indítása tiltott. Ellenőrizd a tárhelyet, vagy töröld a kampányhaladást.",
+    "A kampánymentés hibás, nem támogatott vagy nem olvasható. A kampány indítása tiltott. Ellenőrizd a tárhelyet, vagy töröld a kampányhaladást a Beállítások „Játékmenet” szakaszában.",
   "campaign.saveError": "A kampányhaladás mentése sikertelen. A kijelzett haladás csak ebben a munkamenetben érvényes.",
   "campaign.startError": "A játékmotor még nem elérhető. Próbáld újra az indítást.",
 
@@ -284,10 +282,6 @@ export const hu = {
   "menu.opponent": "Ellenfél (offline)",
   "menu.opponentHuman": "Második játékos",
   "menu.opponentAi": "Gép (AI)",
-  "menu.aiExperience": "AI tapasztalat: {matches} meccs – törlés",
-  "menu.aiResetTitle": "Törlöd az AI tapasztalatát?",
-  "menu.aiResetConfirm":
-    "Az AI {matches} meccsnyi tapasztalata törlődik, és újra kezdő szinten játszik. Ez nem vonható vissza.",
   "menu.opponentHint": "A gép a P2 tankot vezérli, tanul és fejlődik. A következő meccstől érvényes.",
   "menu.audioChannels": "Hangcsoportok",
   "audio.music": "Zene",

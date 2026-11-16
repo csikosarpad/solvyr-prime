@@ -38,4 +38,23 @@ describe("welcome screen", () => {
     render(<App />);
     expect(screen.getByRole("button", { name: "START" })).toBeInTheDocument();
   });
+
+  it("az M billentyű minden képernyőn némítást vált, de szövegmezőben gépelve nem", () => {
+    useGameStore.setState({ muted: false });
+    render(<App />);
+    // Már a belépőképernyőn is működik.
+    fireEvent.keyDown(window, { key: "m" });
+    expect(useGameStore.getState().muted).toBe(true);
+    fireEvent.keyDown(window, { key: "M" });
+    expect(useGameStore.getState().muted).toBe(false);
+    fireEvent.keyDown(window, { key: "m", repeat: true });
+    expect(useGameStore.getState().muted).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "START" }));
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    const nameInput = screen.getByLabelText("P1 neve");
+    fireEvent.keyDown(nameInput, { key: "m" });
+    expect(useGameStore.getState().muted).toBe(false);
+    fireEvent.keyDown(window, { key: "m" });
+    expect(useGameStore.getState().muted).toBe(true);
+  });
 });
