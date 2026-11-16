@@ -68,12 +68,14 @@ csak az aktuális emberi játékos fejleszthető. Az AI külön profilban kap é
 költ XP-t, nem használja egyik emberi profil egyenlegét sem. A profilok és az AI-tapasztalat a
 gyorscsatával közösek, külön kampánynehézség még nincs.
 
-A térképen a „Kampányhaladás törlése” csak a teljesítést törli.
-A főmenü „Mentés törlése” az XP-t, XP-fejlesztéseket és a régi kampány
-haladását törli; az új kampánygazdaságot és VEYLORA-haladást nem.
+A haladás törlése a Beállítások „Játékmenet” szakaszában érhető el: kapcsolókkal
+jelölhető ki, hogy az XP és fejlesztések, a kampányhaladás, a VEYLORA-haladás és
+kampánygazdaság, illetve az AI-tapasztalat közül mi törlődjön. A törlés megerősítés
+után fut le, és mindkét helyi játékosra érvényes.
 Tárolási hibánál figyelmeztetés jelenik meg; sikertelen mentés után a kijelzett
 haladás csak az aktuális munkamenetben érvényes. Hibás/nem támogatott kampánymentés
-esetén az indítás tiltott; a kampányreset új mentést hozhat létre, a régi XP megtartásával.
+esetén az indítás tiltott; a Beállításokban elvégzett kampánytörlés új mentést hozhat
+létre, a régi XP megtartásával.
 Félbehagyott offline csata refresh után nem folytatható, a művelet újra indítható.
 
 ### VEYLORA-03 – első játszható prototípus
@@ -100,7 +102,7 @@ Mindhárom küldetés sikerével VEYLORA biztosított, de továbbra is újraját
 A küldetéshaladás és a gazdaság helyileg, IndexedDB-ben mentődik. Mentési
 hibánál figyelmeztetés látszik; az eredményképernyőn a sikertelen
 teljesítés-/jutalommentés újrapróbálható. Hibás mentésnél az indítás tiltott;
-a szektorhaladás törlése nem kerülheti meg a sérült gazdasági mentést.
+a helyreállításhoz a Beállítások „Játékmenet” szakaszában törölhető a kampánygazdaság.
 
 - A bánya első sikeres teljesítése **20 ipari ércet** ad.
 - A kutatótelep első sikeres, épületvédelmet is teljesítő küldetése
@@ -114,12 +116,12 @@ a szektorhaladás törlése nem kerülheti meg a sérült gazdasági mentést.
   A korábban megvásárolt pajzs is felszerelve marad.
 - Az újrajátszás nem ad újabb gazdasági jutalmat, a megszokott XP viszont jár.
   A küldetés teljesítése és a jutalom elszámolása külön látszik.
-- **VEYLORA-haladás törlése:** csak a küldetésállapot törlődik. A készlet,
-  tervrajz, vásárlás és korábbi jutalomfelvétel megmarad, nincs újrakifizetés.
-- **Teljes kampánygazdaság törlése:** külön megerősítés után az új kampányok
-  haladása, vagyona, fejlesztései és jutalomnyilvántartása együtt törlődik.
-  A jutalmak újra megszerezhetők; az XP, XP-fejlesztések és a régi kampány
-  megmaradnak. Másik lapon korábban indult csata nem írhat az új gazdaságba.
+- **Törlés:** a VEYLORA-haladás és a kampánygazdaság együtt, külön megerősítés
+  után törölhető a Beállítások „Játékmenet” szakaszában. A haladás, vagyon,
+  fejlesztések és jutalomnyilvántartás együtt törlődik, és a jutalmak újra
+  megszerezhetők. Az XP, az XP-fejlesztések és a régi kampány csak akkor törlődik,
+  ha a saját águk is ki van jelölve. Másik lapon korábban indult csata nem írhat
+  az új gazdaságba.
 
 A korábbi, gazdaság nélküli prototípus haladása átemelődik, de nem ad
 visszamenőleges jutalmat. Az első gazdasági jutalomhoz újra sikeresen teljesítsd
@@ -152,7 +154,7 @@ az eredményképernyőn összesíti.
 | Ctrl + bal / jobb nyíl | Szög ±1°; Shift mellett ±5° |
 | Szóköz | Tűz |
 | T | Célzástámogatás / röppálya-előnézet |
-| M | Globális némítás |
+| M | Globális némítás (minden képernyőn működik) |
 | HUD gombok és csúszkák | Mozgás, célzás, tüzelés és hang |
 
 A 0° jobbra, a 180° balra mutat, ezért a Ctrl + bal nyíl növeli a szöget.
@@ -239,7 +241,9 @@ A Beállításokban a **Nyelv**, **Hang** és **Játékosok** csoport külön ny
   a Fejlesztésben és a játékosválasztókon is megjelenik; a beállítás helyben mentődik.
   Online a színek csak a saját böngésző megjelenítését módosítják, nem szinkronizálódnak.
   Azonos színek is választhatók, ezért a játékosazonosítókat is érdemes figyelni.
-- **Hang:** Zene, Parancsnok és Effektek külön kapcsolhatók egy-egy be/ki kapcsolóval; az M némítás mindet felülírja.
+- **Hang:** a fő hang és a Zene, Parancsnok, Effektek csoportok külön-külön
+  be/ki kapcsolóval kapcsolhatók; az M billentyű bármely képernyőn némít, és a fő
+  hang kapcsolójával azonos állapotot vált. A némítás mindhárom csoportot felülírja.
   A Beállítások **Játék hangereje** csúszkája 0–100% között szabályozza mindhárom hangcsoportot,
   és a választás megmarad újratöltés után. A 100% az eddigi hangkeverésnek felel meg;
   a némítás nem törli a beállított hangerőt. Mindhárom csoport kapcsolója mellett saját
@@ -251,10 +255,11 @@ A Beállításokban a **Nyelv**, **Hang** és **Játékosok** csoport külön ny
 - **Parancsnoki konzol:** időbélyeges taktikai közlések és böngészős felolvasás.
   A hangok a böngészőtől/operációs rendszertől függnek; P2 magasabban és gyorsabban szól.
   Győzelemkor szintetizált fanfár és győzelmi bemondás hallható.
-- **AI:** a tapasztalata külön törölhető a Beállításokban; normál célzása hibázhat,
-  Smart Aim használatakor pontos találó lövést is kereshet.
-- **Mentés törlése:** megerősítés után a profilok XP-je és fejlesztései törlődnek.
-  Ez nem azonos az AI-tapasztalat külön törlésével.
+- **AI:** a tapasztalata a Játékmenet szakasz „AI-tapasztalat” ágával törölhető;
+  normál célzása hibázhat, Smart Aim használatakor pontos találó lövést is kereshet.
+- **Játékmenet törlése:** kapcsolókkal kijelölhető, hogy az XP és fejlesztések,
+  a kampányhaladás, a VEYLORA-haladás és kampánygazdaság, illetve az AI-tapasztalat
+  közül mi törlődjön. A törlés megerősítés után fut le, és mindkét játékosra érvényes.
 
 A profilok és beállítások a böngésző helyi tárolójában maradnak meg.
 Nincs fiókalapú szinkron; tárolótörlés vagy másik böngésző/eszköz eltérő állapotot jelenthet.
