@@ -229,6 +229,23 @@ describe("Hud billentyűk", () => {
     expect(screen.getByRole("meter", { name: "Páncélzat" })).toHaveAttribute("aria-valuetext", "15/60");
   });
 
+  it("a lövedék repülése alatt a nyilak és a mozgásgombok kitérést hívnak, ha van keret", () => {
+    const move = vi.fn();
+    gameRef.current = { move } as unknown as Game;
+    act(() => useGameStore.setState({ phase: "flying", canControl: false, canDodge: true }));
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(move.mock.calls).toEqual([[1], [-1]]);
+    expect(screen.getByRole("button", { name: "Átcsoportosítás balra" })).toBeEnabled();
+    // Ctrl+nyíl (szögállítás) kitéréskor nem mozgat.
+    fireEvent.keyDown(window, { key: "ArrowRight", ctrlKey: true });
+    expect(move).toHaveBeenCalledTimes(2);
+    act(() => useGameStore.setState({ canDodge: false }));
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(move).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("button", { name: "Átcsoportosítás balra" })).toBeDisabled();
+  });
+
   it("a szög a [0, 180] tartományban marad", () => {
     act(() => useGameStore.setState({ angle: 2 }));
     fireEvent.keyDown(window, { key: "ArrowRight", ctrlKey: true, shiftKey: true });

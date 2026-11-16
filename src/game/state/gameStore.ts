@@ -47,6 +47,8 @@ export interface GameState {
   phase: Phase;
   currentId: string;
   canControl: boolean;
+  /** A lövedék repülése alatt a védekező emberi tank még kitérhet a maradék keretéből. */
+  canDodge: boolean;
   winner: string | null;
   tanks: TankView[];
   strategicObjectives: readonly PlacedStrategicObjective[];
@@ -98,6 +100,7 @@ export const useGameStore = create<GameState>((set) => ({
   phase: "aiming",
   currentId: "P1",
   canControl: true,
+  canDodge: false,
   winner: null,
   tanks: [],
   strategicObjectives: [],

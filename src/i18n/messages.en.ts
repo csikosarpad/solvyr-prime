@@ -179,6 +179,7 @@ export const en: Record<MessageKey, string> = {
 
   "hud.turn": "Active unit:",
   "hud.move": "Movement allowance: {value} m",
+  "hud.dodge": "Dodge allowance: {value} m",
   "hud.legend": "Combat systems",
   "hud.legend.hp": "Integrity (HP)",
   "hud.legend.shield": "Energy shield (regenerates each turn)",

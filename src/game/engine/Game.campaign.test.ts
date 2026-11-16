@@ -8,6 +8,9 @@ import { useMultiplayerStore } from "../state/multiplayerStore";
 import { tankContains, type Tank } from "../entities/tank";
 import { TRAINING_SECTOR, sectorById } from "../data/sectors";
 import { loadProfiles, saveProfiles } from "../systems/profileStorage";
+import { simulateImpact } from "../systems/ai";
+import { barrelTip } from "../entities/tank";
+import { DEFAULT_WORLD } from "../physics/ballistics";
 import type { Profile } from "../systems/upgrades";
 import { Texture } from "pixi.js";
 import { GlowFilter } from "pixi-filters";
@@ -717,6 +720,59 @@ describe("Game campaign lifecycle", () => {
       P2: { xp: 0, levels: {} },
     });
     expect(useVeyloraStore.getState().economy).toEqual(economy);
+  });
+
+  it("the defending human tank dodges during shell flight from its leftover movement budget", () => {
+    game.restart({ seed: 42, starterIndex: 0 });
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const shooter = tanks[0]!;
+    const defender = tanks[1]!;
+    defender.moveLeft = 4;
+    const shooterX = shooter.x;
+    const defenderX = defender.x;
+    game.fire();
+    expect(useGameStore.getState().phase).toBe("flying");
+    expect(useGameStore.getState().canDodge).toBe(true);
+    game.move(1);
+    game.move(1);
+    // A keret elfogyott: a harmadik lépés már nem mozdít.
+    game.move(1);
+    expect(defender.x).toBe(defenderX + 4);
+    expect(shooter.x).toBe(shooterX);
+    expect(useGameStore.getState().canDodge).toBe(false);
+  });
+
+  it("the AI dodges a guaranteed player hit during flight based on its predicted impact", () => {
+    useAiSettings.getState().setEnabled(true);
+    game.restart({ seed: 42, starterIndex: 0 });
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const ai = tanks[1]!;
+    const mask = Reflect.get(game, "terrain").mask;
+    // A kitérési esély-dobás mindig sikerüljön.
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    // Az AI a kiszámolt becsapódási pontra áll, így a lövés biztosan veszélyzónában éri.
+    const angle = 60;
+    const power = 400;
+    const wind = useGameStore.getState().wind;
+    const impact = simulateImpact(
+      barrelTip({ ...tanks[0]!, angle }),
+      angle,
+      power,
+      { gravity: DEFAULT_WORLD.gravity, wind },
+      mask,
+    );
+    expect(impact).not.toBeNull();
+    ai.x = Math.round(impact!.pos.x);
+    ai.y = mask.surfaceY(ai.x);
+    useGameStore.getState().setAim(angle, power);
+    const aiX = ai.x;
+    game.fire();
+    // Az AI tankot a játékos nem mozgathatja kitérésként.
+    expect(useGameStore.getState().canDodge).toBe(false);
+    game.move(1);
+    expect(ai.x).toBe(aiX);
+    vi.advanceTimersByTime(3000);
+    expect(ai.x).not.toBe(aiX);
   });
 
   it("builds the selected real sector, retains it on rematch and resets it for quick battles", () => {

@@ -149,7 +149,7 @@ az eredményképernyőn összesíti.
 
 | Vezérlő | Művelet |
 | --- | --- |
-| Bal / jobb nyíl | Mozgás |
+| Bal / jobb nyíl | Mozgás; az ellenfél lövedéke alatt kitérés |
 | Fel / le nyíl | Lövési erő ±10; Shift mellett ±50 |
 | Ctrl + bal / jobb nyíl | Szög ±1°; Shift mellett ±5° |
 | Szóköz | Tűz |
@@ -159,6 +159,10 @@ az eredményképernyőn összesíti.
 
 A 0° jobbra, a 180° balra mutat, ezért a Ctrl + bal nyíl növeli a szöget.
 A lövés alatt, az ellenfél körében és meccsvégén a harci vezérlés zárolt.
+Kivétel a kitérés: az ellenfél lövedékének repülése alatt a védekező tank a saját
+körében megmaradt mozgási keretéből elmozdulhat (◀ ▶ vagy a mozgásgombok).
+A gépi ellenfél a tapasztalatától függő eséllyel és reakcióidővel szintén kitérhet
+az előre jelzett becsapódás elől. Online meccsen nincs kitérés.
 
 ### Érintésvezérlés
 

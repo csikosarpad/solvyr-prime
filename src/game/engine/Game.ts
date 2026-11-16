@@ -20,6 +20,7 @@ import {
   predictTrajectory,
   stepBody,
   type BallisticBody,
+  type Vec2,
 } from "../physics/ballistics";
 import { PreviewAllowance } from "../systems/previewAllowance";
 import { dragToAim, DRAG_POWER_PER_PX } from "../systems/dragAim";
@@ -86,6 +87,13 @@ const AI_AIM_MS = 700;
 const AI_MOVE_STEP_MS = 45;
 /** Esélye, hogy a gép a Smart Aimet is bekapcsolja, ha van még töltete. */
 const AI_PREVIEW_CHANCE = 0.5;
+/** A kitérő gép alap reakcióideje a játékos lövése után (ms); a tudásszint gyorsítja. */
+const AI_DODGE_REACTION_MS = 700;
+/** Kitérési esély: alap + tudásszint-arányos rész. */
+const AI_DODGE_BASE_CHANCE = 0.2;
+const AI_DODGE_SKILL_CHANCE = 0.7;
+/** Ennyivel nagyobb a kerülendő zóna a robbanási sugárnál (px). */
+const DODGE_SAFETY_MARGIN = 12;
 
 interface ImpactReport {
   tank: Tank;
@@ -741,6 +749,7 @@ export class Game {
   }
 
   private syncStore(): void {
+    const dodger = this.humanDodger();
     useGameStore.getState().sync({
       matchMode: this.matchMode,
       strategicObjectives: this.strategicObjectives,
@@ -753,6 +762,7 @@ export class Game {
         (!this.multiplayer || useMultiplayerStore.getState().credentials?.playerId === this.turns.current) &&
         this.pendingMultiplayerEvents.length === 0,
       winner: this.turns.winner,
+      canDodge: dodger !== null && dodger.moveLeft > 0,
       tanks: this.tanks.map((t) => ({
         id: t.id,
         hp: t.hp,
@@ -807,18 +817,36 @@ export class Game {
     }
   }
 
-  /** Mozgás a jelenlegi tankkal; zárolt bemenetnél nem csinál semmit. */
+  /** Mozgás; célzáskor a soron lévő tank lép, a lövedék repülése alatt a védekező emberi tank térhet ki. */
   move(dir: -1 | 1): void {
-    if (!this.matchActive || this.turns.inputLocked || !this.terrain || this.isAiTurn()) return;
+    if (!this.matchActive || !this.terrain) return;
     if (this.multiplayer) {
-      if (this.canControlCurrentTurn()) void useMultiplayerStore.getState().publish("move", { direction: dir });
+      if (!this.turns.inputLocked && this.canControlCurrentTurn())
+        void useMultiplayerStore.getState().publish("move", { direction: dir });
       return;
     }
+    if (this.turns.phase === "flying") {
+      const dodger = this.humanDodger();
+      if (dodger && moveTank(dodger, dir, this.terrain.mask)) {
+        this.audio?.moveTick();
+        this.syncStore();
+      }
+      return;
+    }
+    if (this.turns.inputLocked || this.isAiTurn()) return;
     if (moveTank(this.current, dir, this.terrain.mask)) {
       this.audio?.moveTick();
       this.lockTarget();
       this.syncStore();
     }
+  }
+
+  /** A lövedék repülése alatt kitérésre jogosult emberi tank (csak offline); különben null. */
+  private humanDodger(): Tank | null {
+    if (this.multiplayer || !this.matchActive || this.turns.phase !== "flying") return null;
+    const dodger = this.tanks.find((t) => isAlive(t) && t.id !== this.turns.current);
+    if (!dodger || (this.aiActive && dodger.id === this.aiId())) return null;
+    return dodger;
   }
 
   /** Lövés a store-ban beállított szöggel és erővel. */
@@ -849,7 +877,44 @@ export class Game {
     if (view) view.anim = kick(angle);
     this.shellAge = 0;
     this.shellTrail.clear();
+    this.scheduleAiDodge(tank, angle, power, tip);
     this.syncStore();
+  }
+
+  /** A gép az előre jelzett becsapódás alapján, tudásszint-függő eséllyel kitér a játékos lövése elől. */
+  private scheduleAiDodge(shooter: Tank, angle: number, power: number, tip: Vec2): void {
+    if (this.multiplayer || !this.aiActive || shooter.id === this.aiId() || !this.terrain || !this.aiBrain) return;
+    const ai = this.tanks.find((t) => t.id === this.aiId());
+    if (!ai || !isAlive(ai) || ai.moveLeft <= 0) return;
+    const skill = this.aiBrain.skill;
+    if (Math.random() > AI_DODGE_BASE_CHANCE + skill * AI_DODGE_SKILL_CHANCE) return;
+    const wind = useGameStore.getState().wind;
+    const impact = simulateImpact(tip, angle, power, { gravity: DEFAULT_WORLD.gravity, wind }, this.terrain.mask, ai);
+    if (!impact) return;
+    const danger = shooter.stats.blastRadius + DODGE_SAFETY_MARGIN;
+    if (Math.abs(impact.pos.x - ai.x) >= danger) return;
+    const dir: -1 | 1 = impact.pos.x > ai.x ? -1 : 1;
+    this.afterDodge(AI_DODGE_REACTION_MS * (1 - skill * 0.5), () => this.aiDodgeStep(dir, impact.pos.x, danger));
+  }
+
+  /** Lépésenként távolodik a becsapódási ponttól, amíg van keret és veszélyzónában áll. */
+  private aiDodgeStep(dir: -1 | 1, impactX: number, danger: number): void {
+    const ai = this.tanks.find((t) => t.id === this.aiId());
+    if (!ai || !isAlive(ai) || !this.terrain) return;
+    if (Math.abs(ai.x - impactX) >= danger) return;
+    if (!moveTank(ai, dir, this.terrain.mask)) return;
+    this.audio?.moveTick();
+    this.syncStore();
+    this.afterDodge(AI_MOVE_STEP_MS, () => this.aiDodgeStep(dir, impactX, danger));
+  }
+
+  /** Időzítő, ami csak a lövedék repülése alatt fut le. */
+  private afterDodge(ms: number, action: () => void): void {
+    const id = window.setTimeout(() => {
+      this.aiTimers = this.aiTimers.filter((t) => t !== id);
+      if (!this.destroyed && this.turns.phase === "flying") action();
+    }, ms);
+    this.aiTimers.push(id);
   }
 
   private canControlCurrentTurn(): boolean {

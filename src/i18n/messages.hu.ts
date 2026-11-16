@@ -179,6 +179,7 @@ export const hu = {
 
   "hud.turn": "Aktív egység:",
   "hud.move": "Mozgási keret: {value} m",
+  "hud.dodge": "Kitérési keret: {value} m",
   "hud.legend": "Harci rendszerek",
   "hud.legend.hp": "Integritás (HP)",
   "hud.legend.shield": "Energiapajzs (körönként regenerálódik)",

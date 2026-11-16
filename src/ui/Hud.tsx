@@ -29,6 +29,7 @@ export function Hud() {
     phase,
     currentId,
     canControl,
+    canDodge,
     tanks,
     previewAvailable,
     previewRemaining,
@@ -56,6 +57,10 @@ export function Hud() {
       : profileStars(profiles[id] ?? newProfile(), MAX_RANK);
   const locked = phase !== "aiming" || !canControl;
   const me = tanks.find((t) => t.id === currentId);
+  // A lövedék repülése alatt a védekező (nem soron lévő) tank térhet ki.
+  const dodging = phase === "flying" && canDodge;
+  const dodger = tanks.find((t) => t.id !== currentId);
+  const moveDisabled = phase === "flying" ? !canDodge : locked;
   // Érintőeszközön a billentyűkre utaló jelzések fölöslegesek.
   const touch = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
   const soundState = muted ? t("hud.soundOff") : t("hud.soundOn");
@@ -72,7 +77,13 @@ export function Hud() {
         setExitDestination("menu");
         return;
       }
-      const { phase, canControl, nudgePower, nudgeAngle } = useGameStore.getState();
+      const { phase, canControl, canDodge, nudgePower, nudgeAngle } = useGameStore.getState();
+      // Kitérés az ellenfél lövedéke alatt: csak balra/jobbra mozgás.
+      if (phase === "flying" && canDodge && !e.ctrlKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+        gameRef.current?.move(e.key === "ArrowLeft" ? -1 : 1);
+        e.preventDefault();
+        return;
+      }
       if (phase !== "aiming" || !canControl) return;
       const step = e.shiftKey ? 50 : 10;
       const angleStep = e.shiftKey ? 5 : 1;
@@ -177,7 +188,7 @@ export function Hud() {
           <div className="hud-readout">
             {t("hud.turn")} <strong style={{ color: toCss(me?.color) }}>{name(currentId)}</strong>
             <span aria-hidden="true">·</span>
-            {t("hud.move", { value: me?.moveLeft ?? 0 })}
+            {dodging ? t("hud.dodge", { value: dodger?.moveLeft ?? 0 }) : t("hud.move", { value: me?.moveLeft ?? 0 })}
           </div>
           {online && (
             <div className="hud-status-message" role={multiplayerError ? "alert" : "status"}>
@@ -265,7 +276,7 @@ export function Hud() {
           <RepeatButton
             aria-label={t("hud.moveLeft")}
             title={t("hud.moveLeft")}
-            disabled={locked}
+            disabled={moveDisabled}
             intervalMs={140}
             onPress={() => gameRef.current?.move(-1)}
           >
@@ -277,7 +288,7 @@ export function Hud() {
           <RepeatButton
             aria-label={t("hud.moveRight")}
             title={t("hud.moveRight")}
-            disabled={locked}
+            disabled={moveDisabled}
             intervalMs={140}
             onPress={() => gameRef.current?.move(1)}
           >
