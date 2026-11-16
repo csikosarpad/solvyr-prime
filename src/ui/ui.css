@@ -1223,6 +1223,7 @@
   color: #fff;
   background: color-mix(in srgb, var(--player-color) 25%, #081426);
   box-shadow: inset 0 0 0 1px var(--player-accent);
+  border-radius: 12px 0 12px 0;
 }
 
 .workshop-players .btn[class*="player-selector-"][aria-pressed="true"] {
