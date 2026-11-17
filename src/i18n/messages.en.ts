@@ -274,6 +274,8 @@ export const en: Record<MessageKey, string> = {
 
   "command.title": "Operations console",
   "command.feed": "Combat log",
+  "command.collapse": "Collapse operations console",
+  "command.expand": "Expand operations console",
   "command.targetAcquired": "Target identified",
   "command.smartAim": "Fire-control system activated",
   "command.aimed": "Target locked",

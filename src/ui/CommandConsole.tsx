@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useCommandStore, type CommandMessage } from "@/game/state/commandStore";
 import { useT } from "@/i18n";
 
@@ -44,13 +44,26 @@ function Line({ message, latest }: { message: CommandMessage; latest: boolean })
 export function CommandConsole() {
   const t = useT();
   const messages = useCommandStore((s) => s.messages);
+  const feedId = useId();
+  const [open, setOpen] = useState(true);
+  const toggleLabel = t(open ? "command.collapse" : "command.expand");
+
   return (
-    <aside className="command-console" aria-label={t("command.title")}>
-      <header className="command-header">
+    <aside className={`command-console${open ? " is-open" : " is-collapsed"}`} aria-label={t("command.title")}>
+      <button
+        className="command-header"
+        type="button"
+        aria-label={toggleLabel}
+        aria-expanded={open}
+        aria-controls={feedId}
+        title={toggleLabel}
+        onClick={() => setOpen(!open)}
+      >
         <strong>{t("command.title")}</strong>
         <span className="command-feed-label">{t("command.feed")}</span>
-      </header>
-      <ul className="command-feed" role="log" aria-live="polite">
+        <span className="command-toggle-icon" aria-hidden="true">{open ? "−" : "+"}</span>
+      </button>
+      <ul id={feedId} className="command-feed" role="log" aria-live="polite" hidden={!open}>
         {messages.map((m, i) => (
           <Line key={m.id} message={m} latest={i === messages.length - 1} />
         ))}

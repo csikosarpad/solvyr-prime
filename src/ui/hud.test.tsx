@@ -219,7 +219,8 @@ describe("Hud billentyűk", () => {
         ],
       }),
     );
-    expect(screen.getByText("P1: 80/100 HP")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "P1" })).toHaveTextContent("P1");
+    expect(screen.getByRole("region", { name: "P1" })).toHaveTextContent("80/100 HP");
     const meters = screen.getAllByRole("meter");
     // P1: HP + pajzs + páncél, P2: csak HP.
     expect(meters).toHaveLength(4);
@@ -227,6 +228,44 @@ describe("Hud billentyűk", () => {
     expect(shield).toHaveAttribute("aria-valuenow", "12");
     expect(shield).toHaveAttribute("aria-valuemax", "40");
     expect(screen.getByRole("meter", { name: "Páncélzat" })).toHaveAttribute("aria-valuetext", "15/60");
+  });
+
+  it("a játékosszín jelenik meg mindkét panelen, és a HP-csík a HP-értékhez igazodik", () => {
+    act(() =>
+      useGameStore.setState({
+        tanks: [
+          {
+            id: "P1",
+            hp: 75,
+            maxHp: 100,
+            shield: 0,
+            maxShield: 0,
+            armor: 0,
+            maxArmor: 0,
+            moveLeft: 0,
+            color: 0x54d994,
+          },
+          {
+            id: "P2",
+            hp: 25,
+            maxHp: 100,
+            shield: 0,
+            maxShield: 0,
+            armor: 0,
+            maxArmor: 0,
+            moveLeft: 0,
+            color: 0xc98bff,
+          },
+        ],
+      }),
+    );
+
+    const p1 = screen.getByRole("region", { name: "P1" });
+    const p2 = screen.getByRole("region", { name: "P2" });
+    expect(p1.style.getPropertyValue("--unit-accent")).toBe("#54d994");
+    expect(p2.style.getPropertyValue("--unit-accent")).toBe("#c98bff");
+    expect(p1.querySelector(".hud-health-fill")).toHaveStyle({ width: "75%" });
+    expect(p2.querySelector(".hud-health-fill")).toHaveStyle({ width: "25%" });
   });
 
   it("a lövedék repülése alatt a nyilak és a mozgásgombok kitérést hívnak, ha van keret", () => {

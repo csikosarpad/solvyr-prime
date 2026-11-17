@@ -274,6 +274,8 @@ export const hu = {
 
   "command.title": "Hadműveleti konzol",
   "command.feed": "Harci eseménynapló",
+  "command.collapse": "Műveleti konzol összecsukása",
+  "command.expand": "Műveleti konzol lenyitása",
   "command.targetAcquired": "Cél azonosítva",
   "command.smartAim": "Tűzvezető rendszer aktiválva",
   "command.aimed": "Célzár létrejött",

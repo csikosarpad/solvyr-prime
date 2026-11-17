@@ -356,6 +356,8 @@ describe("ResultScreen", () => {
     render(<ResultScreen />);
     expect(screen.getByText("P1 nyert!")).toBeInTheDocument();
     expect(screen.getByText("+150")).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /P1/ })).toHaveClass("is-winner");
+    expect(screen.getByRole("row", { name: /P2/ })).toHaveClass("is-runner-up");
   });
 
   it("a főmenü gomb visszavált a menüre", () => {

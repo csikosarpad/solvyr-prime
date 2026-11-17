@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCommandStore } from "@/game/state/commandStore";
 import { useLocaleStore } from "@/i18n";
@@ -38,5 +38,20 @@ describe("structure messages in the command console", () => {
     act(() => vi.advanceTimersByTime(4000));
     expect(screen.getByRole("log")).toHaveTextContent("P1: civil habitat destroyed");
     expect(screen.getByRole("log")).toHaveTextContent("AI (P2): energy reactor damaged");
+  });
+
+  it("can collapse and reopen the command log", () => {
+    render(<CommandConsole />);
+    const collapse = screen.getByRole("button", { name: "Műveleti konzol összecsukása" });
+
+    expect(collapse).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("log")).toBeVisible();
+    fireEvent.click(collapse);
+
+    const expand = screen.getByRole("button", { name: "Műveleti konzol lenyitása" });
+    expect(expand).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("log")).not.toBeInTheDocument();
+    fireEvent.click(expand);
+    expect(screen.getByRole("log")).toBeVisible();
   });
 });

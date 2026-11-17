@@ -49,6 +49,7 @@ export function ResultScreen() {
       <div className="panel result-panel">
         <ResultDecorCanvas accent={winner === "P1" || winner === "P2" ? playerAccent(playerColor(winner, colors)) : getUnitPresentation("P1").accent} />
         <div className="winner-banner">
+          <span className="winner-wing-art" aria-hidden="true" />
           <span className="winner-trophy" aria-hidden="true">
             ★
           </span>
@@ -109,9 +110,9 @@ export function ResultScreen() {
           </thead>
           <tbody>
             {Object.entries(matchStats).map(([id, s]) => (
-              <tr key={id}>
+              <tr key={id} className={winner ? (winner === id ? "is-winner" : "is-runner-up") : "is-draw"}>
                 <td>
-                  <u>{name(id)}</u>
+                  <strong>{name(id)}</strong>
                 </td>
                 <td>{s.shots}</td>
                 <td>{s.damage}</td>
@@ -128,7 +129,7 @@ export function ResultScreen() {
         )}
         <div className="result-actions">
           <button
-            className="btn hud-button hud-button-primary"
+            className="btn hud-button hud-button-primary result-workshop-action"
             disabled={(onlineMatch && !matchFinished) || (operation && (operationPending > 0 || starting))}
             onClick={() => useGameStore.getState().openWorkshop()}
           >
@@ -136,7 +137,7 @@ export function ResultScreen() {
           </button>
           {operation && (
             <button
-              className="btn hud-button hud-button-primary"
+              className="btn hud-button hud-button-primary result-extra-action"
               disabled={operationPending > 0 || starting}
               onClick={() => {
                 gameRef.current?.leaveBattle();
@@ -148,7 +149,7 @@ export function ResultScreen() {
           )}
           {campaign && (
             <button
-              className="btn hud-button hud-button-primary"
+              className="btn hud-button hud-button-primary result-extra-action"
               onClick={() => {
                 gameRef.current?.leaveBattle();
                 setScreen("campaignMap");
@@ -159,7 +160,7 @@ export function ResultScreen() {
           )}
           {!onlineMatch ? (
             <button
-              className="btn hud-button hud-button-primary"
+              className="btn hud-button hud-button-primary result-rematch-action"
               disabled={operation && (operationPending > 0 || starting)}
               onClick={async () => {
                 if (!operation || !campaignMission) {
@@ -178,7 +179,7 @@ export function ResultScreen() {
             </button>
           ) : credentials.playerId === "P1" ? (
             <button
-              className="btn hud-button hud-button-primary"
+              className="btn hud-button hud-button-primary result-rematch-action"
               disabled={!matchFinished}
               onClick={() => gameRef.current?.requestMultiplayerRematch()}
             >
@@ -188,7 +189,7 @@ export function ResultScreen() {
             <p role="status">{t("result.waitingRematch")}</p>
           )}
           <button
-            className="btn secondary hud-button hud-button-secondary"
+            className="btn secondary hud-button hud-button-secondary result-menu-action"
             disabled={operation && (operationPending > 0 || starting)}
             onClick={() => {
               if (onlineMatch) useMultiplayerStore.getState().leave();

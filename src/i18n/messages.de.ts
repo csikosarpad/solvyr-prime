@@ -284,6 +284,8 @@ export const de: Record<MessageKey, string> = {
 
   "command.title": "Einsatzkonsole",
   "command.feed": "Gefechtsprotokoll",
+  "command.collapse": "Einsatzkonsole einklappen",
+  "command.expand": "Einsatzkonsole ausklappen",
   "command.targetAcquired": "Ziel identifiziert",
   "command.smartAim": "Feuerleitsystem aktiviert",
   "command.aimed": "Zielaufschaltung hergestellt",

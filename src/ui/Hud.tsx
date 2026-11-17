@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { SectorBriefing } from "./SectorBriefing";
-import { PowerDial, UnitGauge } from "./gauges";
+import { clamp01, PowerDial, UnitGauge } from "./gauges";
 import { MAX_ANGLE, MIN_ANGLE, MIN_POWER, useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { usePlayerName } from "@/game/state/playerNames";
@@ -150,9 +150,15 @@ export function Hud() {
             aria-label={unit.id}
           >
             <div className="hud-unit-heading">
-              <span style={{ fontWeight: unit.id === currentId ? "bold" : "normal" }}>
-                {name(unit.id)}: {unit.hp}/{unit.maxHp} HP
-              </span>
+              <div className="hud-unit-title">
+                <strong className="hud-unit-name" style={{ fontWeight: unit.id === currentId ? "bold" : "normal" }}>
+                  {name(unit.id)}
+                </strong>
+                <span className="hud-unit-health">{unit.hp}/{unit.maxHp} HP</span>
+              </div>
+              <div className="hud-health-bar" aria-hidden="true">
+                <span className="hud-health-fill" style={{ width: `${clamp01(unit.hp, unit.maxHp) * 100}%` }} />
+              </div>
               <span
                 className="hud-rank"
                 role="img"
