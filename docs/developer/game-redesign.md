@@ -574,7 +574,10 @@ A megvalósíthatóságot ezek a meglévő felületek támasztják alá:
 - [Harctéri test](../../src/game/assets/tank-body.svg) és
   [löveg](../../src/game/assets/tank-barrel.svg): külön SVG-k, jelenleg 24×12 és 16×4
   logikai képpont. A [Game](../../src/game/engine/Game.ts) ezeket textúrává tölti,
-  sprite-okként kezeli; a test kap játékosszín-tintet, a löveg külön forog.
+  sprite-okként kezeli; a külön [jelölésréteg](../../src/game/assets/tank-markings.svg)
+  kap játékosszín-tintet, a löveg külön forog. A Nano Banana tankterv alapján
+  az SVG-k oldalnézeti, tagolt fémpáncélt, futógörgős lánctalpat és világító
+  jelöléseket használnak; a logikai méretek és a forgáspont változatlanok.
   Egyetlen SVG belső csoportjai betöltés után nem animálhatók külön: az önállóan
   mozgó vagy színezhető rétegekhez külön textúra/sprite kell.
 - [Löveg állapotmodell](../../src/game/systems/barrelAnimation.ts): szögsimítás és
