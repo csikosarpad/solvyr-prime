@@ -17,12 +17,32 @@ pnpm.cmd install
 pnpm.cmd dev          # fejlesztői szerver
 pnpm.cmd build        # típusellenőrzés + build
 pnpm.cmd test         # Vitest
+pnpm.cmd test:e2e     # Playwright böngészős E2E tesztek
+pnpm.cmd test:e2e:ui  # Interaktív Playwright UI
 pnpm.cmd lint
 pnpm.cmd fmt
 ```
 
 Ha a PowerShell a `pnpm` szkriptet letiltja, a `pnpm.cmd` használható.
 A `fmt` a teljes repositoryt formázza; célzott változtatásnál csak az érintett fájlokat formázd.
+
+Az E2E tesztek automatikusan elindítják a Vite szervert. Első használat előtt telepítsd
+a Chromium böngészőt:
+
+```powershell
+pnpm.cmd exec playwright install chromium
+```
+
+A konfiguráció a teljes Chromium böngészőt használja (`channel: "chromium"`),
+nem a külön headless shellt: utóbbival a Pixi/WebGL felület trace-rögzítése
+jelentősen lelassíthatja a teszteket.
+
+Az interaktív felületen a tesztek külön-külön indíthatók, és követhető a böngésző
+állapota, a lépések és az eredmény:
+
+```powershell
+pnpm.cmd test:e2e:ui
+```
 
 Online módhoz a PHP API és MySQL/MariaDB is szükséges. A repository gyökeréből:
 
