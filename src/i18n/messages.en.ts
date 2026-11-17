@@ -119,7 +119,7 @@ export const en: Record<MessageKey, string> = {
   "campaign.title": "Campaign Map",
   "campaign.goalTitle": "Campaign objective",
   "campaign.goalDescription":
-    "Choose a sector on the Operation Map and complete its missions. VEYLORA-03 unlocks after completing ALPHA-01. Dependencies between the other sectors and their missions will be defined later.",
+    "Choose a sector on the Operation Map and complete its missions.",
   "campaign.operation": "Current operation",
   "campaign.progress": "Completed: {value} / {total}",
   "campaign.completed": "Completed",

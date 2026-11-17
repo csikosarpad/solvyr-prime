@@ -122,7 +122,7 @@ export const de: Record<MessageKey, string> = {
   "campaign.title": "Kampagnenkarte",
   "campaign.goalTitle": "Kampagnenziel",
   "campaign.goalDescription":
-    "Wähle einen Sektor auf der Operationskarte und erfülle seine Missionen. VEYLORA-03 wird nach dem Abschluss von ALPHA-01 freigeschaltet. Abhängigkeiten zwischen den übrigen Sektoren und ihren Missionen werden später festgelegt.",
+    "Wähle einen Sektor auf der Operationskarte und erfülle seine Missionen.",
   "campaign.operation": "Aktuelle Operation",
   "campaign.progress": "Abgeschlossen: {value} / {total}",
   "campaign.completed": "Abgeschlossen",

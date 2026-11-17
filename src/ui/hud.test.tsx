@@ -181,7 +181,7 @@ describe("Hud billentyűk", () => {
     fireEvent.click(screen.getByRole("button", { name: "Átcsoportosítás balra" }));
     fireEvent.click(screen.getByRole("button", { name: "Átcsoportosítás jobbra" }));
     fireEvent.click(screen.getByRole("button", { name: /Tűzvezetés/i }));
-    fireEvent.click(screen.getByRole("button", { name: "TÜZET!" }));
+    fireEvent.click(screen.getByRole("button", { name: "TŰZ!" }));
     fireEvent.click(screen.getByRole("button", { name: "Kommunikáció: aktív (M)" }));
 
     expect(move.mock.calls).toEqual([[-1], [1]]);
@@ -296,7 +296,9 @@ describe("Hud billentyűk", () => {
         weaponOptions: ["standard", "laser"],
       }),
     );
-    fireEvent.click(screen.getByRole("button", { name: /Lézer/ }));
+    const laser = screen.getByRole("button", { name: "Lézer" });
+    expect(laser.querySelector(".hud-weapon-icon")).toHaveAttribute("src", expect.stringContaining("laser"));
+    fireEvent.click(laser);
     expect(selectWeapon).toHaveBeenCalledWith("laser");
     fireEvent.keyDown(window, { key: "2" });
     expect(selectWeapon).toHaveBeenCalledTimes(2);

@@ -119,7 +119,7 @@ export const hu = {
   "campaign.title": "Műveleti térkép",
   "campaign.goalTitle": "A kampány célja",
   "campaign.goalDescription":
-    "Válassz szektort a Műveleti térképen, és teljesítsd a hozzá tartozó küldetéseket. VEYLORA-03 az ALPHA-01 teljesítése után nyílik meg. A többi szektor és küldetései közti függéseket később határozzuk meg.",
+    "Válassz szektort a Műveleti térképen, és teljesítsd a hozzá tartozó küldetéseket.",
   "campaign.operation": "Aktuális művelet",
   "campaign.progress": "Teljesítve: {value} / {total}",
   "campaign.completed": "Teljesített",
@@ -206,7 +206,7 @@ export const hu = {
   "hud.power": "Töltet: {value}",
   "hud.moveLeft": "Átcsoportosítás balra",
   "hud.moveRight": "Átcsoportosítás jobbra",
-  "hud.fire": "TÜZET!",
+  "hud.fire": "TŰZ!",
   "hud.previewActive": "Tűzvezető rendszer aktív",
   "hud.previewAvailable": "Tűzvezetés (T, {value} töltet)",
   "hud.previewAvailableTouch": "Tűzvezetés ({value} töltet)",

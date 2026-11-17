@@ -23,6 +23,7 @@ node_modules
 *.local
 playwright-report
 test-results
+/chrome/
 
 # Cache
 .cache

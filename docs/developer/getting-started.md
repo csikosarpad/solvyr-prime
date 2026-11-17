@@ -33,12 +33,14 @@ a Chromium böngészőt:
 pnpm.cmd exec playwright install chromium
 ```
 
-A konfiguráció a teljes Chromium böngészőt használja (`channel: "chromium"`),
-nem a külön headless shellt: utóbbival a Pixi/WebGL felület trace-rögzítése
-jelentősen lelassíthatja a teszteket.
+A konfiguráció a Playwright által telepített alapértelmezett Chromium böngészőt
+használja; így az interaktív UI és a tesztfuttatás ugyanazt a böngészőkészletet
+használja. Egy egyedi csatornát nem szükséges kényszeríteni.
 
 Az interaktív felületen a tesztek külön-külön indíthatók, és követhető a böngésző
-állapota, a lépések és az eredmény:
+állapota, a lépések és az eredmény. A UI szkript headed módot és élő trace-rögzítést
+használ, ezért a játék külön Chromium-ablakban megnyílik, a tesztlépésekhez pedig
+képkockák is megjelennek:
 
 ```powershell
 pnpm.cmd test:e2e:ui

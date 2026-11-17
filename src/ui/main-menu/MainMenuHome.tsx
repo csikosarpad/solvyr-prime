@@ -44,7 +44,7 @@ export function MainMenuHome({ onShowLobby, onShowSettings }: MainMenuHomeProps)
           <strong>{operation.name}</strong>
           <small>{t("campaign.progress", { value: completedIds.length, total: SECTORS.length })}</small>
         </div>
-        <p>{t("menu.tagline")}</p>
+        {/* <p>{t("menu.tagline")}</p> */}
         <small>{t("menu.controls")}</small>
       </header>
       <nav className="main-menu-actions" aria-label={t("menu.title")}>

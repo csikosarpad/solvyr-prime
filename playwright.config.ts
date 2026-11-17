@@ -5,14 +5,9 @@ export default defineConfig({
   timeout: 60_000,
   use: {
     ...devices["Desktop Chrome"],
-    channel: "chromium",
     baseURL: "http://127.0.0.1:5173",
     locale: "en-US",
     reducedMotion: "reduce",
-    // screenshot: "off",
-    // screenshot: "only-on-failure",
-    // trace: "off",
-    // video: "off",
   },
   webServer: {
     command: "pnpm dev --host 127.0.0.1",

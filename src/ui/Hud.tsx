@@ -15,8 +15,21 @@ import { CommandConsole } from "./CommandConsole";
 import { WindIndicator } from "./WindIndicator";
 import { BattleExitDialog } from "./BattleExitDialog";
 import { structureState } from "@/game/systems/strategicObjectives";
+import type { WeaponId } from "@/game/data/weapons";
+import standardWeaponIcon from "@/game/assets/weapons/standard.webp?url";
+import apWeaponIcon from "@/game/assets/weapons/ap.webp?url";
+import incendiaryWeaponIcon from "@/game/assets/weapons/incendiary.webp?url";
+import laserWeaponIcon from "@/game/assets/weapons/laser.webp?url";
+import homingWeaponIcon from "@/game/assets/weapons/homing.webp?url";
 
 const toCss = (color?: number) => (color === undefined ? "#ffffff" : `#${playerAccent(color).toString(16).padStart(6, "0")}`);
+const weaponIcons: Record<WeaponId, string> = {
+  standard: standardWeaponIcon,
+  ap: apWeaponIcon,
+  incendiary: incendiaryWeaponIcon,
+  laser: laserWeaponIcon,
+  homing: homingWeaponIcon,
+};
 
 export function Hud() {
   const t = useT();
@@ -229,13 +242,17 @@ export function Hud() {
             {weaponOptions.map((id, index) => (
               <button
                 key={id}
+                aria-label={t(`weapon.${id}.name` as MessageKey)}
                 aria-pressed={weapon === id}
                 disabled={locked}
                 title={t(`weapon.${id}.desc` as MessageKey)}
                 onClick={() => gameRef.current?.selectWeapon(id)}
               >
-                <span className="hud-weapon-key" aria-hidden="true">{index + 1}</span>
-                {t(`weapon.${id}.name` as MessageKey)}
+                <span className="hud-weapon-key" aria-hidden="true">
+                  {index + 1}
+                </span>
+                <img className="hud-weapon-icon" src={weaponIcons[id]} alt={t(`weapon.${id}.name` as MessageKey)} aria-hidden="true" />
+                {/* <span className="hud-weapon-name">{t(`weapon.${id}.name` as MessageKey)}</span> */}
               </button>
             ))}
           </div>

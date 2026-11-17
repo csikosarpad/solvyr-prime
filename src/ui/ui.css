@@ -228,7 +228,10 @@
 .hud-weapons button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  /* gap: 6px;
   padding: 4px 10px;
   border: 1px solid rgba(73, 208, 255, 0.4);
   border-radius: 3px 9px;
@@ -237,13 +240,22 @@
   font: inherit;
   font-size: 12px;
   letter-spacing: 0.4px;
-  text-transform: uppercase;
+  text-transform: uppercase; */
   cursor: pointer;
+  border-radius: 50%;
+  &:hover {
+    outline: 1px solid;
+    outline-color: #49d0ff;
+    scale: 1.05;
+  }
 }
 
 .hud-weapons button[aria-pressed="true"] {
-  border-color: #49d0ff;
-  background: rgba(0, 170, 255, 0.22);
+  outline: 1px solid;
+  outline-offset: 2px;
+  outline-color: rgba(73, 208, 255, 0.55);
+  /* background: rgba(0, 170, 255, 0.22); */
+  background: transparent;
   box-shadow: 0 0 10px rgba(0, 170, 255, 0.35);
 }
 
@@ -251,6 +263,14 @@
   opacity: 0.45;
   cursor: default;
 }
+
+.hud-weapon-icon {
+    display: block;
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    padding: 0;
+  }
 
 .hud-weapon-key {
   display: inline-grid;
@@ -761,7 +781,7 @@
 .menu-sector {
   display: grid;
   gap: 4px;
-  margin-bottom: 16px;
+  margin-bottom: 2px;
   padding-left: 12px;
   border-left: 2px solid var(--bf-shield);
 }
@@ -2450,6 +2470,13 @@
     display: contents;
   }
 
+  .hud-weapons {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: end;
+    justify-self: center;
+  }
+
   .hud-controls,
   .hud-actions {
     align-self: end;
@@ -2970,7 +2997,7 @@
 
   .hud-actions button {
     gap: 2px;
-    min-height: 38px;
+    min-height: 24px;
     padding: 3px;
     font-size: 11px;
   }
@@ -3473,7 +3500,9 @@
 
 @media (max-width: 1024px), (pointer: coarse), (orientation: landscape) and (max-height: 500px) {
   .hud-top {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns:
+      minmax(0, 1fr) minmax(140px, 0.75fr)
+      minmax(0, 1fr);
     gap: 0;
     padding: 5px;
   }
@@ -3483,7 +3512,8 @@
   }
 
   .hud-unit-p2 {
-    grid-column: 2;
+    grid-column: 3;
+    grid-row: 1;
   }
 
   .hud-unit-p1,
@@ -3496,11 +3526,12 @@
   }
 
   .hud-top-center {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    grid-column: 2;
+    grid-row: 1;
     border: 0;
-    border-top: 1px solid rgba(73, 208, 255, 0.2);
+    border-right: 1px solid rgba(73, 208, 255, 0.2);
     border-bottom: 1px solid rgba(73, 208, 255, 0.2);
+    border-left: 1px solid rgba(73, 208, 255, 0.2);
     padding: 5px 8px;
   }
 
@@ -3508,7 +3539,7 @@
     position: static;
     z-index: auto;
     grid-column: 1 / -1;
-    grid-row: 3;
+    grid-row: 2;
     width: auto;
     padding: 5px 8px;
     border: 0;
@@ -3531,6 +3562,48 @@
 
   .hud-unit-health {
     font-size: 0.85em;
+  }
+
+  .hud-weapons {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 5px;
+    min-height: 38px;
+    padding: 0 4px;
+  }
+
+  .hud-weapons-label,
+  .hud-weapon-name {
+    display: none;
+  }
+
+  .hud-weapons button {
+    position: relative;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    justify-content: center;
+    /* border-radius: 6px; */
+  }
+
+  .hud-weapon-icon {
+    display: block;
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  .hud-weapon-key {
+    position: absolute;
+    z-index: 1;
+    top: 1px;
+    left: 1px;
+    min-width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    background: rgba(3, 15, 30, 0.9);
+    font-size: 8px;
   }
 }
 
