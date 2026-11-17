@@ -9,9 +9,10 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:5173",
     locale: "en-US",
     reducedMotion: "reduce",
-    screenshot: "off",
-    trace: "off",
-    video: "off",
+    // screenshot: "off",
+    // screenshot: "only-on-failure",
+    // trace: "off",
+    // video: "off",
   },
   webServer: {
     command: "pnpm dev --host 127.0.0.1",
