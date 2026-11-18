@@ -30,7 +30,7 @@
   position: absolute;
   z-index: 0;
   inset: 0;
-  background: url("./result/winner-wings.png") center top / 100% auto no-repeat;
+  background: url("../result/winner-wings.png") center top / 100% auto no-repeat;
   pointer-events: none;
 }
 
