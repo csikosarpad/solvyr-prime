@@ -4,7 +4,7 @@
   padding: clamp(24px, 7vh, 72px) 16px;
   background:
     linear-gradient(to top, rgba(1, 7, 18, 0.85), transparent 38%),
-    url("../../plans/solvyr-prime_siege_protocol_game.png") center top / cover no-repeat,
+    url("../../../plans/solvyr-prime_siege_protocol_game.png") center top / cover no-repeat,
     #020814;
 }
 
