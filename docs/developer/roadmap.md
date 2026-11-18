@@ -34,6 +34,21 @@ orbitális képességek, egységosztályok és kampány rangsora:
 A jelenlegi és tervezett fejlesztési ágak áttekintő ábrája:
 [Játékmenet-fejlesztési útvonal](./gameplay-development-path.md).
 
+## Fegyverprogresszió – kampányjutalmak (2026-11-18)
+
+**Új tervezési irány, még nem implementált átállás:** a Páncéltörő,
+Gyújtólövedék, Lézer és Célkövető rakéta ne egyszerű XP-vásárlással,
+hanem kampányjutalomként vagy megszerzett technológia és nyersanyag révén
+váljon elérhetővé. Ehhez a műhely információs szerkezete és a többszintű
+műveleti térkép is bővítendő; az XP-s statfejlődés külön maradhat.
+
+A [részletes terv](./campaign-weapon-progression.md) rögzíti a javasolt
+fegyver–hadjárat hozzárendelést, az AP-ra szűkített első próbát, a mentések
+megőrzését, az állapottulajdonlást és a kiadási kapukat.
+Ez a korábbi XP-s fegyverfeloldási cél felülvizsgálata, nem kész funkció
+és nem automatikus jóváhagyás minden receptre vagy szektorfüggőségre.
+A jelenlegi vásárlás a tartalommal és migrációval együtt kiadott átállásig megmarad.
+
 ## Aktuális állapot (2026-11)
 
 - VEYLORA-03 első játszható prototípusa elkészült, majd a Műveleti térkép

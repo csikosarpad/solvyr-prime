@@ -20,7 +20,7 @@ describe("weapon catalog and shot effects", () => {
     const ap = resolveShotEffect(weaponById("ap"), stats);
     expect(ap).toMatchObject({ damage: 70, blastRadius: 0, directOnly: true, armorPierce: 0.5 });
     const incendiary = resolveShotEffect(weaponById("incendiary"), stats);
-    expect(incendiary.burn).toMatchObject({ radius: 42, damagePerSecond: 8, durationSeconds: 4 });
+    expect(incendiary.burn).toMatchObject({ radius: 42, damagePerSecond: 8, durationSeconds: 5 });
     expect(incendiary.directOnly).toBe(false);
   });
 

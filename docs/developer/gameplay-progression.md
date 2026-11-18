@@ -42,6 +42,14 @@ XP-s fejlődés mellett kivételként marad. A menü, a két játékos kampányk
 
 ## 1. Összefoglaló
 
+**2026-11-18: a különleges fegyverek megszerzésének új tervezési iránya
+kampányhoz kötött, nem egyszerű XP-vásárlás.** A Páncéltörő, Gyújtólövedék,
+Lézer és Célkövető rakéta kampánycélként, technológiával és szükség esetén
+gyártási alapanyaggal legyen megszerezhető. A [részletes terv](./campaign-weapon-progression.md)
+együtt kezeli a jutalmakat, a műhely átszervezését, a térképbővítést és a migrációt.
+Az alábbi korábbi XP-s lövedékjavaslatok nem írják felül ezt az új irányt;
+a működő XP-s vásárlás kivezetése még nincs implementálva.
+
 A jelenlegi fejlődés viszonylag hamar kifut: minden fejlesztés megszerezhető, és a
 maximális szintek után az XP-nek nincs további érdemi felhasználása.
 

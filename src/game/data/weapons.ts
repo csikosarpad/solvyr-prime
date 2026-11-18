@@ -74,7 +74,7 @@ export const WEAPONS: readonly WeaponDefinition[] = [
     carveRadius: 20,
     usesTankStats: false,
     armorPierce: 0,
-    burn: { radius: 42, damagePerSecond: 8, durationSeconds: 4 },
+    burn: { radius: 42, damagePerSecond: 8, durationSeconds: 5 },
   },
   {
     id: "laser",

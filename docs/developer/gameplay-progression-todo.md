@@ -275,9 +275,12 @@ későbbi egységváltás egy helyen legyen érthető.
 
 ### Gazdaság és hozzáférés
 
-- [ ] A tervezett fejlődés alapja a **megszerzett, elkölthető XP**: az új
-      fejlesztések, fegyverfeloldások és egységfejlesztések XP-hez kötöttek.
-      Más fejlesztési lehetőségek későbbi megfontolások, nem elfogadott költségek.
+- [ ] **2026-11-18-i irányváltás:** az XP maradhat a statfejlesztések alapja,
+      de a Páncéltörő, Gyújtólövedék, Lézer és Célkövető megszerzése kampányhoz,
+      technológiához és szükség esetén nyersanyaghoz kötendő. A műhely ezt ne
+      XP-s vásárlási sorként mutassa. Részletes célállapot, mentésmigráció és
+      első próba: [kampányhoz kötött fegyverfeloldás](./campaign-weapon-progression.md).
+      Az átállás még nem készült el; az új receptek és költségek javaslatok.
 - [ ] A jelenlegi VEYLORA-pajzs kivételének megőrzése és a két külön
       kampánykészlet bevezetése során a meglévő vásárlás, felszerelés,
       készlet és mentés ne vesszen el, és ne legyen kétszeri díj.
@@ -365,6 +368,12 @@ feltételezhető kész funkciónak.
       balansz- és kezelhetőségi játékpróba.
 
 ## 4A. Választható lövedékek – megvalósíthatósági javaslat
+
+**2026-11-18-i pontosítás:** az alábbi korábbi XP-árak és XP-s feloldási
+döntések történeti prototípustervet jelentenek. A négy jelenlegi különleges
+fegyver célmodellje a [kampányjutalom és technológiai megszerzés](./campaign-weapon-progression.md).
+A működő fegyverkatalógus már Standard, AP, gyújtó, lézer és célkövető típusokat
+tartalmaz; az alábbi korábbi csomaglista nem aktuális katalógus.
 
 **Státusz:** tervezési javaslat, még nem elfogadott roadmap-prioritás. A körökre
 osztott játékmenethez jól illeszkedik: a játékos a lövés előtt választ típust,
@@ -742,6 +751,11 @@ Részletes alapelvek és hatókör:
       taktikai megoldást talál; különben balansz/design iteráció következik.
 
 ## 6B. Kampánycélok – nyersanyag- és technológiaalapú fejlődés
+
+**2026-11-18:** a négy különleges fegyverhez elkészült a
+[konkrét folytatási terv](./campaign-weapon-progression.md), jutalommátrix-javaslattal,
+műhely-UX-szel, térképi hierarchiával és migrációs/kiadási kapukkal.
+Ez részletesebb designanyag, nem a teljes gazdasági rendszer implementációja.
 
 **Státusz:** 2026-11-09-én rögzített hosszú távú designirány, még nem
 implementációs specifikáció. A nyersanyag–technológia lépcsők/mátrix
