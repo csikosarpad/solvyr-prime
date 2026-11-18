@@ -248,9 +248,9 @@ export function Hud() {
                 title={t(`weapon.${id}.desc` as MessageKey)}
                 onClick={() => gameRef.current?.selectWeapon(id)}
               >
-                <span className="hud-weapon-key" aria-hidden="true">
+                {/* <span className="hud-weapon-key" aria-hidden="true">
                   {index + 1}
-                </span>
+                </span> */}
                 <img className="hud-weapon-icon" src={weaponIcons[id]} alt={t(`weapon.${id}.name` as MessageKey)} aria-hidden="true" />
                 {/* <span className="hud-weapon-name">{t(`weapon.${id}.name` as MessageKey)}</span> */}
               </button>

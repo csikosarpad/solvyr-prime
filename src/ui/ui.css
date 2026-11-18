@@ -244,19 +244,19 @@
   cursor: pointer;
   border-radius: 50%;
   &:hover {
-    outline: 1px solid;
-    outline-color: #49d0ff;
-    scale: 1.05;
+    /* outline: 1px solid;
+    outline-color: #49d0ff; */
+    scale: 1.15;
   }
 }
 
 .hud-weapons button[aria-pressed="true"] {
-  outline: 1px solid;
-  outline-offset: 2px;
-  outline-color: rgba(73, 208, 255, 0.55);
+  /* outline: 1px solid; */
+  /* outline-offset: 2px;
+  outline-color: rgba(73, 208, 255, 0.55); */
   /* background: rgba(0, 170, 255, 0.22); */
   background: transparent;
-  box-shadow: 0 0 10px rgba(0, 170, 255, 0.35);
+  box-shadow: 0 0 10px rgba(0, 170, 255, 0.75);
 }
 
 .hud-weapons button:disabled {
@@ -3501,8 +3501,8 @@
 @media (max-width: 1024px), (pointer: coarse), (orientation: landscape) and (max-height: 500px) {
   .hud-top {
     grid-template-columns:
-      minmax(0, 1fr) minmax(140px, 0.75fr)
-      minmax(0, 1fr);
+      minmax(0, 0.5fr) minmax(140px, 0.75fr)
+      minmax(0, 0.5fr);
     gap: 0;
     padding: 5px;
   }
