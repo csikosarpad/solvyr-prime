@@ -16,7 +16,10 @@
     "paths": {
       "@/*": ["./src/*"],
       "@ui/*": ["./src/ui/*"],
-      "@game/*": ["./src/game/*"]
+      "@game/*": ["./src/game/*"],
+      "@game/assets/*": ["./src/game/assets/*"],
+      "@game/systems/*": ["./src/game/systems/*"],
+      "@game/physics/*": ["./src/game/physics/*"]      
     }
   },
   "include": ["src", "vite.config.ts"]

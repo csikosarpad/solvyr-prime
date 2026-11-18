@@ -72,6 +72,7 @@ export function UnitPanel({ id, profile, presentation, filter = "all", editable,
                       definition={definition}
                       editable={editable}
                       disabled={disabled}
+                      iconSet={presentation.iconSet}
                     />
                   ))}
                 </div>

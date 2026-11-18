@@ -1285,7 +1285,7 @@
 }
 
 .result-panel .result-stats td {
-  padding: 9px 10px;
+  padding: 4px 10px;
   text-align: left;
   border-top: 1px solid rgba(115, 153, 180, 0.7);
   border-bottom: 1px solid rgba(115, 153, 180, 0.7);
@@ -1556,6 +1556,9 @@
   align-items: center;
   min-height: 58px;
   border-top: 1px solid rgba(56, 144, 186, 0.45);
+  &.top-row {
+    align-items: start;
+  }
 }
 
 .upgrade-row.is-unaffordable .upgrade-icon,
@@ -1582,7 +1585,7 @@
 .weapon-upgrade-list .weapon-upgrade-row {
   grid-template-columns: 32px minmax(0, 1fr);
   grid-template-rows: minmax(54px, 1fr) auto;
-  min-height: 110px;
+  /* min-height: 110px; */
   padding: 8px;
   border: 1px solid rgba(69, 187, 225, 0.48);
   border-radius: 8px 2px;
@@ -1765,6 +1768,14 @@
 
 .upgrade-icon-glyph {
   line-height: 1;
+}
+
+.upgrade-icon-image {
+  display: block;
+  width: 32px;
+  height: 32px;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .upgrade-label {
@@ -2094,7 +2105,7 @@
 
 .hud-button {
   min-width: 154px;
-  min-height: 44px;
+  min-height: 36px;
   border: 1px solid currentColor;
   border-radius: 8px;
   box-shadow:

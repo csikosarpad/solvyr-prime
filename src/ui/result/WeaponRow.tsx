@@ -11,10 +11,11 @@ interface WeaponRowProps {
   definition: WeaponDefinition;
   editable: boolean;
   disabled: boolean;
+  iconSet: string;
 }
 
 /** Egy fegyver sora a fegyvertárban: tartós XP-feloldás, a kezdőfegyver mindig elérhető. */
-export function WeaponRow({ playerId, profile, definition, editable, disabled }: WeaponRowProps) {
+export function WeaponRow({ playerId, profile, definition, editable, disabled, iconSet }: WeaponRowProps) {
   const t = useT();
   const owned = unlockedWeapons(profile).includes(definition.id);
   const unaffordable = !owned && profile.xp < definition.cost;
@@ -22,8 +23,8 @@ export function WeaponRow({ playerId, profile, definition, editable, disabled }:
   const name = t(`weapon.${definition.id}.name` as MessageKey);
 
   return (
-    <div className={`upgrade-row weapon-upgrade-row${unaffordable ? " is-unaffordable" : ""}`}>
-      <UpgradeIcon upgradeId={definition.id} />
+    <div className={`upgrade-row top-row gap-2 weapon-upgrade-row${unaffordable ? " is-unaffordable" : ""}`}>
+      <UpgradeIcon upgradeId={definition.id} iconSet={iconSet} />
       <div className="upgrade-label">
         <strong>{name}</strong>
         <small>{t(`weapon.${definition.id}.desc` as MessageKey)}</small>

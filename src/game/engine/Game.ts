@@ -2,17 +2,17 @@ import { Application, Assets, Container, Graphics, Sprite, type Texture } from "
 import { GlowFilter } from "pixi-filters";
 import { TerrainBloomFilter } from "./TerrainBloomFilter";
 import { bloomSettings } from "./bloomQuality";
-import tankBodyUrl from "../assets/tank-body.svg?url";
-import tankBarrelUrl from "../assets/tank-barrel.svg?url";
-import tankMarkingsUrl from "../assets/tank-markings.svg?url";
-import forgeReactorUrl from "../assets/forge-reactor.png?url";
-import habitatUrl from "../assets/buildings/habitat.png?url";
-import labUrl from "../assets/buildings/research-lab.png?url";
-import radarUrl from "../assets/buildings/radar.png?url";
-import defenseUrl from "../assets/buildings/defense.png?url";
-import foundryUrl from "../assets/buildings/foundry.png?url";
+import tankBodyUrl from "@/game/assets/tank-body.svg?url";
+import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
+import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
+import forgeReactorUrl from "@/game/assets/forge-reactor.png?url";
+import habitatUrl from "@/game/assets/buildings/habitat.png?url";
+import labUrl from "@/game/assets/buildings/research-lab.png?url";
+import radarUrl from "@/game/assets/buildings/radar.png?url";
+import defenseUrl from "@/game/assets/buildings/defense.png?url";
+import foundryUrl from "@/game/assets/buildings/foundry.png?url";
 import { BuildingDecor } from "./BuildingDecor";
-import { kick, stepBarrel, type BarrelState } from "../systems/barrelAnimation";
+import { kick, stepBarrel, type BarrelState } from "@/game/systems/barrelAnimation";
 import {
   DEFAULT_WORLD,
   dashPolyline,
@@ -21,20 +21,20 @@ import {
   stepBody,
   type BallisticBody,
   type Vec2,
-} from "../physics/ballistics";
-import { PreviewAllowance } from "../systems/previewAllowance";
-import { dragToAim, DRAG_POWER_PER_PX } from "../systems/dragAim";
-import { createSeededRandom, type MatchSetup } from "../systems/seededRandom";
-import { ScreenShake } from "../systems/screenShake";
-import { ShellTrail } from "../systems/shellTrail";
+} from "@/game/physics/ballistics";
+import { PreviewAllowance } from "@/game/systems/previewAllowance";
+import { dragToAim, DRAG_POWER_PER_PX } from "@/game/systems/dragAim";
+import { createSeededRandom, type MatchSetup } from "@/game/systems/seededRandom";
+import { ScreenShake } from "@/game/systems/screenShake";
+import { ShellTrail } from "@/game/systems/shellTrail";
 import { Terrain } from "../terrain/Terrain";
-import { ParticleSystem } from "../systems/particles";
+import { ParticleSystem } from "@/game/systems/particles";
 import { DEFAULT_THEME, type Theme } from "../theme";
 import { FxRenderer } from "./FxRenderer";
 import { loadFxTextures } from "./fxTextures";
 import { AudioManager } from "./AudioManager";
 import { BattlefieldLayers } from "./BattlefieldLayers";
-import { TurnManager } from "../systems/turnManager";
+import { TurnManager } from "@/game/systems/turnManager";
 import {
   applyDamage,
   barrelTip,
@@ -46,9 +46,9 @@ import {
   settleTank,
   tankContains,
   type Tank,
-} from "../entities/tank";
-import { awardXp, buyUpgrade, computeStats, newProfile, type Profile } from "../systems/upgrades";
-import { weaponById, type WeaponDefinition, type WeaponId } from "../data/weapons";
+} from "@/game/entities/tank";
+import { awardXp, buyUpgrade, computeStats, newProfile, type Profile } from "@/game/systems/upgrades";
+import { weaponById, type WeaponDefinition, type WeaponId } from "@/game/data/weapons";
 import {
   buyWeapon,
   resolveShotEffect,
@@ -56,20 +56,20 @@ import {
   traceHitscan,
   unlockedWeapons,
   type ShotEffect,
-} from "../systems/weapons";
-import { newMatchStats, recordDamage, recordShot, recordXp, type MatchStats } from "../systems/matchStats";
-import { loadProfiles, saveProfiles } from "../systems/profileStorage";
-import { MAX_ANGLE, MIN_POWER, useGameStore } from "../state/gameStore";
-import { useMultiplayerStore } from "../state/multiplayerStore";
-import { useCommandStore } from "../state/commandStore";
-import { playerName } from "../state/playerNames";
-import { playerAccent, playerColor, tankTint, usePlayerColors } from "../state/playerColors";
-import { useAiSettings } from "../state/aiSettings";
-import { useCampaignStore } from "../state/campaignStore";
-import type { MatchMode } from "../state/gameStore";
-import { AiBrain, chooseUpgrades, simulateImpact, skillFromMemory } from "../systems/ai";
-import type { RoomEvent } from "../multiplayer/protocol";
-import { TRAINING_SECTOR, sectorById, type Sector, type SectorId } from "../data/sectors";
+} from "@/game/systems/weapons";
+import { newMatchStats, recordDamage, recordShot, recordXp, type MatchStats } from "@/game/systems/matchStats";
+import { loadProfiles, saveProfiles } from "@/game/systems/profileStorage";
+import { MAX_ANGLE, MIN_POWER, useGameStore } from "@/game/state/gameStore";
+import { useMultiplayerStore } from "@/game/state/multiplayerStore";
+import { useCommandStore } from "@/game/state/commandStore";
+import { playerName } from "@/game/state/playerNames";
+import { playerAccent, playerColor, tankTint, usePlayerColors } from "@/game/state/playerColors";
+import { useAiSettings } from "@/game/state/aiSettings";
+import { useCampaignStore } from "@/game/state/campaignStore";
+import type { MatchMode } from "@/game/state/gameStore";
+import { AiBrain, chooseUpgrades, simulateImpact, skillFromMemory } from "@/game/systems/ai";
+import type { RoomEvent } from "@/game/multiplayer/protocol";
+import { TRAINING_SECTOR, sectorById, type Sector, type SectorId } from "@/game/data/sectors";
 import {
   applyStrategicDamage,
   createStrategicObjective,
@@ -77,14 +77,14 @@ import {
   strategicExplosionDamage,
   structureState,
   type PlacedStrategicObjective,
-} from "../systems/strategicObjectives";
+} from "@/game/systems/strategicObjectives";
 import { StrategicObjectiveGraphics } from "./StrategicObjectiveGraphics";
-import { missionById, missionBattlefield, type CampaignMission } from "../data/campaignContent";
-import { useVeyloraStore } from "../state/veyloraStore";
-import { missionSucceeded } from "../systems/campaignMission";
-import { BASE_STATS } from "../data/upgrades";
-import { applyCampaignUpgrades, type CampaignSave } from "../systems/campaignEconomy";
-import type { LocalPlayerId } from "../state/playerId";
+import { missionById, missionBattlefield, type CampaignMission } from "@/game/data/campaignContent";
+import { useVeyloraStore } from "@/game/state/veyloraStore";
+import { missionSucceeded } from "@/game/systems/campaignMission";
+import { BASE_STATS } from "@/game/data/upgrades";
+import { applyCampaignUpgrades, type CampaignSave } from "@/game/systems/campaignEconomy";
+import type { LocalPlayerId } from "@/game/state/playerId";
 
 /** Ennyi HP-arány alatt kritikus a tank állapota. */
 const CRITICAL_HP_FRACTION = 0.3;

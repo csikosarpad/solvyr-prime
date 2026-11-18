@@ -26,6 +26,9 @@ export default defineConfig({
       "@": srcPath,
       "@game": `${srcPath}/game`,
       "@ui": `${srcPath}/ui`,
+      "@game/assets": `${srcPath}/game/assets`,
+      "@game/systems/*": `${srcPath}/game/systems/*`,
+      "@game/physics/*": `${srcPath}/game/physics/*`
     },
   },
   build: {

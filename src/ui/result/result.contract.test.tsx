@@ -72,7 +72,7 @@ describe("UnitPanel and Shop presentation contract", () => {
   });
 
   it("a space presentation ugyanazt a panel és upgrade layoutot használja", () => {
-    render(
+    const { container } = render(
       <UnitPanel
         id="P1"
         profile={{ xp: 240, levels: { armor: 1 } }}
@@ -87,6 +87,7 @@ describe("UnitPanel and Shop presentation contract", () => {
     // 7 fejlesztés + a fegyvertár 4 feloldható fegyvere.
     expect(screen.getAllByRole("button")).toHaveLength(11);
     expect(screen.getByText("1/5")).toBeInTheDocument();
+    expect(container.querySelectorAll(".weapon-upgrade-row .upgrade-icon-image")).toHaveLength(4);
   });
 
   it("a Shop minden profilt egységpanelként jelenít meg", () => {
