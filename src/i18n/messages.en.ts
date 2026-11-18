@@ -250,7 +250,7 @@ export const en: Record<MessageKey, string> = {
   "weapon.ap.name": "Armor piercing",
   "weapon.ap.desc": "Only a direct hit deals damage; half of the post-shield damage bypasses armor.",
   "weapon.incendiary.name": "Incendiary shell",
-  "weapon.incendiary.desc": "Smaller blast, but the ground keeps burning and damages whoever stands on it each turn.",
+  "weapon.incendiary.desc": "Smaller blast; the ground burns for 4 seconds, dealing 8 damage per second to tanks standing in it.",
   "weapon.laser.name": "Laser",
   "weapon.laser.desc": "Instant straight-line hit; wind and gravity do not deflect it.",
   "weapon.homing.name": "Homing missile",

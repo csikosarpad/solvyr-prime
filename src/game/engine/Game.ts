@@ -67,7 +67,14 @@ import { playerAccent, playerColor, tankTint, usePlayerColors } from "@/game/sta
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import type { MatchMode } from "@/game/state/gameStore";
-import { AiBrain, chooseUpgrades, simulateImpact, skillFromMemory } from "@/game/systems/ai";
+import {
+  AiBrain,
+  chooseUpgrades,
+  moveTankAvoidingFire,
+  planFireEscape,
+  simulateImpact,
+  skillFromMemory,
+} from "@/game/systems/ai";
 import type { RoomEvent } from "@/game/multiplayer/protocol";
 import { TRAINING_SECTOR, sectorById, type Sector, type SectorId } from "@/game/data/sectors";
 import {
@@ -155,6 +162,7 @@ export class Game {
   private shellGlow = new Sprite();
   private trailGfx = new Graphics();
   private shellTrail = new ShellTrail();
+  private shellVisual = { ...DEFAULT_THEME.shell, scale: 1, intensity: 1 };
   private shake = new ScreenShake();
   private shakeEnabled = true;
   private stageBase = { x: 0, y: 0 };
@@ -197,6 +205,8 @@ export class Game {
   private aiActive = false;
   private aiBrain: AiBrain | null = null;
   private aiTimers: number[] = [];
+  private aiEscapingFire = false;
+  private aiFireEscapeCooldown = 0;
   private aiHits = 0;
   private shell: BallisticBody | null = null;
   private shellAge = 0;
@@ -204,8 +214,15 @@ export class Game {
   private activeShot: { weapon: WeaponDefinition; effect: ShotEffect } | null = null;
   /** Játékosonként kiválasztott fegyver; a meccs alatt megmarad, új meccsnél ürül. */
   private selectedWeapons: Record<string, WeaponId> = {};
-  /** Égő talajzónák (gyújtólövedék); körkezdetkor sebeznek és öregszenek. */
-  private burnZones: { x: number; radius: number; turnsLeft: number; damagePerTurn: number; ownerId: string }[] = [];
+  /** Égő talajzónák (gyújtólövedék); a fix szimulációs lépésekben sebeznek és öregszenek. */
+  private burnZones: {
+    x: number;
+    radius: number;
+    secondsLeft: number;
+    damagePerSecond: number;
+    ownerId: string;
+    exposure: Map<string, { pendingDamage: number; notified: boolean }>;
+  }[] = [];
   private burnGfx = new Graphics();
   private burnTime = 0;
   /** A lézersugár rövid, halványuló visszajelzése. */
@@ -405,6 +422,7 @@ export class Game {
     this.previewAllowance.reset(Object.fromEntries(this.tanks.map((tank) => [tank.id, tank.stats.previewCharges])));
     this.shell = null;
     this.activeShot = null;
+    this.shellTrail.clear();
     this.selectedWeapons = {};
     this.burnZones = [];
     this.laserBeam = null;
@@ -688,8 +706,6 @@ export class Game {
     // A kör elején beállított szög/erő még nem játékos-beavatkozás.
     this.targetLocked = true;
     const tank = this.current;
-    // Az égő talaj a kör elején sebez; a találat a pajzsregenerációt is kihagyatja.
-    if (this.applyBurnZones(tank)) return;
     regenTankShield(tank);
     tank.moveLeft = tank.stats.moveBudget;
     this.previewActive = false;
@@ -703,37 +719,57 @@ export class Game {
     if (this.isAiTurn()) this.scheduleAiTurn();
   }
 
-  /** Égő zónák sebzése és öregítése a kör elején; igaz, ha a meccs ezzel véget ért. */
-  private applyBurnZones(tank: Tank): boolean {
-    if (this.burnZones.length === 0) return false;
-    let total = 0;
-    let lastOwner: string | null = null;
+  private stepBurnZones(dt: number): void {
+    if (!this.matchActive || this.turns.phase === "gameOver" || this.burnZones.length === 0) return;
+    let changed = false;
+    let eliminated = false;
     for (const zone of this.burnZones) {
-      if (Math.abs(tank.x - zone.x) > zone.radius) continue;
-      const before = tank.hp + tank.shield + tank.armor;
-      applyDamage(tank, zone.damagePerTurn);
-      const dealt = before - (tank.hp + tank.shield + tank.armor);
-      if (dealt <= 0) continue;
-      total += dealt;
-      lastOwner = zone.ownerId;
-      if (zone.ownerId !== tank.id) {
-        this.award(zone.ownerId, dealt);
-        this.matchStats = recordDamage(this.matchStats, zone.ownerId, dealt);
+      const elapsed = Math.min(dt, zone.secondsLeft);
+      zone.secondsLeft = Math.max(0, zone.secondsLeft - dt);
+      for (const tank of this.tanks) {
+        const previous = zone.exposure.get(tank.id);
+        if (!isAlive(tank) || Math.abs(tank.x - zone.x) > zone.radius) {
+          if (previous) previous.notified = false;
+          continue;
+        }
+        const exposure = previous ?? { pendingDamage: 0, notified: false };
+        zone.exposure.set(tank.id, exposure);
+        // Egész sebzéspontok, de a tört kitettség megmarad a fix lépések között.
+        exposure.pendingDamage += zone.damagePerSecond * elapsed;
+        const damage = Math.floor(exposure.pendingDamage + 1e-9);
+        if (damage === 0) continue;
+        exposure.pendingDamage = Math.max(0, exposure.pendingDamage - damage);
+        const before = tank.hp + tank.shield + tank.armor;
+        applyDamage(tank, damage);
+        const dealt = before - (tank.hp + tank.shield + tank.armor);
+        if (dealt <= 0) continue;
+        changed = true;
+        if (zone.ownerId !== tank.id) {
+          this.award(zone.ownerId, dealt);
+          this.matchStats = recordDamage(this.matchStats, zone.ownerId, dealt);
+        }
+        if (!exposure.notified) {
+          useCommandStore.getState().announce(
+            "command.burning", { id: playerName(tank.id), damage: dealt }, "warning", tank.id,
+          );
+          exposure.notified = true;
+        }
+        if (!isAlive(tank)) {
+          eliminated = true;
+          useCommandStore.getState().announce("command.destroyed", undefined, "critical", zone.ownerId);
+        }
       }
     }
-    this.burnZones = this.burnZones
-      .map((zone) => ({ ...zone, turnsLeft: zone.turnsLeft - 1 }))
-      .filter((zone) => zone.turnsLeft > 0);
-    if (total > 0) {
-      useCommandStore
-        .getState()
-        .announce("command.burning", { id: playerName(tank.id), damage: total }, "warning", tank.id);
+    this.burnZones = this.burnZones.filter((zone) => zone.secondsLeft > 1e-9);
+    if (eliminated) {
+      this.clearAiTimers();
+      this.shell = null;
+      this.activeShot = null;
+      this.turns.resolveElimination(this.tanks.filter(isAlive).map((tank) => tank.id));
+      this.concludeMatch();
+    } else if (changed) {
+      this.syncStore();
     }
-    if (isAlive(tank)) return false;
-    if (lastOwner) useCommandStore.getState().announce("command.destroyed", undefined, "critical", lastOwner);
-    this.turns.resolveElimination(this.tanks.filter(isAlive).map((t) => t.id));
-    this.concludeMatch();
-    return true;
   }
 
   private isAiTurn(): boolean {
@@ -749,6 +785,8 @@ export class Game {
   private clearAiTimers(): void {
     for (const id of this.aiTimers) window.clearTimeout(id);
     this.aiTimers = [];
+    this.aiEscapingFire = false;
+    this.aiFireEscapeCooldown = 0;
   }
 
   private afterAi(ms: number, action: () => void): void {
@@ -766,19 +804,49 @@ export class Game {
       const target = this.tanks.find((t) => t.id !== this.aiId());
       if (!this.terrain || !this.aiBrain || !target) return;
       const wind = useGameStore.getState().wind;
-      const steps = this.aiBrain.planMove(this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity);
+      const steps = this.aiBrain.planMove(
+        this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity, this.burnZones,
+      );
       this.aiMove(target.x < this.current.x ? -1 : 1, steps);
     });
   }
 
   private aiMove(dir: -1 | 1, stepsLeft: number): void {
-    if (stepsLeft > 0 && this.terrain && moveTank(this.current, dir, this.terrain.mask)) {
+    if (
+      stepsLeft > 0 &&
+      this.terrain &&
+      moveTankAvoidingFire(this.current, dir, this.terrain.mask, this.burnZones)
+    ) {
       this.audio?.moveTick();
       this.syncStore();
       this.afterAi(AI_MOVE_STEP_MS, () => this.aiMove(dir, stepsLeft - 1));
       return;
     }
     this.aiAimAndFire();
+  }
+
+  private stepAiFireEscape(dt: number): void {
+    if (!this.aiActive || this.multiplayer || this.turns.phase === "gameOver" || !this.terrain) return;
+    const ai = this.tanks.find((tank) => tank.id === this.aiId());
+    if (!ai || !isAlive(ai)) return;
+    this.aiFireEscapeCooldown = Math.max(0, this.aiFireEscapeCooldown - dt);
+    if (this.aiFireEscapeCooldown > 0) return;
+    const escape = planFireEscape(ai, this.terrain.mask, this.burnZones);
+    if (!escape) {
+      if (this.aiEscapingFire) {
+        this.aiEscapingFire = false;
+        if (this.isAiTurn()) this.scheduleAiTurn();
+      }
+      return;
+    }
+    if (!this.aiEscapingFire) {
+      this.clearAiTimers();
+      this.aiEscapingFire = true;
+    }
+    if (!moveTankAvoidingFire(ai, escape.dir, this.terrain.mask, this.burnZones)) return;
+    this.aiFireEscapeCooldown = AI_MOVE_STEP_MS / 1000;
+    this.audio?.moveTick();
+    this.syncStore();
   }
 
   private aiAimAndFire(): void {
@@ -947,6 +1015,7 @@ export class Game {
     this.matchStats = recordShot(this.matchStats, tank.id);
     const weapon = this.weaponFor(tank.id);
     this.activeShot = { weapon, effect: resolveShotEffect(weapon, tank.stats) };
+    this.setShellVisual(weapon, tank.stats.damage);
     const tip = barrelTip(tank);
     this.particles.spawnMuzzleFlash(tip.x, tip.y, angle);
     this.audio?.play("shot", { rate: 0.95 + Math.random() * 0.1 });
@@ -1033,7 +1102,7 @@ export class Game {
     const ai = this.tanks.find((t) => t.id === this.aiId());
     if (!ai || !isAlive(ai) || !this.terrain) return;
     if (Math.abs(ai.x - impactX) >= danger) return;
-    if (!moveTank(ai, dir, this.terrain.mask)) return;
+    if (!moveTankAvoidingFire(ai, dir, this.terrain.mask, this.burnZones)) return;
     this.audio?.moveTick();
     this.syncStore();
     this.afterDodge(AI_MOVE_STEP_MS, () => this.aiDodgeStep(dir, impactX, danger));
@@ -1229,14 +1298,15 @@ export class Game {
     this.matchStats = recordDamage(this.matchStats, shooter.id, dealt);
     this.shake.trigger(Math.min(1, radius / 80) * 0.75 + (dealt > 0 ? 0.25 : 0));
     for (const t of this.tanks) if (this.terrain) settleTank(t, this.terrain.mask);
-    // Gyújtólövedék: a becsapódás körül égő zóna marad, amely körkezdetkor sebez.
+    // Gyújtólövedék: időalapú, folyamatosan sebző égő talajzóna.
     if (effect.burn) {
       this.burnZones.push({
         x,
         radius: effect.burn.radius,
-        turnsLeft: effect.burn.turns,
-        damagePerTurn: effect.burn.damagePerTurn,
+        secondsLeft: effect.burn.durationSeconds,
+        damagePerSecond: effect.burn.damagePerSecond,
         ownerId: shooter.id,
+        exposure: new Map(),
       });
     }
     this.shell = null;
@@ -1315,6 +1385,8 @@ export class Game {
     this.acc += Math.min(frameDt, 0.1);
     while (this.acc >= FIXED_DT) {
       this.acc -= FIXED_DT;
+      this.stepAiFireEscape(FIXED_DT);
+      this.stepBurnZones(FIXED_DT);
       this.stepShell();
     }
     this.processPendingMultiplayerEvents();
@@ -1430,17 +1502,35 @@ export class Game {
     this.tanksGfx.circle(ex, ey, 7).fill({ color, alpha: 0.9 });
   }
 
+  private setShellVisual(weapon: WeaponDefinition, damage: number): void {
+    const palette: Record<WeaponId, { core: number; glow: number; scale: number }> = {
+      standard: { ...this.theme.shell, scale: 1 },
+      ap: { core: 0xeef4ff, glow: 0x8cafff, scale: 0.8 },
+      incendiary: { core: 0xffedb5, glow: 0xff792e, scale: 1.1 },
+      laser: { core: 0xff8296, glow: 0xff2e4d, scale: 1 },
+      homing: { core: 0xe2ffe8, glow: 0x70edb0, scale: 1.05 },
+    };
+    // A becsapódás után elhalványuló csík is az eredeti lövés stílusát tartja meg.
+    const boost = weapon.usesTankStats ? Math.min(0.75, Math.max(0, damage - 1)) : 0;
+    this.shellVisual = {
+      ...palette[weapon.id],
+      scale: palette[weapon.id].scale * (1 + boost * 0.35),
+      intensity: 1 + boost * 0.6,
+    };
+  }
+
   /** Plazmanyom: két rétegű, additív, a lövedék felé vastagodó és erősödő fénycsík. */
   private drawShellTrail(): void {
+    const { core, glow, scale, intensity } = this.shellVisual;
     for (const { from, to, t } of this.shellTrail.segments()) {
       this.trailGfx
         .moveTo(from.x, from.y)
         .lineTo(to.x, to.y)
-        .stroke({ width: 2 + t * 7, color: this.theme.shell.glow, alpha: t * 0.22, cap: "round" });
+        .stroke({ width: (2 + t * 7) * scale, color: glow, alpha: t * 0.22 * intensity, cap: "round" });
       this.trailGfx
         .moveTo(from.x, from.y)
         .lineTo(to.x, to.y)
-        .stroke({ width: 1 + t * 2, color: this.theme.shell.core, alpha: t * 0.7, cap: "round" });
+        .stroke({ width: (1 + t * 2) * scale, color: core, alpha: Math.min(1, t * 0.7 * intensity), cap: "round" });
     }
   }
 
@@ -1498,8 +1588,11 @@ export class Game {
     this.applyShake();
     this.shellGlow.visible = !!this.shell;
     if (this.shell) {
+      const { core, glow, scale } = this.shellVisual;
       this.shellGlow.position.set(this.shell.pos.x, this.shell.pos.y);
-      this.shellGfx.circle(this.shell.pos.x, this.shell.pos.y, 3).fill(this.theme.shell.core);
+      this.shellGlow.tint = glow;
+      this.shellGlow.width = this.shellGlow.height = 30 * scale;
+      this.shellGfx.circle(this.shell.pos.x, this.shell.pos.y, 3 * scale).fill(core);
     }
   }
 

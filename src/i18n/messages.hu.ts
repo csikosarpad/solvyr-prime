@@ -250,7 +250,7 @@ export const hu = {
   "weapon.ap.name": "Páncéltörő",
   "weapon.ap.desc": "Csak közvetlen találat sebez; a pajzs utáni sebzés fele megkerüli a páncélt.",
   "weapon.incendiary.name": "Gyújtólövedék",
-  "weapon.incendiary.desc": "Kisebb robbanás, de a talaj égve marad, és körönként sebzi a rajta állót.",
+  "weapon.incendiary.desc": "Kisebb robbanás; a talaj 4 másodpercig ég, és másodpercenként 8-at sebez a rajta álló tankokon.",
   "weapon.laser.name": "Lézer",
   "weapon.laser.desc": "Azonnali, egyenes vonalú találat; a szél és a gravitáció nem téríti el.",
   "weapon.homing.name": "Célkövető rakéta",

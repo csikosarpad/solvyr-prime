@@ -138,6 +138,21 @@ A játék körökre osztott. A soron lévő játékos mozoghat a körönkénti m
 beállíthatja a löveg szögét és erejét, majd tüzelhet. A szél minden körben változik
 és eltéríti a lövedéket. A lövés lezárása után a következő élő játékos jön.
 
+A fegyverek fénycsíkja eltér: a standard a pálya alapszínét követi, a páncéltörő
+vékonyabb, kékesfehér, a gyújtólövedék narancsos, a célkövető rakéta zöldes,
+a lézer pedig vörös sugarat húz. A Robbanófej fejlesztése szintenként erősebb
+izzást ad a standard lövedéknek; a többi fegyver látványát nem módosítja.
+
+A gyújtólövedék után a talaj 4 másodpercig ég. A tűz másodpercenként 8 sebzést
+okoz minden rajta álló tanknak, a lövő saját tankjának is, függetlenül attól,
+ki van soron. A sebzés először a pajzsot, majd a páncélt, végül a HP-t fogyasztja.
+A zónából kilépve a sebzés megszűnik, visszalépve folytatódik.
+Az AI előrenyomulás és kitérés közben sem hajt újabb égő területre.
+Ha tűzben áll, a lövés helyett először menekül: a legrövidebb járható kijárat
+felé használja a megmaradt mozgáskeretét, akár a másik játékos köre alatt is.
+Ha nincs járható menekülőút vagy elfogyott a kerete, helyben marad, és a saját
+körében onnan lő.
+
 A terep rombolható; egy robbanás a későbbi mozgást és lövési lehetőségeket is módosítja.
 A talajról teljesen leszakadt terepdarabok azonnal eltűnnek. Az oldalról még
 megtámasztott túlnyúlások megmaradnak; nincs külön omlási sebzés vagy lehulló törmelék.

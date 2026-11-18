@@ -10,10 +10,10 @@ export type WeaponId = "standard" | "ap" | "incendiary" | "laser" | "homing";
 export interface BurnEffect {
   /** Az égő zóna sugara a becsapódás körül (px). */
   radius: number;
-  /** Körönkénti sebzés a zónában álló egységnek. */
-  damagePerTurn: number;
-  /** Hány körkezdetet él meg a zóna. */
-  turns: number;
+  /** Másodpercenkénti sebzés a zónában álló egységnek. */
+  damagePerSecond: number;
+  /** Az égés időtartama másodpercben. */
+  durationSeconds: number;
 }
 
 export interface HomingGuidance {
@@ -74,7 +74,7 @@ export const WEAPONS: readonly WeaponDefinition[] = [
     carveRadius: 20,
     usesTankStats: false,
     armorPierce: 0,
-    burn: { radius: 42, damagePerTurn: 8, turns: 4 },
+    burn: { radius: 42, damagePerSecond: 8, durationSeconds: 4 },
   },
   {
     id: "laser",

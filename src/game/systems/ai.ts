@@ -170,6 +170,52 @@ export interface AiBrainOptions {
   random?: () => number;
 }
 
+export interface FireZone {
+  x: number;
+  radius: number;
+}
+
+const insideFire = (x: number, zone: FireZone): boolean => Math.abs(x - zone.x) <= zone.radius;
+
+/** Már égő területről kifelé mozoghat, de újabb tűzbe nem léphet be. */
+export function moveTankAvoidingFire(
+  tank: Tank,
+  dir: -1 | 1,
+  mask: TerrainMask,
+  fireZones: readonly FireZone[],
+): boolean {
+  const probe = { ...tank };
+  if (!moveTank(probe, dir, mask)) return false;
+  if (fireZones.some((zone) => insideFire(probe.x, zone) && !insideFire(tank.x, zone))) return false;
+  tank.x = probe.x;
+  tank.y = probe.y;
+  tank.moveLeft = probe.moveLeft;
+  return true;
+}
+
+export function planFireEscape(
+  tank: Tank,
+  mask: TerrainMask,
+  fireZones: readonly FireZone[],
+): { dir: -1 | 1; steps: number } | null {
+  if (!fireZones.some((zone) => insideFire(tank.x, zone))) return null;
+  let best: { dir: -1 | 1; steps: number } | null = null;
+  for (const dir of [-1, 1] as const) {
+    const probe = { ...tank };
+    if (!moveTankAvoidingFire(probe, dir, mask, fireZones)) continue;
+    // A kijáratot keresi; a végrehajtás csak a megmaradt mozgáskeretet használhatja.
+    probe.moveLeft = mask.width;
+    for (let steps = 1; ; steps++) {
+      if (!fireZones.some((zone) => insideFire(probe.x, zone))) {
+        if (!best || steps < best.steps) best = { dir, steps };
+        break;
+      }
+      if (!moveTankAvoidingFire(probe, dir, mask, fireZones)) break;
+    }
+  }
+  return best;
+}
+
 /**
  * Egy meccsnyi „agy”: a hiányos szélbecslés és a célzási zaj miatt téved,
  * de a becsapódásokból tanul (korrekció), a meccsek közti tapasztalat pedig javítja a tudásszintet.
@@ -230,7 +276,15 @@ export class AiBrain {
   }
 
   /** Hány lépést tegyen az ellenfél felé, hogy elérhető és pontos lövése legyen (0 = marad). */
-  planMove(shooter: Tank, target: Tank, mask: TerrainMask, wind: number, gravity: number): number {
+  planMove(
+    shooter: Tank,
+    target: Tank,
+    mask: TerrainMask,
+    wind: number,
+    gravity: number,
+    fireZones: readonly FireZone[] = [],
+  ): number {
+    if (fireZones.some((zone) => insideFire(shooter.x, zone))) return 0;
     const dir = target.x < shooter.x ? -1 : 1;
     const probe: Tank = { ...shooter };
     let bestSteps = 0;
@@ -252,7 +306,7 @@ export class AiBrain {
         }
         if (error <= shooter.stats.blastRadius) break;
       }
-      if (!moveTank(probe, dir, mask)) break;
+      if (!moveTankAvoidingFire(probe, dir, mask, fireZones)) break;
     }
     return bestSteps;
   }

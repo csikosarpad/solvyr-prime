@@ -11,14 +11,16 @@ import { loadProfiles, saveProfiles } from "../systems/profileStorage";
 import { simulateImpact } from "../systems/ai";
 import { barrelTip } from "../entities/tank";
 import { DEFAULT_WORLD } from "../physics/ballistics";
-import type { Profile } from "../systems/upgrades";
-import { Texture } from "pixi.js";
+import { computeStats, type Profile } from "../systems/upgrades";
+import { Texture, type Graphics } from "pixi.js";
 import { GlowFilter } from "pixi-filters";
 import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
 import { useCommandStore } from "../state/commandStore";
 import { useVeyloraStore } from "../state/veyloraStore";
 import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
 import { DEFAULT_PLAYER_COLORS, PLAYER_COLORS, usePlayerColors } from "../state/playerColors";
+import type { WeaponId } from "../data/weapons";
+import { DEFAULT_THEME } from "../theme";
 
 vi.hoisted(() => {
   HTMLCanvasElement.prototype.getContext = () => null;
@@ -765,6 +767,82 @@ describe("Game campaign lifecycle", () => {
     expect(useGameStore.getState().weaponOptions).toEqual(["standard"]);
   });
 
+  it.each<WeaponId>(["standard", "ap", "incendiary", "homing"])(
+    "%s keeps its shot colors on the fading trail after impact",
+    (weapon) => {
+      Reflect.set(game, "profiles", {
+        P1: { xp: 0, levels: {}, weapons: [weapon] },
+        P2: { xp: 0, levels: {} },
+      });
+      game.restart({ seed: 42, starterIndex: 0 });
+      game.selectWeapon(weapon);
+      game.fire();
+      const trail = Reflect.get(game, "shellTrail");
+      trail.push(200, 100);
+      trail.push(210, 105);
+      const stroke = vi.spyOn(Reflect.get(game, "trailGfx"), "stroke");
+      Reflect.get(game, "drawShellTrail").call(game);
+      const colors = {
+        standard: DEFAULT_THEME.shell,
+        ap: { core: 0xeef4ff, glow: 0x8cafff },
+        incendiary: { core: 0xffedb5, glow: 0xff792e },
+        homing: { core: 0xe2ffe8, glow: 0x70edb0 },
+        laser: { core: 0xff8296, glow: 0xff2e4d },
+      };
+      expect(stroke).toHaveBeenNthCalledWith(1, expect.objectContaining({ color: colors[weapon].glow }));
+      expect(stroke).toHaveBeenNthCalledWith(2, expect.objectContaining({ color: colors[weapon].core }));
+      const before = [...stroke.mock.calls];
+      stroke.mockClear();
+      Reflect.get(game, "explode").call(game, 210, 105, null);
+      expect(Reflect.get(game, "activeShot")).toBeNull();
+      Reflect.get(game, "drawShellTrail").call(game);
+      expect(stroke.mock.calls).toEqual(before);
+      game.restart({ seed: 42, starterIndex: 0 });
+      expect(trail.length).toBe(0);
+    },
+  );
+
+  it.each<WeaponId>(["standard", "ap", "incendiary", "homing"])(
+    "%s applies warhead glow only when the upgrade affects the shot",
+    (weapon) => {
+      const glowSizes: number[] = [];
+      const trailAlphas: number[] = [];
+      Reflect.set(game, "profiles", {
+        P1: { xp: 0, levels: {}, weapons: [weapon] },
+        P2: { xp: 0, levels: {} },
+      });
+      for (const warhead of [0, 1, 5]) {
+        game.restart({ seed: 42, starterIndex: 0 });
+        const tanks: Tank[] = Reflect.get(game, "tanks");
+        tanks[0]!.stats = computeStats({ warhead });
+        game.selectWeapon(weapon);
+        game.fire();
+        const trail = Reflect.get(game, "shellTrail");
+        trail.push(200, 100);
+        trail.push(210, 105);
+        const graphics: Graphics = Reflect.get(game, "trailGfx");
+        const stroke = vi.spyOn(graphics, "stroke");
+        stroke.mockClear();
+        Reflect.get(game, "draw").call(game, 0);
+        glowSizes.push(Reflect.get(game, "shellGlow").width);
+        const outerStroke = stroke.mock.calls[0]![0];
+        if (!outerStroke || typeof outerStroke !== "object" || !("alpha" in outerStroke)) {
+          throw new Error("Expected a trail stroke with an explicit alpha");
+        }
+        trailAlphas.push(outerStroke.alpha ?? 1);
+      }
+      if (weapon === "standard") {
+        expect(glowSizes[1]).toBeGreaterThan(glowSizes[0]!);
+        expect(glowSizes[2]).toBeGreaterThan(glowSizes[1]!);
+        expect(trailAlphas[1]).toBeGreaterThan(trailAlphas[0]!);
+        expect(trailAlphas[2]).toBeGreaterThan(trailAlphas[1]!);
+      } else {
+        expect(new Set(glowSizes).size).toBe(1);
+        expect(new Set(trailAlphas).size).toBe(1);
+      }
+    },
+  );
+
   it("armor piercing damages only on direct hit and half the damage bypasses armor", () => {
     Reflect.set(game, "profiles", { P1: { xp: 0, levels: {}, weapons: ["ap"] }, P2: { xp: 0, levels: { armor: 5 } } });
     game.restart({ seed: 42, starterIndex: 0 });
@@ -789,47 +867,153 @@ describe("Game campaign lifecycle", () => {
     expect(target.armor).toBe(65);
   });
 
-  it("incendiary shells leave burning ground that damages at turn start, then expires", () => {
+  const igniteNearTarget = () => {
     Reflect.set(game, "profiles", { P1: { xp: 0, levels: {}, weapons: ["incendiary"] }, P2: { xp: 0, levels: {} } });
     game.restart({ seed: 42, starterIndex: 0 });
     game.selectWeapon("incendiary");
     const tanks: Tank[] = Reflect.get(game, "tanks");
     const target = tanks[1]!;
     game.fire();
-    // A robbanás 40 px-re ér földet: kis repeszsebzés + égő zóna a célpont alatt.
     Reflect.get(game, "explode").call(game, target.x + 40, target.y, null);
-    // Repesz (6) + az első égési tick (8) a P2 körének elején.
-    expect(target.hp).toBe(100 - 6 - 8);
+    return { shooter: tanks[0]!, target };
+  };
+
+  const advanceBattle = (seconds: number, fps = 60) => {
+    for (let frame = 0; frame < Math.round(seconds * fps); frame++) {
+      Reflect.get(game, "update").call(game, 1 / fps);
+    }
+  };
+
+  it.each([30, 60, 120])("burns for exactly four seconds at eight damage per second at %i FPS", (fps) => {
+    const { target } = igniteNearTarget();
+    expect(target.hp).toBe(94);
+    advanceBattle(1, fps);
+    expect(target.hp).toBe(86);
+    expect(useGameStore.getState().tanks[1]!.hp).toBe(86);
     expect(useGameStore.getState().currentId).toBe("P2");
-    // P2 messzire lő: P1 körén nincs égés, a zóna öregszik.
-    useGameStore.getState().setAim(45, 200);
-    game.fire();
-    Reflect.get(game, "explode").call(game, 200, 100, null);
-    expect(tanks[0]!.hp).toBe(100);
-    // P1 messzire lő: P2 újra ég, ez a zóna utolsó érvényes tickje.
-    game.fire();
-    Reflect.get(game, "explode").call(game, 640, 100, null);
-    expect(target.hp).toBe(100 - 6 - 16);
-    // Következő teljes körpár után már nem ég.
-    useGameStore.getState().setAim(45, 200);
-    game.fire();
-    Reflect.get(game, "explode").call(game, 200, 100, null);
-    game.fire();
-    Reflect.get(game, "explode").call(game, 640, 100, null);
-    expect(target.hp).toBe(100 - 6 - 16);
+    advanceBattle(3, fps);
+    expect(target.hp).toBe(62);
+    expect(Reflect.get(game, "burnZones")).toHaveLength(0);
+    advanceBattle(1, fps);
+    expect(target.hp).toBe(62);
   });
 
-  it("burning ground can finish the match at turn start", () => {
-    Reflect.set(game, "profiles", { P1: { xp: 0, levels: {}, weapons: ["incendiary"] }, P2: { xp: 0, levels: {} } });
-    game.restart({ seed: 42, starterIndex: 0 });
-    game.selectWeapon("incendiary");
-    const tanks: Tank[] = Reflect.get(game, "tanks");
-    const target = tanks[1]!;
-    target.hp = 10;
+  it("stops burn damage outside the fire and resumes it on re-entry without waiting for a turn", () => {
+    const { target } = igniteNearTarget();
+    advanceBattle(0.25);
+    expect(target.hp).toBe(92);
+    game.move(-1);
+    game.move(-1);
+    advanceBattle(0.5);
+    expect(target.hp).toBe(92);
+    game.move(1);
+    game.move(1);
+    advanceBattle(0.25);
+    expect(target.hp).toBe(90);
+    const burningMessages = useCommandStore.getState().messages.filter((message) => message.key === "command.burning");
+    expect(burningMessages).toHaveLength(2);
+  });
+
+  it("burns both tanks through their defenses but awards XP only for enemy damage", () => {
+    const { shooter, target } = igniteNearTarget();
+    shooter.x = target.x;
+    target.shield = 3;
+    target.armor = 3;
+    advanceBattle(1);
+    expect(shooter.hp).toBe(92);
+    expect(target).toMatchObject({ shield: 0, armor: 0, hp: 92, hitSinceTurn: true });
+    expect(useGameStore.getState().matchStats.P1).toMatchObject({ damage: 14, xp: 14 });
+  });
+
+  it("burning ground can finish the match during flight without resolving the shot or victory twice", () => {
+    const { target } = igniteNearTarget();
+    target.hp = 4;
+    useGameStore.getState().setAim(90, 600);
     game.fire();
-    Reflect.get(game, "explode").call(game, target.x + 40, target.y, null);
-    // Repesz (6) után az égési tick (8) a kör elején végez vele.
+    expect(useGameStore.getState().phase).toBe("flying");
+    const resolveElimination = vi.spyOn(Reflect.get(game, "turns"), "resolveElimination");
+    advanceBattle(0.5);
     expect(useGameStore.getState()).toMatchObject({ phase: "gameOver", winner: "P1" });
+    expect(target.hp).toBe(0);
+    expect(Reflect.get(game, "shell")).toBeNull();
+    expect(Reflect.get(game, "activeShot")).toBeNull();
+    expect(Reflect.get(game, "aiTimers")).toHaveLength(0);
+    advanceBattle(1);
+    expect(resolveElimination).toHaveBeenCalledTimes(1);
+  });
+
+  it("resolves simultaneous burn deaths as a draw", () => {
+    const { shooter, target } = igniteNearTarget();
+    shooter.x = target.x;
+    shooter.hp = target.hp = 1;
+    advanceBattle(0.25);
+    expect([shooter.hp, target.hp]).toEqual([0, 0]);
+    expect(useGameStore.getState()).toMatchObject({ phase: "gameOver", winner: null });
+  });
+
+  it("does not apply burn damage or age the fire after leaving the battle", () => {
+    const { target } = igniteNearTarget();
+    game.leaveBattle();
+    advanceBattle(2);
+    expect(target.hp).toBe(94);
+    expect(Reflect.get(game, "burnZones")[0].secondsLeft).toBe(4);
+  });
+
+  it("the AI escapes fire before thinking about its shot, then shoots once from safety", () => {
+    useAiSettings.getState().setEnabled(true);
+    const { target: ai } = igniteNearTarget();
+    const startX = ai.x;
+    const brain = Reflect.get(game, "aiBrain");
+    vi.spyOn(brain, "planMove").mockReturnValue(0);
+    vi.spyOn(brain, "decide").mockReturnValue({ angle: 135, power: 300, error: 0 });
+    advanceBattle(0.25);
+    expect(ai).toMatchObject({ x: startX - 4, moveLeft: ai.stats.moveBudget - 4, hp: 94 });
+    expect(useGameStore.getState().phase).toBe("aiming");
+    vi.advanceTimersByTime(2000);
+    expect(useGameStore.getState().phase).toBe("flying");
+    expect(useGameStore.getState().matchStats.P2!.shots).toBe(1);
+    expect(ai.x).toBe(startX - 4);
+  });
+
+  it.each(["aiming", "flying"])("the AI uses remaining movement to escape during the human's %s phase", (phase) => {
+    useAiSettings.getState().setEnabled(true);
+    const { target: ai } = igniteNearTarget();
+    Reflect.get(game, "launchShot").call(game, 90, 600);
+    Reflect.get(game, "explode").call(game, 640, 100, null);
+    expect(useGameStore.getState().currentId).toBe("P1");
+    if (phase === "flying") {
+      useGameStore.getState().setAim(90, 600);
+      game.fire();
+    }
+    const startX = ai.x;
+    advanceBattle(0.25);
+    expect(ai).toMatchObject({ x: startX - 4, hp: 94 });
+    expect(useGameStore.getState()).toMatchObject({ currentId: "P1", phase });
+    expect(Reflect.get(game, "aiTimers")).toHaveLength(0);
+  });
+
+  it("does not grant the AI extra movement when fire traps it after its budget is exhausted", () => {
+    useAiSettings.getState().setEnabled(true);
+    const { target: ai } = igniteNearTarget();
+    ai.moveLeft = 0;
+    const startX = ai.x;
+    advanceBattle(0.25);
+    expect(ai).toMatchObject({ x: startX, moveLeft: 0, hp: 92 });
+    expect(Reflect.get(game, "aiEscapingFire")).toBe(false);
+  });
+
+  it("rechecks fire safety when executing both a planned advance and a projectile dodge", () => {
+    useAiSettings.getState().setEnabled(true);
+    const { target: ai } = igniteNearTarget();
+    Reflect.get(game, "burnZones")[0].x = ai.x - 44;
+    vi.spyOn(Reflect.get(game, "aiBrain"), "decide").mockReturnValue({ angle: 135, power: 300, error: 0 });
+    const startX = ai.x;
+    const budget = ai.moveLeft;
+    Reflect.get(game, "aiMove").call(game, -1, 5);
+    expect(ai).toMatchObject({ x: startX, moveLeft: budget });
+    Reflect.get(game, "turns").fire();
+    Reflect.get(game, "aiDodgeStep").call(game, -1, startX + 5, 42);
+    expect(ai).toMatchObject({ x: startX, moveLeft: budget });
   });
 
   it("homing shells steer toward the defender during flight", () => {

@@ -260,7 +260,7 @@ export const de: Record<MessageKey, string> = {
   "weapon.ap.name": "Panzerbrechend",
   "weapon.ap.desc": "Nur ein Direkttreffer verursacht Schaden; die Hälfte des Schadens nach dem Schild umgeht die Panzerung.",
   "weapon.incendiary.name": "Brandgeschoss",
-  "weapon.incendiary.desc": "Kleinere Explosion, aber der Boden brennt weiter und verletzt jede Runde, wer darauf steht.",
+  "weapon.incendiary.desc": "Kleinere Explosion; der Boden brennt 4 Sekunden lang und fügt Panzern darin 8 Schaden pro Sekunde zu.",
   "weapon.laser.name": "Laser",
   "weapon.laser.desc": "Sofortiger, geradliniger Treffer; Wind und Schwerkraft lenken ihn nicht ab.",
   "weapon.homing.name": "Zielsuchende Rakete",
