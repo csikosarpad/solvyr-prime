@@ -153,6 +153,25 @@ felé használja a megmaradt mozgáskeretét, akár a másik játékos köre ala
 Ha nincs járható menekülőút vagy elfogyott a kerete, helyben marad, és a saját
 körében onnan lő.
 
+Ha egy kritikus állapotú tankra a hátralévő égés már halálos, és a megmaradt
+mozgáskeretéből nincs járható kijárata, egyszeri búcsúüzenetet küld a konzolra
+a saját parancsnoki hangján. Három véletlenszerű változat közül választ:
+„A végsőkig harcoltunk!”, „Itt a vég!”, „Öröm volt önnek szolgálni!”.
+A pajzs és a páncél védelmét is figyelembe veszi; menekülésre képes vagy a tüzet
+túlélő tank nem búcsúzik el előre.
+
+A Last Stand halálos lövedéktalálat előtt is megszólalhat, nem csak égésnél:
+a rövid távú előrejelzés a tényleges ballisztikát és a célkövető rakéta
+rávezetését követi. Előre csak mozgásképtelen célpontnál búcsúzik; a becsapódáskor
+a teljes megmaradt mozgáskerettel elérhető helyeket is ellenőrzi, és csak akkor
+küld búcsúüzenetet, ha egyik sem jelentene túlélést. A pajzs és a páncél itt is számít.
+Egy egység meccsenként csak egyszer búcsúzik, akkor is, ha egyszerre ég és lövedék közelít felé.
+
+A győztes a fanfár után három véletlenszerű zárómondat egyikét mondja:
+„Ez remek csata volt!”, „Győzni jöttünk!”, „Ránk mindig számíthat, {játékosnév}!”.
+A megszólítás a győzteshez beállított játékosnevet használja; a győztes neve
+továbbra is külön megjelenik a konzolon.
+
 A terep rombolható; egy robbanás a későbbi mozgást és lövési lehetőségeket is módosítja.
 A talajról teljesen leszakadt terepdarabok azonnal eltűnnek. Az oldalról még
 megtámasztott túlnyúlások megmaradnak; nincs külön omlási sebzés vagy lehulló törmelék.

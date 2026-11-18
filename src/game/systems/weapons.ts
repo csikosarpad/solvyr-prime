@@ -5,7 +5,7 @@
 import { isWeaponId, weaponById, WEAPONS, type WeaponDefinition, type WeaponId } from "../data/weapons";
 import type { TankStats } from "../data/upgrades";
 import type { Profile } from "./upgrades";
-import { tankContains, type Tank } from "../entities/tank";
+import { explosionDamage, tankContains, type Tank } from "../entities/tank";
 import type { Vec2 } from "../physics/ballistics";
 import type { TerrainMask } from "../terrain/mask";
 
@@ -33,6 +33,11 @@ export function resolveShotEffect(weapon: WeaponDefinition, stats: TankStats): S
     armorPierce: weapon.armorPierce,
     burn: weapon.burn,
   };
+}
+
+export function shotDamageAt(tank: Tank, pos: Vec2, effect: ShotEffect, direct: boolean): number {
+  if (effect.directOnly) return direct ? Math.round(effect.damage) : 0;
+  return explosionDamage(tank, pos.x, pos.y, effect.blastRadius, 1, effect.damage);
 }
 
 export interface HitscanResult {
