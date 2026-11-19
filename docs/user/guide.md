@@ -143,7 +143,10 @@ vékonyabb, kékesfehér, a gyújtólövedék narancsos, a célkövető rakéta 
 a lézer pedig vörös sugarat húz. A Robbanófej fejlesztése szintenként erősebb
 izzást ad a standard lövedéknek; a többi fegyver látványát nem módosítja.
 
-A gyújtólövedék után a talaj 5 másodpercig ég. A tűz másodpercenként 8 sebzést
+A gyújtólövedék után a talaj 5 másodpercig ég. A terepet követő vöröses-narancs
+izzás mutatja a zónát; a lángok fölött füst és parázs száll. A csökkentett
+mozgású nézetben az izzás és a lángok megmaradnak, animáció nélkül.
+A tűz másodpercenként 8 sebzést
 okoz minden rajta álló tanknak, a lövő saját tankjának is, függetlenül attól,
 ki van soron. A sebzés először a pajzsot, majd a páncélt, végül a HP-t fogyasztja.
 A zónából kilépve a sebzés megszűnik, visszalépve folytatódik.

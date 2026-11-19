@@ -32,6 +32,8 @@ import { Terrain } from "../terrain/Terrain";
 import { ParticleSystem } from "@/game/systems/particles";
 import { DEFAULT_THEME, type Theme } from "../theme";
 import { FxRenderer } from "./FxRenderer";
+import { GroundFireRenderer } from "./GroundFireRenderer";
+import groundFlameUrl from "../assets/fx/ground-flame.svg?url";
 import { loadFxTextures } from "./fxTextures";
 import { AudioManager } from "./AudioManager";
 import { BattlefieldLayers } from "./BattlefieldLayers";
@@ -244,8 +246,7 @@ export class Game {
     exposure: Map<string, { pendingDamage: number; notified: boolean }>;
   }[] = [];
   private lastStandAnnounced = new Set<string>();
-  private burnGfx = new Graphics();
-  private burnTime = 0;
+  private groundFire: GroundFireRenderer | null = null;
   /** A lézersugár rövid, halványuló visszajelzése. */
   private laserBeam: { from: Vec2; to: Vec2; ttl: number } | null = null;
   private beamGfx = new Graphics();
@@ -259,7 +260,7 @@ export class Game {
     host.appendChild(this.app.canvas);
     this.setupDragAim(this.app.canvas);
 
-    const [body, barrel, markings, chassis, armor, details, reactor, habitat, lab, radar, defense, foundry, fxTextures] = await Promise.all([
+    const [body, barrel, markings, chassis, armor, details, reactor, habitat, lab, radar, defense, foundry, fxTextures, groundFlame] = await Promise.all([
       Assets.load<Texture>({ src: tankBodyUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankBarrelUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankMarkingsUrl, data: { resolution: 3 } }),
@@ -273,6 +274,7 @@ export class Game {
       Assets.load<Texture>(defenseUrl),
       Assets.load<Texture>(foundryUrl),
       loadFxTextures(),
+      Assets.load<Texture>(groundFlameUrl),
       this.battlefieldLayers.loadAssets(),
     ]);
     // Az asset-betöltés alatt is megszúnhetett a komponens (StrictMode).
@@ -289,6 +291,7 @@ export class Game {
     this.objectiveGraphics.setLabTexture(lab);
     this.buildingDecor.setTextures({ radar, defense, foundry });
     this.fx = new FxRenderer(fxTextures);
+    this.groundFire = new GroundFireRenderer(groundFlame, fxTextures);
     this.shellGlow.texture = fxTextures.glow;
     this.shellGlow.anchor.set(0.5);
     this.shellGlow.scale.set(30 / fxTextures.glow.width);
@@ -296,7 +299,6 @@ export class Game {
     this.shellGlow.blendMode = "add";
     this.shellGlow.visible = false;
     this.trailGfx.blendMode = "add";
-    this.burnGfx.blendMode = "add";
     this.beamGfx.blendMode = "add";
 
     this.terrain = new Terrain(this.app.renderer, this.theme.terrain);
@@ -317,7 +319,7 @@ export class Game {
       this.terrain.sprite,
       this.buildingDecor.healthBars,
       this.objectiveGraphics,
-      this.burnGfx,
+      this.groundFire.layer,
       this.previewGfx,
       this.tankLayer,
       this.tanksGfx,
@@ -449,6 +451,7 @@ export class Game {
     this.shellTrail.clear();
     this.selectedWeapons = {};
     this.burnZones = [];
+    this.groundFire?.clear();
     this.lastStandAnnounced.clear();
     this.laserBeam = null;
     useGameStore.getState().sync({
@@ -557,6 +560,7 @@ export class Game {
   leaveBattle(): void {
     this.discardMatchXp();
     this.matchActive = false;
+    this.groundFire?.clear();
     this.clearAiTimers();
     window.clearTimeout(this.victoryTimer);
     this.pendingMultiplayerStart = null;
@@ -1579,23 +1583,6 @@ export class Game {
   }
 
   /** Vibráló lángnyelvek az égő talajzónák felszínén. */
-  private drawBurnZones(dt: number): void {
-    this.burnTime += dt;
-    const g = this.burnGfx.clear();
-    const mask = this.terrain?.mask;
-    if (!mask || this.burnZones.length === 0) return;
-    for (const zone of this.burnZones) {
-      for (let i = -3; i <= 3; i++) {
-        const fx = zone.x + (zone.radius * i) / 3.2;
-        if (fx < 0 || fx > mask.width) continue;
-        const fy = mask.surfaceY(fx);
-        const flicker = 0.5 + 0.5 * Math.sin(this.burnTime * 9 + i * 1.7);
-        g.ellipse(fx, fy - 4 - flicker * 4, 4, 6 + flicker * 5).fill({ color: 0xff7a26, alpha: 0.26 + flicker * 0.3 });
-        g.ellipse(fx, fy - 3, 3, 4).fill({ color: 0xffc14d, alpha: 0.38 });
-      }
-    }
-  }
-
   /** A lézersugár rövid, halványuló csíkja. */
   private drawLaserBeam(dt: number): void {
     const g = this.beamGfx.clear();
@@ -1708,7 +1695,7 @@ export class Game {
     }
 
     this.fx?.render(this.particles.particles);
-    this.drawBurnZones(dt);
+    if (this.terrain) this.groundFire?.draw(this.burnZones, this.terrain.mask, dt, this.shakeEnabled);
     this.drawLaserBeam(dt);
     this.shellGfx.clear();
     this.trailGfx.clear();
