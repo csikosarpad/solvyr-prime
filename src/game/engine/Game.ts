@@ -572,7 +572,7 @@ export class Game {
     this.acc = 0;
     this.dragPointerId = null;
     useCommandStore.getState().clear();
-    useGameStore.getState().sync({ canControl: false, profiles: this.profiles, matchStats: this.matchStats });
+    useGameStore.getState().sync({ canControl: false, aiOpponent: null, profiles: this.profiles, matchStats: this.matchStats });
   }
 
   private discardMatchXp(): void {
@@ -1041,10 +1041,19 @@ export class Game {
 
   private syncStore(): void {
     const dodger = this.humanDodger();
+    const aiSlot = this.matchActive && this.aiActive ? this.aiId() : null;
     useGameStore.getState().sync({
       matchMode: this.matchMode,
       strategicObjectives: this.strategicObjectives,
       aiActive: this.aiActive,
+      aiOpponent: aiSlot ? {
+        slot: aiSlot,
+        profile: {
+          ...(this.campaignMission ? newProfile() : this.aiProfile),
+          weapons: this.weaponOptionsFor(aiSlot).filter((weapon) => weapon !== "standard"),
+        },
+        fixedArmor: this.campaignMission?.opponent.armor ?? null,
+      } : null,
       phase: this.turns.phase,
       currentId: this.turns.current,
       canControl:

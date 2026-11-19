@@ -1,4 +1,5 @@
 import type { Profile } from "@/game/systems/upgrades";
+import type { AiOpponentView } from "@/game/state/gameStore";
 
 export type UnitDomain = "ground" | "space" | "air" | "mech";
 export type UnitAccent = "cyan" | "gold" | "orange" | "red";
@@ -27,4 +28,5 @@ export interface UnitPanelProps {
   editable: boolean;
   disabled: boolean;
   inactive?: boolean;
+  opponent?: Pick<AiOpponentView, "slot" | "fixedArmor"> | null;
 }

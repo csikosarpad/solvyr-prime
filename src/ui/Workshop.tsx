@@ -12,7 +12,7 @@ import { PlayerSelectorButton } from "./PlayerSelectorButton";
 
 export function Workshop() {
   const t = useT();
-  const { workshopOrigin, workshopError, closeWorkshop, aiActive, profiles, workshopPlayer, setWorkshopPlayer, campaignPlayer, matchMode } = useGameStore();
+  const { workshopOrigin, workshopError, closeWorkshop, aiActive, aiOpponent: battleOpponent, profiles, workshopPlayer, setWorkshopPlayer, campaignPlayer, matchMode } = useGameStore();
   const { credentials, session, error: multiplayerError } = useMultiplayerStore();
   const { economy, ready, pending, error, playerId, switchPlayer, equipShield } = useVeyloraStore();
   const campaignOwner = useCampaignStore((state) => state.playerId);
@@ -79,7 +79,13 @@ export function Workshop() {
           </div>
         )}
         {Object.keys(profiles).length > 0 ? (
-          <Shop filter={filter} editablePlayerId={selected} dimInactive disabled={online && session?.status !== "finished"} />
+          <Shop
+            filter={filter}
+            editablePlayerId={selected}
+            opponent={workshopOrigin === "playing" && aiActive && !online ? battleOpponent : null}
+            dimInactive
+            disabled={online && session?.status !== "finished"}
+          />
         ) : (
           <p role="status">{t("workshop.loadingProfiles")}</p>
         )}

@@ -36,6 +36,7 @@ describe("workshop", () => {
       phase: "gameOver",
       matchMode: "skirmish",
       aiActive: false,
+      aiOpponent: null,
       profiles: { P1: { xp: 100, levels: {} }, P2: { xp: 100, levels: {} } },
       matchStats: {},
       winner: "P1",
@@ -115,6 +116,40 @@ describe("workshop", () => {
     expect(screen.getByRole("region", { name: "P2" })).not.toHaveClass("is-inactive");
     expect(screen.queryByRole("button", { name: "P1" })).not.toBeInTheDocument();
     await waitFor(() => expect(useVeyloraStore.getState().pending).toBe(0));
+  });
+
+  it("shows the CPU's actual upgrades instead of P2 after an AI battle", () => {
+    useGameStore.setState({
+      workshopOrigin: "playing",
+      aiActive: true,
+      aiOpponent: { slot: "P2", profile: { xp: 450, levels: { armor: 2 } }, fixedArmor: null },
+    });
+    render(<Workshop />);
+    const ai = screen.getByRole("region", { name: "AI-ellenfél" });
+    expect(screen.queryByRole("region", { name: "P2" })).not.toBeInTheDocument();
+    expect(within(ai).getByText("Csak megtekintés")).toBeInTheDocument();
+    expect(within(ai).getByText("450 XP")).toBeInTheDocument();
+    expect(within(ai).getByRole("button", { name: "AI: Páncél" })).toBeDisabled();
+    expect(within(ai).getByRole("button", { name: "AI: Páncél" }).closest(".upgrade-row")).toHaveTextContent(/2\/\d/);
+    expect(within(ai).getByRole("button", { name: "AI: Standard lövedék" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "P1: Páncél" })).toBeEnabled();
+  });
+
+  it("replaces P1 with the mission loadout when P2 fought the AI", () => {
+    useGameStore.setState({
+      workshopOrigin: "playing",
+      matchMode: "operation",
+      campaignPlayer: "P2",
+      aiActive: true,
+      aiOpponent: { slot: "P1", profile: { xp: 0, levels: {}, weapons: ["ap"] }, fixedArmor: 20 },
+    });
+    render(<Workshop />);
+    const ai = screen.getByRole("region", { name: "AI-ellenfél" });
+    expect(screen.queryByRole("region", { name: "P1" })).not.toBeInTheDocument();
+    expect(within(ai).getByText("Küldetésben rögzített páncélzat: 20")).toBeInTheDocument();
+    expect(within(ai).getByRole("button", { name: "AI: Páncéltörő" })).toBeDisabled();
+    expect(within(ai).queryByText("0 XP")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "P2: Páncél" })).toBeEnabled();
   });
 
   it("uses each selected color for the tank panels and player buttons", () => {

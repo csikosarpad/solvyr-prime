@@ -167,6 +167,10 @@ describe("Game campaign lifecycle", () => {
     const aiProfile: Profile = Reflect.get(game, "aiProfile");
     expect(aiProfile.xp + Object.values(aiProfile.levels).reduce((sum, level) => sum + level, 0)).toBeGreaterThan(0);
     expect(loadProfiles(["P1", "P2", "AI"])).toEqual({ ...humanProfiles, AI: aiProfile });
+    expect(useGameStore.getState()).toMatchObject({
+      profiles: humanProfiles,
+      aiOpponent: { slot: "P2", profile: { ...aiProfile, weapons: [] }, fixedArmor: null },
+    });
     const reloaded = new Game();
     expect(Reflect.get(reloaded, "aiProfile")).toEqual(aiProfile);
     reloaded.destroy();
@@ -241,8 +245,14 @@ describe("Game campaign lifecycle", () => {
     expect(Reflect.get(game, "tanks")[1].stats.maxArmor).toBe(20);
     expect(useGameStore.getState().opponentSkill).toBe(0.55);
     expect(useGameStore.getState().strategicObjectives[0]?.type).toBe("RESEARCH_LAB");
+    expect(useGameStore.getState().aiOpponent).toEqual({
+      slot: "P2",
+      profile: { xp: 0, levels: {}, weapons: ["ap"] },
+      fixedArmor: 20,
+    });
     game.startOffline();
     expect(useGameStore.getState()).toMatchObject({ matchMode: "skirmish", campaignMission: null, opponentSkill: null });
+    expect(useGameStore.getState().aiOpponent).toBeNull();
   });
 
   it("does not allow starting the station mission until both planetary operations are complete", async () => {

@@ -40,6 +40,12 @@ export interface TankView {
   color: number;
 }
 
+export interface AiOpponentView {
+  slot: LocalPlayerId;
+  profile: Profile;
+  fixedArmor: number | null;
+}
+
 export interface GameState {
   angle: number;
   power: number;
@@ -77,6 +83,7 @@ export interface GameState {
   missionGeneration: string | null;
   opponentSkill: number | null;
   aiActive: boolean;
+  aiOpponent: AiOpponentView | null;
   /** Helyi prezentációs sorszám; új csatánál változik, nem online protokollmező. */
   matchSequence: number;
   muted: boolean;
@@ -130,6 +137,7 @@ export const useGameStore = create<GameState>((set) => ({
   missionGeneration: null,
   opponentSkill: null,
   aiActive: false,
+  aiOpponent: null,
   matchSequence: 0,
   muted: readMuted(),
   setAim: (angle, power) => set({ angle, power }),

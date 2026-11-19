@@ -255,8 +255,10 @@ pajzsszinkron még nincs.
   összesítő nincs. Sikertelen profilmentésnél a vásárlás nem történik meg.
 - A maximális fejlesztések után az XP tovább nő, de nincs újabb vásárlási lehetőség.
 
-Hot-seat módban mindkét profil fejleszthető. AI-meccsen csak az emberi fél vásárolhat kézzel:
-a gép a csata statisztikái alapján maga költi el XP-jét. Online csak a saját profil
+Hot-seat módban mindkét profil fejleszthető. AI-meccs után a másik játékos profilja
+helyett az AI-ellenfél fejlesztései és fegyverei látszanak, csak megtekintésre.
+Ahol a küldetés rögzíti az ellenfél felszerelését, a beállított páncél és fegyverek
+jelennek meg. Online csak a saját profil
 módosítható, a vásárlás a meccsvége szinkronizálásáig zárolt.
 
 A HUD rendfokozata 0–5 csillag: embernél a megvásárolt fejlesztések arányát,
