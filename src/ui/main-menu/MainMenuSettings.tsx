@@ -5,10 +5,14 @@ import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import { useGameStore } from "@/game/state/gameStore";
 import { useVeyloraStore } from "@/game/state/veyloraStore";
-import { cssPlayerColor, PLAYER_COLORS, PLAYER_COLOR_OPTIONS, usePlayerColors } from "@/game/state/playerColors";
+import {
+  ARMOR_COLORS, ARMOR_COLOR_OPTIONS, cssPlayerColor, PLAYER_COLORS, PLAYER_COLOR_OPTIONS, usePlayerColors,
+} from "@/game/state/playerColors";
 import { useT, type MessageKey } from "@/i18n";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { gameRef } from "../gameRef";
+import { UnitIllustration } from "../result/UnitIllustration";
+import { getUnitPresentation } from "../result/unitPresentation";
 import { LanguageSwitch } from "./LanguageSwitch";
 
 interface MainMenuSettingsProps {
@@ -66,7 +70,7 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
   const toggleMuted = useGameStore((s) => s.toggleMuted);
   const names = usePlayerNamesStore((s) => s.names);
   const setName = usePlayerNamesStore((s) => s.setName);
-  const { colors, setColor, error: colorError } = usePlayerColors();
+  const { colors, armorColors, setColor, setArmorColor, error: colorError } = usePlayerColors();
   const channels = useAudioSettings((s) => s.channels);
   const setChannel = useAudioSettings((s) => s.setChannel);
   const volume = useAudioSettings((s) => s.volume);
@@ -198,6 +202,29 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
               {(["P1", "P2"] as const).map((id) => (
                 <fieldset className="player-color-palette" key={id}>
                   <legend>{t("colors.player", { id })}</legend>
+                  <div className="player-color-preview">
+                    <UnitIllustration
+                      presentation={getUnitPresentation(id, "ground", PLAYER_COLORS[colors[id]], armorColors[id])}
+                    />
+                  </div>
+                  <span>{t("colors.armor")}</span>
+                  <div className="player-color-options">
+                    {ARMOR_COLOR_OPTIONS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className="player-color-option"
+                        style={{ "--swatch-color": cssPlayerColor(ARMOR_COLORS[color].swatch) } as CSSProperties}
+                        title={t(`colors.${color}`)}
+                        aria-label={t("colors.armorOption", { id, color: t(`colors.${color}`) })}
+                        aria-pressed={armorColors[id] === color}
+                        onClick={() => setArmorColor(id, color)}
+                      >
+                        {armorColors[id] === color && <span aria-hidden="true">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                  <span>{t("colors.accent")}</span>
                   <div className="player-color-options">
                     {PLAYER_COLOR_OPTIONS.map((color) => (
                       <button
@@ -206,6 +233,7 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
                         className="player-color-option"
                         data-color={color}
                         style={{ "--swatch-color": cssPlayerColor(PLAYER_COLORS[color]) } as CSSProperties}
+                        title={t(`colors.${color}`)}
                         aria-label={t("colors.option", { id, color: t(`colors.${color}`) })}
                         aria-pressed={colors[id] === color}
                         onClick={() => setColor(id, color)}

@@ -5,11 +5,30 @@
 }
 
 .player-color-palette {
+  display: grid;
+  gap: 6px;
   min-width: 0;
   margin: 0;
   padding: 8px;
   border: 1px solid rgba(91, 177, 210, 0.32);
   border-radius: 6px;
+}
+
+.player-color-preview {
+  min-width: 0;
+  border-radius: 4px;
+  background: radial-gradient(ellipse at center, rgba(91, 177, 210, 0.21), rgba(7, 19, 33, 0.46));
+}
+
+.player-color-preview .unit-illustration-platform {
+  height: auto;
+  margin: 0;
+  opacity: 1;
+}
+
+.player-color-preview .unit-illustration-platform svg {
+  width: min(100%, 208px);
+  height: auto;
 }
 
 .player-color-options {

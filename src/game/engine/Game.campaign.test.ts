@@ -18,7 +18,7 @@ import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
 import { useCommandStore } from "../state/commandStore";
 import { useVeyloraStore } from "../state/veyloraStore";
 import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
-import { DEFAULT_PLAYER_COLORS, PLAYER_COLORS, usePlayerColors } from "../state/playerColors";
+import { ARMOR_COLORS, DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLORS, PLAYER_COLORS, usePlayerColors } from "../state/playerColors";
 import type { WeaponId } from "../data/weapons";
 import { DEFAULT_THEME } from "../theme";
 import { usePlayerNamesStore } from "../state/playerNames";
@@ -54,7 +54,7 @@ describe("Game campaign lifecycle", () => {
 
   afterEach(() => {
     game.destroy();
-    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, error: null });
+    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, armorColors: { ...DEFAULT_ARMOR_COLORS }, error: null });
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
@@ -100,6 +100,27 @@ describe("Game campaign lifecycle", () => {
     expect(layer.children[0].filters[0].color).toBe(0xb9c7d6);
     expect(layer.children[1].children[2].tint).toBe(0xffffff);
     expect(useGameStore.getState().tanks[0]!.color).toBe(0);
+    vi.unstubAllGlobals();
+  });
+
+  it("tints the armor and barrel together when the main color is not steel", () => {
+    usePlayerColors.setState({ armorColors: { P1: "olive", P2: "steel" } });
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    Reflect.set(game, "tankTextures", {
+      body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY,
+      chassis: Texture.EMPTY, armor: Texture.WHITE, details: Texture.EMPTY,
+    });
+    game.restart({ seed: 42, starterIndex: 0 });
+    const layer = Reflect.get(game, "tankLayer");
+    const [barrel, chassis, armor, details, markings] = layer.children[0].children;
+    expect(armor.texture).toBe(Texture.WHITE);
+    expect(armor.tint).toBe(ARMOR_COLORS.olive.tint);
+    expect(barrel.tint).toBe(armor.tint);
+    expect([chassis.tint, details.tint, markings.tint]).toEqual([0xffffff, 0xffffff, PLAYER_COLORS.blue]);
+    expect([chassis, armor, details, markings].map((sprite) => [sprite.anchor.x, sprite.anchor.y, sprite.scale.x]))
+      .toEqual(Array(4).fill([0.5, 1, 1.25]));
+    expect(layer.children[1].children).toHaveLength(3);
+    expect(layer.children[1].children[0].tint).toBe(0xffffff);
     vi.unstubAllGlobals();
   });
 

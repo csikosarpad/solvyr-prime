@@ -580,6 +580,20 @@ A megvalósíthatóságot ezek a meglévő felületek támasztják alá:
   jelöléseket használnak; a logikai méretek és a forgáspont változatlanok.
   Egyetlen SVG belső csoportjai betöltés után nem animálhatók külön: az önállóan
   mozgó vagy színezhető rétegekhez külön textúra/sprite kell.
+- A testszínezéshez három átlátszó
+  24×12-es réteg: [futómű](../../src/game/assets/tank-chassis.svg),
+  [páncél](../../src/game/assets/tank-armor.svg) és
+  [mechanikus részletek](../../src/game/assets/tank-details.svg). Ebben a sorrendben,
+  azonos mérettel és illesztéssel egymásra rajzolva adják ki a meglévő testet;
+  föléjük kerülhet a meglévő jelölésréteg, mögéjük a külön forgó löveg.
+  A Beállítások → Játékosok → Tankok színe alatt játékosonként külön választható
+  a páncél és a jelzések színe. Az acélszürke a változatlan eredeti testet
+  és löveget használja; a kék, piros és olívazöld a páncélréteget és a löveget
+  színezi az előnézetben, a csatában és a műhelyben. A jelzések továbbra is
+  meghatározzák a játékos HUD-színét.
+  Mindkét választás helyben tárolódik; a régi mentések a meglévő jelzésszín
+  mellé acélszürke páncélt kapnak.
+  A test vagy a rétegek módosításakor a másik változatot is összhangban kell tartani.
 - [Löveg állapotmodell](../../src/game/systems/barrelAnimation.ts): szögsimítás és
   visszarúgás már van; a töltési animáció új munka.
 - [Terrain](../../src/game/terrain/Terrain.ts): RenderTexture-látvány, felszíni él,

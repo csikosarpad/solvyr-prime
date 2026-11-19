@@ -1,5 +1,7 @@
 import type { UnitPresentation } from "./result.types";
 import { DEFAULT_THEME } from "@/game/theme";
+import { ARMOR_COLORS, type ArmorColor } from "@/game/state/playerColors";
+import { tankArmorLayers } from "@/game/assets/tankArmorLayers";
 import tankBodyUrl from "@/game/assets/tank-body.svg?url";
 import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
 import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
@@ -46,8 +48,17 @@ const SPACE_PRESENTATIONS: Record<string, UnitPresentation> = {
   },
 };
 
-export function getUnitPresentation(id: string, domain: UnitPresentation["domain"] = "ground", color?: number): UnitPresentation {
+export function getUnitPresentation(
+  id: string, domain: UnitPresentation["domain"] = "ground", color?: number, armorColor: ArmorColor = "steel",
+): UnitPresentation {
   const presentations = domain === "space" ? SPACE_PRESENTATIONS : PRESENTATIONS;
   const presentation = presentations[id] ?? (domain === "space" ? SPACE_PRESENTATION : GROUND_PRESENTATION);
+  if (presentation.illustrationLayout === "body-barrel" && armorColor !== "steel") {
+    return {
+      ...presentation,
+      primaryColor: color ?? presentation.primaryColor,
+      paintedBody: { ...tankArmorLayers, tint: ARMOR_COLORS[armorColor].tint },
+    };
+  }
   return color === undefined ? presentation : { ...presentation, primaryColor: color };
 }

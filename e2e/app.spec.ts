@@ -37,6 +37,46 @@ test("Settings switches the language between English and Hungarian", async ({ pa
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
 });
 
+test("Settings previews and remembers armor and accent colors independently", async ({ page }) => {
+  async function openTankColors() {
+    const menu = await openMainMenu(page);
+    await menu.getByRole("button", { name: "Settings" }).click();
+    await page.locator("summary").filter({ hasText: "Players" }).click();
+  }
+
+  await openTankColors();
+  const p1 = page.getByRole("group", { name: "P1 tank color" });
+  const p2 = page.getByRole("group", { name: "P2 tank color" });
+  const p1Preview = p1.locator(".player-color-preview svg");
+  const p2Preview = p2.locator(".player-color-preview svg");
+  await expect(p1Preview).toBeVisible();
+  await expect(p2Preview).toBeVisible();
+  const p1Markings = p1Preview.locator("filter").first().locator("feColorMatrix");
+  const originalMarkings = await p1Markings.getAttribute("values");
+  const olive = page.getByRole("button", { name: "P1 armor color: Olive green" });
+  const gold = page.getByRole("button", { name: "P1: Gold", exact: true });
+  const barrel = p1Preview.locator("image[transform]");
+  await olive.click();
+  await expect(p1Preview.locator("image[filter]")).toHaveCount(3);
+  await expect(p2Preview.locator("image[filter]")).toHaveCount(1);
+  const paintFilter = p1Preview.locator("filter").last();
+  const armorFilter = paintFilter.locator("feColorMatrix");
+  await expect(barrel).toHaveAttribute("filter", `url(#${await paintFilter.getAttribute("id")})`);
+  const oliveTint = await armorFilter.getAttribute("values");
+  await gold.click();
+  await expect(p1Markings).not.toHaveAttribute("values", originalMarkings!);
+  await expect(armorFilter).toHaveAttribute("values", oliveTint!);
+
+  await openTankColors();
+  await expect(olive).toHaveAttribute("aria-pressed", "true");
+  await expect(gold).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "P2 armor color: Steel gray" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "P1 armor color: Steel gray" }).click();
+  await expect(p1Preview.locator("image[filter]")).toHaveCount(1);
+  await expect(barrel).not.toHaveAttribute("filter", /.+/);
+  await expect(gold).toHaveAttribute("aria-pressed", "true");
+});
+
 test("Settings adjusts volume and toggles sound on and off", async ({ page }) => {
   await (await openMainMenu(page)).getByRole("button", { name: "Settings" }).click();
   await page.locator("summary").filter({ hasText: "Sound" }).click();

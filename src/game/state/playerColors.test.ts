@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_PLAYER_COLORS,
+  DEFAULT_ARMOR_COLORS,
   loadPlayerColors,
   PLAYER_COLOR_STORAGE_KEY,
   PLAYER_COLORS,
@@ -13,16 +14,26 @@ import {
 describe("player colors", () => {
   beforeEach(() => {
     localStorage.removeItem(PLAYER_COLOR_STORAGE_KEY);
-    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, error: null });
+    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, armorColors: { ...DEFAULT_ARMOR_COLORS }, error: null });
   });
 
   it("saves independent selections and reloads them", () => {
     usePlayerColors.getState().setColor("P1", "green");
+    usePlayerColors.getState().setArmorColor("P1", "blue");
     usePlayerColors.getState().setColor("P2", "purple");
     const saved = loadPlayerColors();
-    expect(saved).toEqual({ colors: { P1: "green", P2: "purple" }, error: null });
+    expect(saved).toEqual({ colors: { P1: "green", P2: "purple" }, armorColors: { P1: "blue", P2: "steel" }, error: null });
     expect(playerColor("P1", saved.colors)).toBe(PLAYER_COLORS.green);
     expect(playerColor("P2", saved.colors)).toBe(PLAYER_COLORS.purple);
+  });
+
+  it("keeps accent colors from older saves and defaults both armor colors to steel", () => {
+    localStorage.setItem(PLAYER_COLOR_STORAGE_KEY, JSON.stringify({ P1: "gold", P2: "cyan" }));
+    expect(loadPlayerColors()).toEqual({
+      colors: { P1: "gold", P2: "cyan" },
+      armorColors: { P1: "steel", P2: "steel" },
+      error: null,
+    });
   });
 
   it("allows identical colors and rejects unknown palette values", () => {
@@ -30,7 +41,7 @@ describe("player colors", () => {
     expect(loadPlayerColors().colors).toEqual({ P1: "red", P2: "red" });
     localStorage.setItem(PLAYER_COLOR_STORAGE_KEY, JSON.stringify({ P1: "unknown", P2: "red" }));
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(loadPlayerColors()).toEqual({ colors: DEFAULT_PLAYER_COLORS, error: "colors.loadError" });
+    expect(loadPlayerColors()).toEqual({ colors: DEFAULT_PLAYER_COLORS, armorColors: DEFAULT_ARMOR_COLORS, error: "colors.loadError" });
     log.mockRestore();
   });
 

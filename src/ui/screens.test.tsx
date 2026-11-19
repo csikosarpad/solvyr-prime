@@ -12,7 +12,7 @@ import { ResultScreen } from "./ResultScreen";
 import { Workshop } from "./Workshop";
 import { IDBFactory } from "fake-indexeddb";
 import { useVeyloraStore } from "@/game/state/veyloraStore";
-import { DEFAULT_PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
+import { DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
 
 const mockGame = (overrides: Partial<Record<keyof Game, unknown>>) => {
   gameRef.current = { leaveBattle: vi.fn(), ...overrides } as unknown as Game;
@@ -27,7 +27,7 @@ describe("MainMenu", () => {
     useGameStore.setState({ screen: "menu", muted: false, matchMode: "skirmish", aiActive: false });
     useMultiplayerStore.getState().leave();
     useCampaignStore.getState().reset();
-    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, error: null });
+    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, armorColors: { ...DEFAULT_ARMOR_COLORS }, error: null });
     useAudioSettings.setState({
       channels: { music: true, voice: true, effects: true },
       volume: 1,
@@ -112,11 +112,21 @@ describe("MainMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
     openSettingsGroup("Játékosok");
     expect(screen.getByRole("button", { name: "P1: Kék" })).toHaveAttribute("aria-pressed", "true");
+    const steel = screen.getByRole("button", { name: "P1 páncélszíne: Acélszürke" });
+    const olive = screen.getByRole("button", { name: "P1 páncélszíne: Olívazöld" });
+    expect(steel).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(olive);
     fireEvent.click(screen.getByRole("button", { name: "P1: Zöld" }));
     fireEvent.click(screen.getByRole("button", { name: "P2: Lila" }));
     expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "P2: Lila" })).toHaveAttribute("aria-pressed", "true");
-    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toEqual({ P1: "green", P2: "purple" });
+    expect(olive).toHaveAttribute("aria-pressed", "true");
+    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toEqual({
+      P1: "green", P2: "purple", armorColors: { P1: "olive", P2: "steel" },
+    });
+    fireEvent.click(steel);
+    expect(steel).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("a fekete és fehér palettaszínek külön választhatók", () => {
@@ -127,7 +137,7 @@ describe("MainMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "P2: Fehér" }));
     expect(screen.getByRole("button", { name: "P1: Fekete" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "P2: Fehér" })).toHaveAttribute("aria-pressed", "true");
-    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toEqual({ P1: "black", P2: "white" });
+    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toMatchObject({ P1: "black", P2: "white" });
   });
 
   it("megjeleníti a tankszín mentési hibáját", () => {

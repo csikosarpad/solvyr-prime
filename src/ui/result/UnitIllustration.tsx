@@ -7,15 +7,21 @@ interface UnitIllustrationProps {
   facing?: "left" | "right";
 }
 
+function tintMatrix(color: number): string {
+  const red = ((color >> 16) & 255) / 255;
+  const green = ((color >> 8) & 255) / 255;
+  const blue = (color & 255) / 255;
+  return `${red} 0 0 0 0 0 ${green} 0 0 0 0 0 ${blue} 0 0 0 0 0 1 0`;
+}
+
 export function UnitIllustration({ presentation, facing = "right" }: UnitIllustrationProps) {
   const tintId = useId();
   if (!presentation.silhouetteAsset) return null;
 
   if (presentation.illustrationLayout === "body-barrel") {
-    const color = tankTint(presentation.primaryColor);
-    const red = ((color >> 16) & 255) / 255;
-    const green = ((color >> 8) & 255) / 255;
-    const blue = (color & 255) / 255;
+    const paint = presentation.paintedBody;
+    const paintTintId = `${tintId}-armor`;
+    const paintFilter = paint ? `url(#${paintTintId})` : undefined;
     return (
       <div
         className={`unit-illustration unit-illustration-platform accent-${presentation.accent} facing-${facing}`}
@@ -26,9 +32,14 @@ export function UnitIllustration({ presentation, facing = "right" }: UnitIllustr
             <filter id={tintId} colorInterpolationFilters="sRGB">
               <feColorMatrix
                 type="matrix"
-                values={`${red} 0 0 0 0 0 ${green} 0 0 0 0 0 ${blue} 0 0 0 0 0 1 0`}
+                values={tintMatrix(tankTint(presentation.primaryColor))}
               />
             </filter>
+            {paint && (
+              <filter id={paintTintId} colorInterpolationFilters="sRGB">
+                <feColorMatrix type="matrix" values={tintMatrix(paint.tint)} />
+              </filter>
+            )}
           </defs>
           {presentation.secondaryAsset && (
             <image
@@ -38,9 +49,18 @@ export function UnitIllustration({ presentation, facing = "right" }: UnitIllustr
               width="16"
               height="4"
               transform="rotate(-20 16 6)"
+              filter={paintFilter}
             />
           )}
-          <image href={presentation.silhouetteAsset} x="4" y="4" width="24" height="12" />
+          {paint ? (
+            <>
+              <image href={paint.chassis} x="4" y="4" width="24" height="12" />
+              <image href={paint.armor} x="4" y="4" width="24" height="12" filter={paintFilter} />
+              <image href={paint.details} x="4" y="4" width="24" height="12" />
+            </>
+          ) : (
+            <image href={presentation.silhouetteAsset} x="4" y="4" width="24" height="12" />
+          )}
           {presentation.accentAsset && (
             <image href={presentation.accentAsset} x="4" y="4" width="24" height="12" filter={`url(#${tintId})`} />
           )}

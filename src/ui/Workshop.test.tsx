@@ -10,7 +10,8 @@ import { useVeyloraStore } from "@/game/state/veyloraStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
-import { DEFAULT_PLAYER_COLORS, PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
+import { DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLORS, PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
+import { tankArmorLayers } from "@/game/assets/tankArmorLayers";
 
 vi.mock("./result/ResultDecorCanvas", () => ({ ResultDecorCanvas: () => null }));
 vi.mock("./CampaignStarfieldCanvas", () => ({ CampaignStarfieldCanvas: () => null }));
@@ -22,7 +23,7 @@ describe("workshop", () => {
     vi.stubGlobal("indexedDB", new IDBFactory());
     useMultiplayerStore.getState().leave();
     useAiSettings.setState({ enabled: false });
-    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, error: null });
+    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, armorColors: { ...DEFAULT_ARMOR_COLORS }, error: null });
     useCampaignStore.getState().switchPlayer("P1");
     await useVeyloraStore.getState().switchPlayer("P1");
     await useVeyloraStore.getState().resetEconomy();
@@ -117,11 +118,17 @@ describe("workshop", () => {
   });
 
   it("uses each selected color for the tank panels and player buttons", () => {
-    usePlayerColors.setState({ colors: { P1: "green", P2: "purple" } });
+    usePlayerColors.setState({ colors: { P1: "green", P2: "purple" }, armorColors: { P1: "olive", P2: "steel" } });
     render(<Workshop />);
     expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-color")).toBe("#54d994");
     expect(screen.getByRole("button", { name: "P2" }).style.getPropertyValue("--player-color")).toBe("#c98bff");
-    expect(screen.getByRole("region", { name: "P1" }).style.getPropertyValue("--player-color")).toBe("#54d994");
+    const p1 = screen.getByRole("region", { name: "P1" });
+    expect(p1.style.getPropertyValue("--player-color")).toBe("#54d994");
+    const images = [...p1.querySelectorAll("image")];
+    expect(images.slice(1, 4).map((image) => image.getAttribute("href"))).toEqual(Object.values(tankArmorLayers));
+    expect(images[2]).toHaveAttribute("filter");
+    expect(images[4]).toHaveAttribute("filter");
+    expect(images[2]?.getAttribute("filter")).not.toBe(images[4]?.getAttribute("filter"));
     const p2 = screen.getByRole("region", { name: "P2" });
     expect(p2.style.getPropertyValue("--player-color")).toBe("#c98bff");
     expect(p2.querySelector("feColorMatrix")).toHaveAttribute(

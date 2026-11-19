@@ -275,8 +275,11 @@ A Beállításokban a **Nyelv**, **Hang** és **Játékosok** csoport külön ny
   böngészőnyelv esetén az adott nyelv, egyébként angol indul.
 - **Játékosnevek:** P1/P2 neve legfeljebb 16 karakter. Üres névnél az azonosító marad;
   online a lobbyban megadott név az elsődleges.
-- **Tankok színe:** P1 és P2 külön választhat a palettáról. A szín a következő csatában,
-  a Fejlesztésben és a játékosválasztókon is megjelenik; a beállítás helyben mentődik.
+- **Tankok színe:** P1 és P2 külön választhat fő színt a páncélhoz és a löveghez (acélszürke,
+  kék, piros vagy olívazöld) és kiegészítő színt a jelzésekhez. A tankelőnézet
+  azonnal mutatja a változást. Mindkét választás
+  látszik a következő csatában és a Fejlesztésben; a játékosválasztók továbbra is
+  a kiegészítő színt használják. A beállítás helyben mentődik.
   Online a színek csak a saját böngésző megjelenítését módosítják, nem szinkronizálódnak.
   Azonos színek is választhatók, ezért a játékosazonosítókat is érdemes figyelni.
 - **Hang:** a fő hang és a Zene, Parancsnok, Effektek csoportok külön-külön

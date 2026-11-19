@@ -15,6 +15,7 @@ interface ShopProps {
 export function Shop({ filter = "all", editablePlayerId, disabled = false, dimInactive = false }: ShopProps) {
   const profiles = useGameStore((s) => s.profiles);
   const colors = usePlayerColors((s) => s.colors);
+  const armorColors = usePlayerColors((s) => s.armorColors);
 
   return (
     <div className="shop-players">
@@ -23,7 +24,9 @@ export function Shop({ filter = "all", editablePlayerId, disabled = false, dimIn
           key={id}
           id={id}
           profile={profile}
-          presentation={getUnitPresentation(id, "ground", id === "P1" || id === "P2" ? playerColor(id, colors) : undefined)}
+          presentation={id === "P1" || id === "P2"
+            ? getUnitPresentation(id, "ground", playerColor(id, colors), armorColors[id])
+            : getUnitPresentation(id)}
           filter={filter}
           editable={editablePlayerId === undefined || editablePlayerId === id}
           disabled={disabled}

@@ -5,6 +5,7 @@ import { bloomSettings } from "./bloomQuality";
 import tankBodyUrl from "@/game/assets/tank-body.svg?url";
 import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
 import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
+import { tankArmorLayers } from "@/game/assets/tankArmorLayers";
 import forgeReactorUrl from "@/game/assets/forge-reactor.png?url";
 import habitatUrl from "@/game/assets/buildings/habitat.png?url";
 import labUrl from "@/game/assets/buildings/research-lab.png?url";
@@ -64,7 +65,7 @@ import { MAX_ANGLE, MIN_POWER, useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useCommandStore } from "@/game/state/commandStore";
 import { playerName } from "@/game/state/playerNames";
-import { playerAccent, playerColor, tankTint, usePlayerColors } from "@/game/state/playerColors";
+import { ARMOR_COLORS, playerAccent, playerColor, tankTint, usePlayerColors } from "@/game/state/playerColors";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import type { MatchMode } from "@/game/state/gameStore";
@@ -169,7 +170,14 @@ export class Game {
   private tankLayer = new Container();
   private battlefieldLayers = new BattlefieldLayers();
   private tankViews = new Map<string, TankView>();
-  private tankTextures: { body: Texture; barrel: Texture; markings: Texture } | null = null;
+  private tankTextures: {
+    body: Texture;
+    barrel: Texture;
+    markings: Texture;
+    chassis: Texture;
+    armor: Texture;
+    details: Texture;
+  } | null = null;
   private shellGfx = new Graphics();
   private shellGlow = new Sprite();
   private trailGfx = new Graphics();
@@ -251,10 +259,13 @@ export class Game {
     host.appendChild(this.app.canvas);
     this.setupDragAim(this.app.canvas);
 
-    const [body, barrel, markings, reactor, habitat, lab, radar, defense, foundry, fxTextures] = await Promise.all([
+    const [body, barrel, markings, chassis, armor, details, reactor, habitat, lab, radar, defense, foundry, fxTextures] = await Promise.all([
       Assets.load<Texture>({ src: tankBodyUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankBarrelUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankMarkingsUrl, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: tankArmorLayers.chassis, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: tankArmorLayers.armor, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: tankArmorLayers.details, data: { resolution: 3 } }),
       Assets.load<Texture>(forgeReactorUrl),
       Assets.load<Texture>(habitatUrl),
       Assets.load<Texture>(labUrl),
@@ -272,7 +283,7 @@ export class Game {
         this.lockTarget();
       }
     });
-    this.tankTextures = { body, barrel, markings };
+    this.tankTextures = { body, barrel, markings, chassis, armor, details };
     this.objectiveGraphics.setReactorTexture(reactor);
     this.objectiveGraphics.setHabitatTexture(habitat);
     this.objectiveGraphics.setLabTexture(lab);
@@ -583,22 +594,36 @@ export class Game {
 
   /** A cső a test mögött forog, a játékosszínű jelzések a testet követik. */
   private buildTankViews(): void {
-    if (!this.tankTextures) return;
+    const textures = this.tankTextures;
+    if (!textures) return;
     this.destroyTankViews();
     const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const { armorColors } = usePlayerColors.getState();
+    const bodySprite = (texture: Texture) => {
+      const sprite = new Sprite(texture);
+      sprite.anchor.set(0.5, 1);
+      sprite.scale.set(TANK_VISUAL_SCALE);
+      return sprite;
+    };
     for (const t of this.tanks) {
-      const barrel = new Sprite(this.tankTextures.barrel);
+      const barrel = new Sprite(textures.barrel);
       barrel.anchor.set(0, 0.5);
       barrel.scale.y = TANK_VISUAL_SCALE;
-      const body = new Sprite(this.tankTextures.body);
-      body.anchor.set(0.5, 1);
-      body.scale.set(TANK_VISUAL_SCALE);
-      const markings = new Sprite(this.tankTextures.markings);
-      markings.anchor.set(0.5, 1);
-      markings.scale.set(TANK_VISUAL_SCALE);
-      markings.tint = tankTint(t.color);
       const root = new Container();
-      root.addChild(barrel, body, markings);
+      root.addChild(barrel);
+      const armorColor = t.id === "P1" || t.id === "P2" ? armorColors[t.id] : "steel";
+      if (armorColor === "steel") {
+        root.addChild(bodySprite(textures.body));
+      } else {
+        const armor = bodySprite(textures.armor);
+        const tint = ARMOR_COLORS[armorColor].tint;
+        barrel.tint = tint;
+        armor.tint = tint;
+        root.addChild(bodySprite(textures.chassis), armor, bodySprite(textures.details));
+      }
+      const markings = bodySprite(textures.markings);
+      markings.tint = tankTint(t.color);
+      root.addChild(markings);
       const glow = new GlowFilter({
         color: playerAccent(t.color),
         distance: coarsePointer ? 3 : 4,

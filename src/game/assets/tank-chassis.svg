@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="12" viewBox="0 0 240 120">
+  <defs>
+    <g id="wheel" stroke="#111a1e">
+      <circle r="9" fill="#222b30" stroke-width="2"/>
+      <circle r="6.8" fill="#526066"/>
+      <circle r="4.6" fill="#303a40"/>
+      <circle r="1.8" fill="#68777b"/>
+      <path d="M-5-5 5 5m-10 0L5-5" stroke="#78868a" stroke-width=".6"/>
+    </g>
+  </defs>
+  <path d="M18 82h194l16 11-7 12-29 13H46L17 103 9 91Z"
+        fill="#121a1e" stroke="#11171a" stroke-width="3"/>
+  <path d="M20 85h190l13 9-6 8-27 13H47l-28-14-6-10Z"
+        fill="#303b40" stroke="#78868a" stroke-width="2.5"/>
+  <path d="M20 85h190l13 9-6 8-27 13H47l-28-14-6-10Z"
+        fill="none" stroke="#131d21" stroke-width="4" stroke-dasharray="2 3"/>
+  <use href="#wheel" x="27" y="92"/>
+  <use href="#wheel" x="52" y="105"/>
+  <use href="#wheel" x="81" y="105"/>
+  <use href="#wheel" x="113" y="105"/>
+  <use href="#wheel" x="145" y="105"/>
+  <use href="#wheel" x="176" y="105"/>
+  <use href="#wheel" x="210" y="94"/>
+</svg>
