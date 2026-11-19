@@ -3,13 +3,14 @@ import { DEFAULT_THEME } from "../theme";
 import { validateTerrainProfile } from "../terrain/heightmap";
 import type { Sector, TerrainProfile } from "./sectors";
 import type { StrategicObjectivePlacement } from "../systems/strategicObjectives";
+import { isWeaponId, type SpecialWeaponId } from "./weapons";
 import veyloraJson from "./veylora.json?raw";
 
 export interface CampaignMission {
   id: string;
   battlefieldId: string;
   prerequisites: string[];
-  opponent: { armor: number; skill: number };
+  opponent: { armor: number; skill: number; weapons?: readonly SpecialWeaponId[] };
   protection?: { objectiveId: string; minimumHpRatio: number };
   rewards: CampaignRewards;
 }
@@ -223,6 +224,11 @@ export function parseCampaignContent(value: unknown): CampaignContent {
     const entry = record(value);
     const opponent = record(entry.opponent);
     const armor = number(opponent.armor, 0, 100);
+    const weapons = opponent.weapons === undefined ? undefined : list(opponent.weapons).map((id) => {
+      if (!isWeaponId(id) || id === "standard") throw new Error("Invalid opponent special weapon");
+      return id;
+    });
+    if (weapons) unique(weapons);
     const reward = record(entry.rewards);
     const rewards = { resources: quantities(reward.resources), technologies: list(reward.technologies).map(text) };
     checkReferences(rewards.resources, rewards.technologies);
@@ -230,7 +236,7 @@ export function parseCampaignContent(value: unknown): CampaignContent {
       id: text(entry.id),
       battlefieldId: text(entry.battlefieldId),
       prerequisites: entry.prerequisites === undefined ? [] : list(entry.prerequisites).map(text),
-      opponent: { armor, skill: number(opponent.skill, 0, 0.9) },
+      opponent: { armor, skill: number(opponent.skill, 0, 0.9), ...(weapons ? { weapons } : {}) },
       rewards,
     };
     if (entry.protection !== undefined) {

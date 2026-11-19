@@ -156,6 +156,11 @@ felé használja a megmaradt mozgáskeretét, akár a másik játékos köre ala
 Ha nincs járható menekülőút vagy elfogyott a kerete, helyben marad, és a saját
 körében onnan lő.
 
+A kampányban és a VEYLORA-műveletekben az ellenfél küldetésenként eltérő
+speciális fegyvereket használhat. A Standard mindig elérhető számára; lézerrel
+csak akkor lő, ha a terep nem takarja a célt. Az ALPHA-01 gyakorlópályán és az
+offline gyorscsatában a gép továbbra is csak Standard lövedéket használ.
+
 Ha egy kritikus állapotú tankra a hátralévő égés már halálos, és a megmaradt
 mozgáskeretéből nincs járható kijárata, egyszeri búcsúüzenetet küld a konzolra
 a saját parancsnoki hangján. Három véletlenszerű változat közül választ:

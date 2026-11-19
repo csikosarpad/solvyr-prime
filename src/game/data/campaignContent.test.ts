@@ -49,6 +49,17 @@ describe("campaign content", () => {
     expect(() => parseCampaignContent(cycle)).toThrow("Cyclic");
   });
 
+  it.each([{ weapons: ["unknown"] }, { weapons: ["standard"] }, { weapons: ["ap", "ap"] }])(
+    "rejects invalid opponent weapon lists ($weapons)",
+    ({ weapons }) => {
+      const content = structuredClone(VEYLORA);
+      const missions = content.missions.map((mission, index) =>
+        index === 0 ? { ...mission, opponent: { ...mission.opponent, weapons } } : mission,
+      );
+      expect(() => parseCampaignContent({ ...content, missions })).toThrow(/weapon|Duplicate/);
+    },
+  );
+
   it("requires one location per mission but accepts additional configured locations and missions", () => {
     const duplicate = structuredClone(VEYLORA);
     duplicate.sector.locations[2]!.missionIds = ["secure-mine"];

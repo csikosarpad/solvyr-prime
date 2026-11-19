@@ -6,6 +6,7 @@
  */
 
 export type WeaponId = "standard" | "ap" | "incendiary" | "laser" | "homing";
+export type SpecialWeaponId = Exclude<WeaponId, "standard">;
 
 export interface BurnEffect {
   /** Az égő zóna sugara a becsapódás körül (px). */

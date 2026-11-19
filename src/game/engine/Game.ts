@@ -76,6 +76,7 @@ import {
   chooseUpgrades,
   moveTankAvoidingFire,
   planFireEscape,
+  planLaserAngle,
   simulateImpact,
   skillFromMemory,
 } from "@/game/systems/ai";
@@ -752,6 +753,7 @@ export class Game {
     // A kör elején beállított szög/erő még nem játékos-beavatkozás.
     this.targetLocked = true;
     const tank = this.current;
+    if (this.isAiTurn()) delete this.selectedWeapons[tank.id];
     regenTankShield(tank);
     tank.moveLeft = tank.stats.moveBudget;
     this.previewActive = false;
@@ -960,23 +962,62 @@ export class Game {
   private aiAimAndFire(): void {
     const target = this.tanks.find((t) => t.id !== this.aiId());
     if (!this.terrain || !this.aiBrain || !target) return;
+    const shooter = this.current;
+    const mask = this.terrain.mask;
+    const options = this.weaponOptionsFor(shooter.id);
+    if (options.includes("laser")) {
+      const angle = planLaserAngle(shooter, target, mask);
+      if (angle !== null) {
+        this.scheduleAiShot("laser", angle, shooter.power);
+        return;
+      }
+    }
+
     const wind = useGameStore.getState().wind;
     const trySmartAim = this.previewAllowance.canUse(this.aiId()) && Math.random() < AI_PREVIEW_CHANCE;
     const precise = trySmartAim
-      ? this.aiBrain.decide(this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity, true)
+      ? this.aiBrain.decide(shooter, target, mask, wind, DEFAULT_WORLD.gravity, true)
       : null;
-    if (precise) this.activatePreview();
-    const plan = precise ?? this.aiBrain.decide(this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity);
+    const plan = precise ?? this.aiBrain.decide(shooter, target, mask, wind, DEFAULT_WORLD.gravity);
     const angle = Math.round(plan?.angle ?? (this.aiId() === "P1" ? 45 : 135));
-    const power = Math.round(plan?.power ?? this.current.stats.maxPower * 0.6);
+    const power = Math.round(plan?.power ?? shooter.stats.maxPower * 0.6);
+    let weapon: WeaponId = "standard";
+    if (plan && options.length > 1) {
+      const impact = simulateImpact(barrelTip({ ...shooter, angle }), angle, power, { gravity: DEFAULT_WORLD.gravity, wind }, mask, target);
+      for (const option of options) {
+        if (option === "ap" && impact?.hitTarget) {
+          weapon = option;
+          break;
+        }
+        if (option === "incendiary" && impact) {
+          const burnRadius = weaponById(option).burn!.radius;
+          if (Math.abs(impact.pos.x - shooter.x) > burnRadius && Math.abs(impact.pos.x - target.x) < burnRadius) {
+            weapon = option;
+            break;
+          }
+        }
+        if (option === "homing") {
+          weapon = option;
+          break;
+        }
+      }
+    }
+    if (precise) this.activatePreview();
+    this.scheduleAiShot(weapon, angle, power);
+  }
+
+  private scheduleAiShot(weapon: WeaponId, angle: number, power: number): void {
+    const changed = this.weaponFor(this.current.id).id !== weapon;
+    this.selectedWeapons[this.current.id] = weapon;
     useGameStore.getState().setAim(angle, power);
+    if (changed) this.syncStore();
     this.afterAi(AI_AIM_MS, () => this.launchShot(angle, power));
   }
 
   /** A gép a lövés végén tanul a becsapódásból. */
   private aiObserveImpact(shooterId: string, x: number, dealt: number): void {
     if (!this.aiActive || shooterId !== this.aiId()) return;
-    this.aiBrain?.observe(x);
+    if (this.activeShot?.weapon.kind !== "hitscan" && !this.activeShot?.weapon.homing) this.aiBrain?.observe(x);
     if (dealt > 0) this.aiHits++;
   }
 
@@ -1149,16 +1190,21 @@ export class Game {
     this.explode(result.pos.x, result.pos.y, result.hit);
   }
 
-  /** Az adott játékos lövéshez használt fegyvere; online és gépi játékosnál standard. */
+  /** Az adott játékos lövéshez használt, a készletében elérhető fegyver. */
   private weaponFor(id: string): WeaponDefinition {
     const selected = this.selectedWeapons[id] ?? "standard";
     return weaponById(this.weaponOptionsFor(id).includes(selected) ? selected : "standard");
   }
 
-  /** A játékos által választható fegyverek; online mód és a gép egyelőre standardot használ. */
+  /** A kampányellenfél felszerelése független a mentett játékosprofiloktól. */
   private weaponOptionsFor(id: string): WeaponId[] {
     if (this.multiplayer) return ["standard"];
-    if (this.aiActive && id === this.aiId()) return ["standard"];
+    if (this.aiActive && id === this.aiId()) {
+      const specials = this.matchMode === "operation" ? this.campaignMission?.opponent.weapons
+        : this.matchMode === "campaign" ? sectorById(this.sector.id).opponentWeapons
+          : undefined;
+      return ["standard", ...(specials ?? [])];
+    }
     return unlockedWeapons(this.profiles[id]);
   }
 

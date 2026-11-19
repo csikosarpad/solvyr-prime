@@ -4,6 +4,7 @@ import { barrelTip, moveTank, tankContains, type Tank } from "../entities/tank";
 import type { TerrainMask } from "../terrain/mask";
 import type { AiMemory } from "../state/aiSettings";
 import { buyUpgrade, upgradeCost, type Profile } from "./upgrades";
+import { traceHitscan } from "./weapons";
 
 /** Ugyanaz a fix lépésköz, mint a játékban, így a számolt röppálya egyezik a valódival. */
 const SIM_DT = 1 / 60;
@@ -80,6 +81,17 @@ export interface ShotPlan {
   power: number;
   /** A számolt (zaj nélküli) becsapódás távolsága a célponttól. */
   error: number;
+}
+
+export function planLaserAngle(shooter: Tank, target: Tank, mask: TerrainMask): number | null {
+  const pivotY = barrelTip({ ...shooter, angle: 0 }).y;
+  const rise = Math.max(0, pivotY - (target.y - 6));
+  const center = Math.round(Math.atan2(rise, target.x - shooter.x) * 180 / Math.PI);
+  for (const angle of [center, center - 1, center + 1, center - 2, center + 2]) {
+    if (angle < 0 || angle > 180) continue;
+    if (traceHitscan(barrelTip({ ...shooter, angle }), angle, mask, [target], mask.height).hit === target) return angle;
+  }
+  return null;
 }
 
 export interface PlanInput {

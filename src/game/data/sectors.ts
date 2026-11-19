@@ -1,6 +1,7 @@
 import type { MessageKey } from "@/i18n";
 import { DEFAULT_THEME, type Theme } from "../theme";
 import type { StrategicObjectivePlacement } from "../systems/strategicObjectives";
+import type { SpecialWeaponId } from "./weapons";
 
 export interface TerrainProfile {
   points: readonly (readonly [number, number])[];
@@ -23,7 +24,7 @@ export interface Sector {
 }
 
 export type SectorId = "alpha-01" | "delta-08" | "forge-17" | "vanguard-12" | "prime-00";
-type LegacySector = Sector & { id: SectorId };
+type LegacySector = Sector & { id: SectorId; opponentWeapons?: readonly SpecialWeaponId[] };
 export const CAMPAIGN_CONTENT_VERSION = 3;
 
 export const TRAINING_SECTOR: LegacySector = {
@@ -45,6 +46,7 @@ export const SECTORS: readonly LegacySector[] = [
     code: "SECTOR DELTA-08",
     name: "Crystal Basin",
     briefing: "sector.deltaBrief",
+    opponentWeapons: ["ap"],
     terrain: {
       points: [
         [0, 0.58],
@@ -65,6 +67,7 @@ export const SECTORS: readonly LegacySector[] = [
     code: "SECTOR FORGE-17",
     name: "Industrial Expanse",
     briefing: "sector.forgeBrief",
+    opponentWeapons: ["incendiary"],
     terrain: {
       points: [
         [0, 0.62],
@@ -91,6 +94,7 @@ export const SECTORS: readonly LegacySector[] = [
     code: "SECTOR VANGUARD-12",
     name: "Defense Grid",
     briefing: "sector.vanguardBrief",
+    opponentWeapons: ["homing"],
     terrain: {
       points: [
         [0, 0.62],
@@ -111,6 +115,7 @@ export const SECTORS: readonly LegacySector[] = [
     code: "SECTOR PRIME-00",
     name: "Capital Perimeter",
     briefing: "sector.primeBrief",
+    opponentWeapons: ["laser", "homing"],
     terrain: {
       points: [
         [0, 0.62],

@@ -20,13 +20,13 @@
     {
       "id": "secure-mine",
       "battlefieldId": "veylora-mine",
-      "opponent": { "armor": 0, "skill": 0.35 },
+      "opponent": { "armor": 0, "skill": 0.35, "weapons": ["incendiary"] },
       "rewards": { "resources": { "industrial-ore": 20 }, "technologies": [] }
     },
     {
       "id": "secure-lab",
       "battlefieldId": "veylora-lab",
-      "opponent": { "armor": 20, "skill": 0.55 },
+      "opponent": { "armor": 20, "skill": 0.55, "weapons": ["ap"] },
       "protection": { "objectiveId": "research-lab-01", "minimumHpRatio": 0.2 },
       "rewards": { "resources": {}, "technologies": ["materials-blueprint"] }
     },
@@ -34,7 +34,7 @@
       "id": "secure-station",
       "battlefieldId": "veylora-station",
       "prerequisites": ["secure-mine", "secure-lab"],
-      "opponent": { "armor": 30, "skill": 0.65 },
+      "opponent": { "armor": 30, "skill": 0.65, "weapons": ["laser", "homing"] },
       "rewards": { "resources": {}, "technologies": [] }
     }
   ],

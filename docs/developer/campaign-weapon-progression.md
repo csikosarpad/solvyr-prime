@@ -27,7 +27,7 @@ A központi státusz továbbra is a roadmap; ez annak részletes designanyaga.
 | Bolt | A műhely egységpaneljeiben XP-s fegyversorok vannak | Nem elég a vásárlásgomb átnevezése: forrás, előfeltétel és haladás kell |
 | Kampánygazdaság | VEYLORA: egyszeri érc- és tervrajzjutalom, állomási pajzsvásárlás | Új pénztárca helyett ezt az alapot érdemes általánosítani |
 | Felső térkép | Öt önálló C3-harctér és a külön belső nézetű VEYLORA | A harctér és a többküldetéses hadjárat külön fogalom legyen |
-| Játékmódok | Ember offline választhat feloldott fegyvert; AI és online jelenleg Standardot használ | A kampányátállás ne kapcsoljon be mellékesen új online vagy AI-fegyvereket |
+| Játékmódok | Ember offline választhat feloldott fegyvert; a kampány-AI küldetésenként rögzített fegyvereket kap; a gyorscsata-AI és az online mód Standardot használ | A kampányfeloldás ne módosítsa az ellenfél készletét vagy az online módot |
 
 Források: [fegyverkatalógus](../../src/game/data/weapons.ts),
 [feloldási szabályok](../../src/game/systems/weapons.ts),
@@ -314,7 +314,8 @@ A migráció újratöltés és több böngészőfül esetén is idempotens legye
 ### Módok és tulajdonosok
 
 - P1 és P2 saját mentett haladást és fegyverkészletet kap; egyik jutalma nem a másiké.
-- Az első offline átállás ne bővítse mellékesen az AI fegyverkészletét.
+- A kampány-AI felszerelése a kampánytartalomhoz tartozik, nem vásárolható meg XP-ből,
+  és nem kerül át a gyorscsatába. A célzáshoz a meglévő terep- és találatszabályokat használja.
 - Az online mód jelenlegi Standard-korlátozása maradjon, amíg külön snapshot-,
   protokoll- és replay-terv nem készül. A kampányfeloldás nem kész online támogatás.
 - A csata közben megváltozó készlet ne módosítsa visszamenőleg az aktív meccs fegyverjogosultságait.
@@ -362,7 +363,7 @@ A harci sebzés, égési idő, célkövetési fizika és lőszerfogyasztás át�
 - A térképi és technológiai gráf körmentes; minden fegyverhez van elérhető, önmagát nem igénylő út.
 - A költségterv a pajzs és más korai vásárlások után sem okoz végleges erőforráshiányt.
 - A Standarddal induló játékos és a régi, már fejlett profil is végigpróbálható.
-- Az offline átállás nem kapcsol be nem támogatott AI-/online fegyverhasználatot.
+- A játékos fegyverfeloldása nem módosítja a kampány-AI készletét vagy az online fegyverhasználatot.
 - A műhely és térkép HU/EN/DE nyelven, billentyűzettel és mobilnézetben is érthető.
 
 ## 11. Következő egyeztetés: mit kell eldönteni?

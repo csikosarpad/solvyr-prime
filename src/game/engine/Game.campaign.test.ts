@@ -257,6 +257,64 @@ describe("Game campaign lifecycle", () => {
     expect(useGameStore.getState().opponentSkill).toBe(0.65);
   });
 
+  it.each([
+    ["alpha-01", "standard", 60],
+    ["delta-08", "ap", 60],
+    ["forge-17", "incendiary", 60],
+    ["forge-17", "standard", 30],
+    ["vanguard-12", "homing", 60],
+  ] as const)("fires the %s campaign opponent's configured %s shot at distance %d", (sector, weapon, distance) => {
+    expect(game.startCampaign(sector)).toBe(true);
+    game.restart({ seed: 42, starterIndex: 1 });
+    const [target, ai] = Reflect.get(game, "tanks") as Tank[];
+    target!.x = ai!.x - distance;
+    useGameStore.getState().sync({ wind: 0 });
+    const brain = Reflect.get(game, "aiBrain");
+    vi.spyOn(brain, "planMove").mockReturnValue(0);
+    vi.spyOn(brain, "decide").mockReturnValue({ angle: 180, power: 300, error: 0 });
+    expect(useGameStore.getState().canControl).toBe(false);
+
+    vi.advanceTimersByTime(2000);
+
+    expect(Reflect.get(game, "activeShot")?.weapon.id).toBe(weapon);
+    expect(useGameStore.getState().matchStats.P2!.shots).toBe(1);
+    expect(useGameStore.getState().phase).toBe("flying");
+  });
+
+  it.each([false, true])("uses the station laser only with a clear shot (blocked: %s)", async (blocked) => {
+    const progress = useVeyloraStore.getState();
+    await progress.complete("secure-mine", progress.economy.generation);
+    await progress.complete("secure-lab", progress.economy.generation);
+    expect(await game.startOperation("secure-station")).toBe(true);
+    game.restart({ seed: 42, starterIndex: 1 });
+    const [target, ai] = Reflect.get(game, "tanks") as Tank[];
+    target!.x = ai!.x - 120;
+    if (blocked) {
+      const terrain = Reflect.get(game, "terrain");
+      terrain.mask = TerrainMask.fromHeightmap(
+        Array.from({ length: 1280 }, (_, x) => x >= ai!.x - 65 && x <= ai!.x - 55 ? 500 : 550),
+        720,
+      );
+    }
+    const brain = Reflect.get(game, "aiBrain");
+    vi.spyOn(brain, "planMove").mockReturnValue(0);
+    vi.spyOn(brain, "decide").mockReturnValue({ angle: 135, power: 300, error: 0 });
+    const hp = target!.hp;
+    expect(useGameStore.getState().weaponOptions).toEqual(["standard", "laser", "homing"]);
+    expect(useGameStore.getState().profiles.P2?.weapons ?? []).toEqual([]);
+
+    vi.advanceTimersByTime(2000);
+
+    expect(useGameStore.getState().matchStats.P2!.shots).toBe(1);
+    if (blocked) {
+      expect(Reflect.get(game, "activeShot")?.weapon.id).toBe("homing");
+      expect(target!.hp).toBe(hp);
+    } else {
+      expect(Reflect.get(game, "laserBeam")).not.toBeNull();
+      expect(target!.hp).toBeLessThan(hp);
+    }
+  });
+
   it("only clears VEYLORA after a successful victory in the station mission", async () => {
     const progress = useVeyloraStore.getState();
     await progress.complete("secure-mine", progress.economy.generation);
