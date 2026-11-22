@@ -18,7 +18,7 @@ import type { PlacedStrategicObjective } from "../systems/strategicObjectives";
 import { useCommandStore } from "../state/commandStore";
 import { useVeyloraStore } from "../state/veyloraStore";
 import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
-import { ARMOR_COLORS, DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLORS, PLAYER_COLORS, usePlayerColors } from "../state/playerColors";
+import { armorColorMatrix, armorTint, DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLORS, markingColor, playerAccent, usePlayerColors } from "../state/playerColors";
 import type { WeaponId } from "../data/weapons";
 import { DEFAULT_THEME } from "../theme";
 import { usePlayerNamesStore } from "../state/playerNames";
@@ -71,15 +71,20 @@ describe("Game campaign lifecycle", () => {
   it("applies both selected colors to the tank and HUD on a new battle", () => {
     usePlayerColors.setState({ colors: { P1: "green", P2: "purple" } });
     vi.stubGlobal("matchMedia", () => ({ matches: false }));
-    Reflect.set(game, "tankTextures", { body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY });
+    Reflect.set(game, "tankTextures", {
+      body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY,
+      chassis: Texture.EMPTY, armor: Texture.WHITE, details: Texture.EMPTY,
+    });
     game.restart({ seed: 42, starterIndex: 0 });
     const tanks: Tank[] = Reflect.get(game, "tanks");
-    expect(tanks.map((tank) => tank.color)).toEqual([PLAYER_COLORS.green, PLAYER_COLORS.purple]);
-    expect(useGameStore.getState().tanks.map((tank) => tank.color)).toEqual([PLAYER_COLORS.green, PLAYER_COLORS.purple]);
+    const colors = [markingColor("P1", usePlayerColors.getState()), markingColor("P2", usePlayerColors.getState())];
+    expect(tanks.map((tank) => tank.color)).toEqual(colors);
+    expect(useGameStore.getState().tanks.map((tank) => tank.color)).toEqual(colors);
     const layer = Reflect.get(game, "tankLayer");
-    for (const [index, color] of [PLAYER_COLORS.green, PLAYER_COLORS.purple].entries()) {
-      const [barrel, body, markings] = layer.children[index].children;
-      expect(body.tint).toBe(0xffffff);
+    for (const [index, color] of colors.entries()) {
+      const [barrel, , body, , markings] = layer.children[index].children;
+      expect(body.filters[0].matrix).toEqual(armorColorMatrix(armorTint(index === 0 ? "P1" : "P2", usePlayerColors.getState())));
+      expect(barrel.filters[0]).toBe(body.filters[0]);
       expect(markings.tint).toBe(color);
       expect(markings.anchor.x).toBe(body.anchor.x);
       expect(markings.anchor.y).toBe(body.anchor.y);
@@ -89,17 +94,20 @@ describe("Game campaign lifecycle", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders a black tank with visible shading and outline without changing its saved color", () => {
-    usePlayerColors.setState({ colors: { P1: "black", P2: "white" } });
+  it("renders neutral markings with a visible player outline", () => {
+    usePlayerColors.setState({ colors: { P1: "white", P2: "white" } });
     vi.stubGlobal("matchMedia", () => ({ matches: false }));
-    Reflect.set(game, "tankTextures", { body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY });
+    Reflect.set(game, "tankTextures", {
+      body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY,
+      chassis: Texture.EMPTY, armor: Texture.WHITE, details: Texture.EMPTY,
+    });
     game.restart({ seed: 42, starterIndex: 0 });
     const layer = Reflect.get(game, "tankLayer");
-    expect(layer.children[0].children[1].tint).toBe(0xffffff);
-    expect(layer.children[0].children[2].tint).toBe(0x777777);
-    expect(layer.children[0].filters[0].color).toBe(0xb9c7d6);
-    expect(layer.children[1].children[2].tint).toBe(0xffffff);
-    expect(useGameStore.getState().tanks[0]!.color).toBe(0);
+    const color = markingColor("P1", usePlayerColors.getState());
+    expect(layer.children[0].children[4].tint).toBe(color);
+    expect(layer.children[0].filters[0].color).toBe(playerAccent(color));
+    expect(layer.children[1].children[4].tint).toBe(color);
+    expect(useGameStore.getState().tanks[0]!.color).toBe(color);
     vi.unstubAllGlobals();
   });
 
@@ -114,13 +122,12 @@ describe("Game campaign lifecycle", () => {
     const layer = Reflect.get(game, "tankLayer");
     const [barrel, chassis, armor, details, markings] = layer.children[0].children;
     expect(armor.texture).toBe(Texture.WHITE);
-    expect(armor.tint).toBe(ARMOR_COLORS.olive.tint);
-    expect(barrel.tint).toBe(armor.tint);
-    expect([chassis.tint, details.tint, markings.tint]).toEqual([0xffffff, 0xffffff, PLAYER_COLORS.blue]);
+    expect(armor.filters[0].matrix).toEqual(armorColorMatrix(armorTint("P1", usePlayerColors.getState())));
+    expect(barrel.filters[0]).toBe(armor.filters[0]);
+    expect([chassis.tint, details.tint, markings.tint]).toEqual([0xffffff, 0xffffff, markingColor("P1", usePlayerColors.getState())]);
     expect([chassis, armor, details, markings].map((sprite) => [sprite.anchor.x, sprite.anchor.y, sprite.scale.x]))
       .toEqual(Array(4).fill([0.5, 1, 1.25]));
-    expect(layer.children[1].children).toHaveLength(3);
-    expect(layer.children[1].children[0].tint).toBe(0xffffff);
+    expect(layer.children[1].children).toHaveLength(5);
     vi.unstubAllGlobals();
   });
 
@@ -580,7 +587,7 @@ describe("Game campaign lifecycle", () => {
       const tanks: Tank[] = Reflect.get(game, "tanks");
       glows.forEach((glow, i) => {
         expect(glow).toBeInstanceOf(GlowFilter);
-        expect(glow.color).toBe(tanks[i]!.color);
+        expect(glow.color).toBe(playerAccent(tanks[i]!.color));
         expect(glow.distance).toBe(touch ? 3 : 4);
       });
       const destroyed = glows.map((glow) => vi.spyOn(glow, "destroy"));

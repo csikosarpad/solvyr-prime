@@ -5,7 +5,7 @@ import type { GlowLine } from "../pixi/GlowLine";
 import { accentColor, PIXI_UI_THEME } from "../pixi/PixiUiTheme";
 import type { ResultBackgroundEffects } from "../pixi/ResultBackgroundEffects";
 import type { PixiUiAccent } from "../pixi/PixiUiTheme";
-import { playerAccent, playerColor, usePlayerColors } from "@/game/state/playerColors";
+import { playerAccent, markingColor, usePlayerColors } from "@/game/state/playerColors";
 
 interface ResultDecorCanvasProps {
   accent?: PixiUiAccent | number;
@@ -150,9 +150,9 @@ function drawDecorations(
 
 export function ResultDecorCanvas({ accent = "gold" }: ResultDecorCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const colors = usePlayerColors((state) => state.colors);
-  const p1Color = playerAccent(playerColor("P1", colors));
-  const p2Color = playerAccent(playerColor("P2", colors));
+  const colors = usePlayerColors();
+  const p1Color = playerAccent(markingColor("P1", colors));
+  const p2Color = playerAccent(markingColor("P2", colors));
 
   useEffect(() => {
     const host = hostRef.current;

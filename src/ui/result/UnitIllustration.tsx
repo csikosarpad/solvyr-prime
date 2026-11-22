@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { tankTint } from "@/game/state/playerColors";
+import { armorColorMatrix, tankTint } from "@/game/state/playerColors";
 import type { UnitPresentation } from "./result.types";
 
 interface UnitIllustrationProps {
@@ -37,7 +37,7 @@ export function UnitIllustration({ presentation, facing = "right" }: UnitIllustr
             </filter>
             {paint && (
               <filter id={paintTintId} colorInterpolationFilters="sRGB">
-                <feColorMatrix type="matrix" values={tintMatrix(paint.tint)} />
+                <feColorMatrix type="matrix" values={armorColorMatrix(paint.tint).join(" ")} />
               </filter>
             )}
           </defs>

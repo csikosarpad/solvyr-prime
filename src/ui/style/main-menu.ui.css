@@ -559,13 +559,51 @@
 }
 
 /* Fókusz állapot billentyűzetes navigációhoz */
-.main-menu-actions .btn:focus-visible,
-.main-menu-settings .btn:focus-visible,
-.main-menu-back:focus-visible {
+.main-menu-actions .btn:focus-visible {
   outline: 1px solid #ffe27a;
   outline-offset: 3px;
 }
+.main-menu-settings .btn:focus-visible,
+.main-menu-back:focus-visible {
+  outline: 2px solid #ffe27a;
+  outline-offset: 2px;
+}
 /* Main menu settings styling */
+
+.settings-menu-panel .main-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-menu-panel .main-menu-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-shadow: none;
+}
+
+.settings-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #a9c8d6;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.settings-close:focus-visible {
+  outline: 2px solid #ffe27a;
+  outline-offset: 2px;
+}
 
 .main-menu-settings {
   display: grid;
@@ -669,6 +707,22 @@
   text-transform: uppercase;
 }
 
+.main-menu-setting small {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.settings-menu-panel .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.language-switch {
+  flex-wrap: wrap;
+}
+
 .main-menu-setting .language-switch {
   margin-top: 0;
 }
@@ -679,6 +733,26 @@
   border: 1px solid rgba(91, 177, 210, 0.32);
   border-radius: 2px 6px;
   color: #a9c8d6;
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  .settings-menu-panel {
+    padding: 16px;
+  }
+
+  .settings-group summary {
+    min-height: 52px;
+  }
+
+  .settings-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .settings-menu-panel .main-menu-settings .btn,
+  .settings-menu-panel .main-menu-back {
+    min-height: 44px;
+  }
 }
 
 .main-menu-back {

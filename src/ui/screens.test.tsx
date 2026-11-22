@@ -12,7 +12,7 @@ import { ResultScreen } from "./ResultScreen";
 import { Workshop } from "./Workshop";
 import { IDBFactory } from "fake-indexeddb";
 import { useVeyloraStore } from "@/game/state/veyloraStore";
-import { DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
+import { DEFAULT_ARMOR_COLORS, DEFAULT_DISTANCE, DEFAULT_LIGHTNESS, DEFAULT_PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
 
 const mockGame = (overrides: Partial<Record<keyof Game, unknown>>) => {
   gameRef.current = { leaveBattle: vi.fn(), ...overrides } as unknown as Game;
@@ -27,7 +27,11 @@ describe("MainMenu", () => {
     useGameStore.setState({ screen: "menu", muted: false, matchMode: "skirmish", aiActive: false });
     useMultiplayerStore.getState().leave();
     useCampaignStore.getState().reset();
-    usePlayerColors.setState({ colors: { ...DEFAULT_PLAYER_COLORS }, armorColors: { ...DEFAULT_ARMOR_COLORS }, error: null });
+    usePlayerColors.setState({
+      colors: { ...DEFAULT_PLAYER_COLORS }, armorColors: { ...DEFAULT_ARMOR_COLORS },
+      lightness: { P1: DEFAULT_LIGHTNESS, P2: DEFAULT_LIGHTNESS },
+      distances: { P1: DEFAULT_DISTANCE, P2: DEFAULT_DISTANCE }, error: null,
+    });
     useAudioSettings.setState({
       channels: { music: true, voice: true, effects: true },
       volume: 1,
@@ -69,6 +73,13 @@ describe("MainMenu", () => {
     expect(screen.getByRole("complementary", { name: "Köszönet" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Online játék" }));
     expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+  });
+
+  it("a bezárás gomb visszatér a főmenübe", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások bezárása" }));
+    expect(screen.getByRole("button", { name: "Játék indítása" })).toBeInTheDocument();
   });
 
   it("a beállításcsoportok külön nyithatók és becsukáskor megtartják az értékeket", () => {
@@ -117,27 +128,31 @@ describe("MainMenu", () => {
     expect(steel).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(olive);
     fireEvent.click(screen.getByRole("button", { name: "P1: Zöld" }));
+    fireEvent.click(screen.getByRole("button", { name: "P2" }));
     fireEvent.click(screen.getByRole("button", { name: "P2: Lila" }));
-    expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "P2: Lila" })).toHaveAttribute("aria-pressed", "true");
-    expect(olive).toHaveAttribute("aria-pressed", "true");
-    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toEqual({
+    fireEvent.click(screen.getByRole("button", { name: "P1" }));
+    expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "P1 páncélszíne: Olívazöld" })).toHaveAttribute("aria-pressed", "true");
+    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toMatchObject({
       P1: "green", P2: "purple", armorColors: { P1: "olive", P2: "steel" },
     });
-    fireEvent.click(steel);
-    expect(steel).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "P1 páncélszíne: Acélszürke" }));
+    expect(screen.getByRole("button", { name: "P1 páncélszíne: Acélszürke" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("a fekete és fehér palettaszínek külön választhatók", () => {
+  it("a semleges palettaszín mindkét játékosnál választható", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
     openSettingsGroup("Játékosok");
-    fireEvent.click(screen.getByRole("button", { name: "P1: Fekete" }));
-    fireEvent.click(screen.getByRole("button", { name: "P2: Fehér" }));
-    expect(screen.getByRole("button", { name: "P1: Fekete" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "P2: Fehér" })).toHaveAttribute("aria-pressed", "true");
-    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toMatchObject({ P1: "black", P2: "white" });
+    fireEvent.click(screen.getByRole("button", { name: "P1: Semleges szürke" }));
+    fireEvent.click(screen.getByRole("button", { name: "P2" }));
+    fireEvent.click(screen.getByRole("button", { name: "P2: Semleges szürke" }));
+    expect(screen.getByRole("button", { name: "P2: Semleges szürke" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "P1" }));
+    expect(screen.getByRole("button", { name: "P1: Semleges szürke" })).toHaveAttribute("aria-pressed", "true");
+    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toMatchObject({ P1: "white", P2: "white" });
   });
 
   it("megjeleníti a tankszín mentési hibáját", () => {
@@ -296,10 +311,11 @@ describe("MainMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
     openSettingsGroup("Játékmenet");
 
-    // A VEYLORA-ág kikapcsolva kimarad a törlésből.
     const veyloraSwitch = screen.getByRole("switch", { name: "VEYLORA-haladás és kampánygazdaság" });
-    fireEvent.click(veyloraSwitch);
     expect(veyloraSwitch).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(screen.getByRole("switch", { name: "XP és fejlesztések" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Kampányhaladás" }));
+    fireEvent.click(screen.getByRole("switch", { name: /AI-tapasztalat/ }));
 
     fireEvent.click(screen.getByRole("button", { name: "Kijelöltek törlése" }));
     const dialog = screen.getByRole("dialog", { name: "Törlöd a kijelölt játékmenet-adatokat?" });
@@ -332,10 +348,6 @@ describe("MainMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
     openSettingsGroup("Játékmenet");
 
-    fireEvent.click(screen.getByRole("switch", { name: "XP és fejlesztések" }));
-    fireEvent.click(screen.getByRole("switch", { name: "Kampányhaladás" }));
-    fireEvent.click(screen.getByRole("switch", { name: "VEYLORA-haladás és kampánygazdaság" }));
-    fireEvent.click(screen.getByRole("switch", { name: /AI-tapasztalat/ }));
     expect(screen.getByRole("button", { name: "Kijelöltek törlése" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("switch", { name: "VEYLORA-haladás és kampánygazdaság" }));

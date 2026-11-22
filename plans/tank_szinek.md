@@ -23,9 +23,9 @@ A jelzés sosem független döntés: a páncél világosságához képest ellent
 - Sötét páncél → világosabb jelzés
 - Világos páncél → sötétebb jelzés
 
-### 2.3. A megkülönböztethetőség garantált
+### 2.3. A világosságkülönbség garantált
 
-A `ΔL` küszöb alá nem lehet menni. A rendszer a határon megállítja a csúszkát; a tiltott sáv vizuálisan elérhetetlen.
+A `ΔL` küszöb alá nem lehet menni. A rendszer a határon megállítja a csúszkát; a tiltott sáv vizuálisan elérhetetlen. Ez a számított HSL-színekre vonatkozó korlát, nem garantálja az árnyékolt textúra minden képpontjának látható kontrasztját.
 
 ## 3. A páncél beállítása
 
@@ -41,9 +41,24 @@ A `ΔL` küszöb alá nem lehet menni. A rendszer a határon megállítja a csú
 - **Bemenet:** palettaszín + a páncéltól mért távolság (`ΔL`)
 - A csúszka nem abszolút világosságot állít, hanem `ΔL`-t.
 - **Irány:** automatikus — a rendszer a páncél `L`-jéhez képest a kontrasztos oldalra tolja.
-- **Alapérték:** `ΔL = 0,40`
-- **Tartomány:** `ΔL ∈ [0,25 … 0,70]`
+- **Alapérték:** `ΔL = 0,35`
+- **Tényleges tartomány:** `ΔL ∈ [0,25 … ΔL_max]`, ahol
+  `ΔL_max = max(L_páncél − 0,15; 0,85 − L_páncél)`. A felső határ a
+  páncél világosságától függ, és `0,35–0,70` közé esik.
 - **A csúszka címe:** `TÁVOLSÁG A PÁNCÉLTÓL`, jobbra a `ΔL` értékkel
+
+| Páncél világossága | A `ΔL` tényleges tartománya |
+|---:|---:|
+| 0,15 | 0,25–0,70 |
+| 0,30 | 0,25–0,55 |
+| 0,50 | 0,25–0,35 |
+| 0,70 | 0,25–0,55 |
+| 0,85 | 0,25–0,70 |
+
+A jelzés arra az oldalra kerül, ahol több hely van: `L < 0,50` esetén
+világosabb, `L > 0,50` esetén sötétebb. `L = 0,50` esetén mindkét
+irány megfelel: a jelzés sötétebb. A középérték átlépésekor az irány
+azonnal vált, így a jelzés világossága ugrásszerűen változhat.
 
 ### 4.1. A küszöb viselkedése
 
@@ -55,13 +70,14 @@ A `ΔL = 0,25` alatti sáv elérhetetlen. A csúszka sávján ezen a ponton egy 
 
 ### 4.2. A páncél és a jelzés összefüggése
 
-Ha a játékos a páncél világosságát úgy állítja, hogy a meglévő jelzés `ΔL`-je a küszöb alá kerülne, akkor:
+Ha a játékos a páncél világosságát úgy állítja, hogy a meglévő `ΔL`
+meghaladná az új `ΔL_max` értéket, akkor:
 
-1. A jelzés világossága automatikusan követi a páncélt, hogy a `ΔL` a küszöbön maradjon.
-2. A jelzés csúszkája a küszöbhöz ugrik.
-3. Ugyanaz a figyelmeztetés jelenik meg.
+1. A `ΔL` az új `ΔL_max` értékre csökken, és a jelzés világossága ehhez igazodik.
+2. A jelzés csúszkájának felső határa és értéke az új maximumra áll.
 
-Így a páncél állítása soha nem teszi olvashatatlanná a jelzést.
+A `0,25`-ös minimum minden megengedett páncélvilágosság mellett tartható.
+A páncél módosítása önmagában nem csökkenti a `ΔL`-t a minimum alá.
 
 ## 5. Visszaállítás
 
@@ -70,14 +86,17 @@ Három szint létezik, amelyek mindegyike megerősítés nélkül visszavonható
 | Szint | Hely | Hatás |
 |---|---|---|
 | Mező | A csúszka melletti ↺ ikon | Az adott csúszka visszaáll az alapértékre |
-| Játékos | A P1 / P2 panel fejlécében látható ↺ ikon | Az adott játékos páncélja és jelzése visszaáll az alapértékre |
-| Globális | A Settings alja, `SZÍNEK VISSZAÁLLÍTÁSA` gomb | Mindkét játékos mindkét színe visszaáll az alapértékre |
+| Játékos | A kiválasztott játékos paneljén látható ↺ ikon | Az adott játékos páncélja és jelzése visszaáll az alapértékre |
+| Globális | A Settings Játékosok szekciója, `SZÍNEK VISSZAÁLLÍTÁSA` gomb | Mindkét játékos mindkét színe visszaáll az alapértékre |
 
 > A globális gomb letiltott, ha minden érték már az alapértéken van.
+> A legutóbbi visszaállítás külön gombbal visszavonható a beállítások nyitva
+> tartása alatt; újabb színmódosítás vagy visszaállítás után az előző
+> visszavonási lehetőség megszűnik.
 
 ## 6. Élő előnézet
 
-A panel alján a tankelőnézet mindkét színt egyszerre mutatja. A beállítás közben az előnézet azonnal frissül — ez a felület egyetlen visszajelzése arról, hogy a két szín együtt hogyan néz ki.
+Egyetlen tankelőnézet látható, felette a P1 / P2 játékosválasztóval. Az előnézet a kiválasztott játékos mindkét színét egyszerre mutatja, és a beállítás közben azonnal frissül.
 
 ## 7. Hozzáférés és érintés
 
@@ -104,19 +123,24 @@ A panel alján a tankelőnézet mindkét színt egyszerre mutatja. A beállítá
   "player": 1,
   "armour": {
     "paletteIndex": 2,
-    "lightness": 0.72
+    "lightness": 0.70
   },
   "marking": {
     "paletteIndex": 0,
-    "deltaL": 0.44
+    "deltaL": 0.40
   }
 }
 ```
 
-- Csak ez a hat érték mentődik játékosonként.
+- Játékosonként a két palettaválasztás, a páncél világossága és a `ΔL` mentődik.
 - A jelzés tényleges világossága számítással áll elő:  
-  `L_marking = clamp(L_armour ± ΔL, 0.15, 0.85)`
+  `L_marking = L_armour ± ΔL`, a 4. szakaszban megadott iránnyal és
+  dinamikus felső korláttal.
 - A mentés lokális — online nem szinkronizálódik, ahogy a jelenlegi felirat is jelzi.
+- A korábban választható fekete és fehér jelzésszín egyetlen semleges
+  szürke palettává egyesül; mindkét korábbi választás erre migrálódik.
+- Az `L` a palettaszín HSL-világossága. Az árnyékolt tanktextúrán látható
+  kontraszt nem egyenlő minden képponton a színértékek `ΔL` különbségével.
 
 ## 10. Ellenőrző lista a megvalósításhoz
 

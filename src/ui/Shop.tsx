@@ -1,5 +1,5 @@
 import { useGameStore, type AiOpponentView } from "@/game/state/gameStore";
-import { playerColor, usePlayerColors } from "@/game/state/playerColors";
+import { armorTint, markingColor, usePlayerColors } from "@/game/state/playerColors";
 import type { WorkshopFilter } from "./result/result.types";
 import { getUnitPresentation } from "./result/unitPresentation";
 import { UnitPanel } from "./result/UnitPanel";
@@ -15,8 +15,7 @@ interface ShopProps {
 /** Meccs utáni bolt: minden játékos a saját XP-jét költi. */
 export function Shop({ filter = "all", editablePlayerId, disabled = false, dimInactive = false, opponent = null }: ShopProps) {
   const profiles = useGameStore((s) => s.profiles);
-  const colors = usePlayerColors((s) => s.colors);
-  const armorColors = usePlayerColors((s) => s.armorColors);
+  const colors = usePlayerColors();
 
   return (
     <div className="shop-players">
@@ -28,7 +27,7 @@ export function Shop({ filter = "all", editablePlayerId, disabled = false, dimIn
             id={ai ? "AI" : id}
             profile={ai?.profile ?? profile}
             presentation={id === "P1" || id === "P2"
-              ? getUnitPresentation(id, "ground", playerColor(id, colors), armorColors[id])
+              ? getUnitPresentation(id, "ground", markingColor(id, colors), colors.armorColors[id], armorTint(id, colors))
               : getUnitPresentation(id)}
             filter={filter}
             editable={!ai && (editablePlayerId === undefined || editablePlayerId === id)}

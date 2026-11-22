@@ -63,3 +63,26 @@
   gap: 12px;
   margin-top: 24px;
 }
+
+.confirm-dialog-mobile-sheet .btn:focus-visible {
+  outline: 2px solid var(--bf-highlight);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .confirm-dialog-mobile-sheet {
+    position: fixed;
+    inset: auto 0 0;
+    width: 100%;
+    max-width: none;
+    max-height: calc(100dvh - 16px);
+    margin: 0;
+    padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 16px 16px 0 0;
+  }
+
+  .confirm-dialog-mobile-sheet .btn {
+    min-height: 44px;
+    flex: 1 1 auto;
+  }
+}

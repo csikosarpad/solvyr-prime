@@ -49,15 +49,15 @@ const SPACE_PRESENTATIONS: Record<string, UnitPresentation> = {
 };
 
 export function getUnitPresentation(
-  id: string, domain: UnitPresentation["domain"] = "ground", color?: number, armorColor: ArmorColor = "steel",
+  id: string, domain: UnitPresentation["domain"] = "ground", color?: number, armorColor: ArmorColor = "steel", tint?: number,
 ): UnitPresentation {
   const presentations = domain === "space" ? SPACE_PRESENTATIONS : PRESENTATIONS;
   const presentation = presentations[id] ?? (domain === "space" ? SPACE_PRESENTATION : GROUND_PRESENTATION);
-  if (presentation.illustrationLayout === "body-barrel" && armorColor !== "steel") {
+  if (presentation.illustrationLayout === "body-barrel" && (armorColor !== "steel" || tint !== undefined)) {
     return {
       ...presentation,
       primaryColor: color ?? presentation.primaryColor,
-      paintedBody: { ...tankArmorLayers, tint: ARMOR_COLORS[armorColor].tint },
+      paintedBody: { ...tankArmorLayers, tint: tint ?? ARMOR_COLORS[armorColor].tint },
     };
   }
   return color === undefined ? presentation : { ...presentation, primaryColor: color };

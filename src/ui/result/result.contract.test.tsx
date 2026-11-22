@@ -111,12 +111,11 @@ describe("UnitPanel and Shop presentation contract", () => {
     const illustrations = document.querySelectorAll(".unit-illustration-platform");
     expect(illustrations).toHaveLength(2);
     illustrations.forEach((illustration) => {
-      expect(illustration.querySelectorAll("image")).toHaveLength(3);
+      expect(illustration.querySelectorAll("image")).toHaveLength(5);
       expect(illustration.querySelector("image")?.getAttribute("href")).toBe(tankBarrelUrl);
-      expect(illustration.querySelectorAll("image")[1]?.getAttribute("href")).toBe(tankBodyUrl);
-      expect(illustration.querySelector("image[filter]")?.getAttribute("href")).toBe(tankMarkingsUrl);
+      expect(illustration.querySelectorAll("image")[4]?.getAttribute("href")).toBe(tankMarkingsUrl);
     });
     const filters = [...document.querySelectorAll(".unit-illustration-platform filter")];
-    expect(new Set(filters.map((filter) => filter.id)).size).toBe(2);
+    expect(new Set(filters.map((filter) => filter.id)).size).toBe(4);
   });
 });

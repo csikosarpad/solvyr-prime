@@ -10,7 +10,7 @@ import { useVeyloraStore } from "@/game/state/veyloraStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
-import { DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLORS, PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
+import { cssPlayerColor, DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLORS, markingColor, playerAccent, usePlayerColors } from "@/game/state/playerColors";
 import { tankArmorLayers } from "@/game/assets/tankArmorLayers";
 
 vi.mock("./result/ResultDecorCanvas", () => ({ ResultDecorCanvas: () => null }));
@@ -155,34 +155,37 @@ describe("workshop", () => {
   it("uses each selected color for the tank panels and player buttons", () => {
     usePlayerColors.setState({ colors: { P1: "green", P2: "purple" }, armorColors: { P1: "olive", P2: "steel" } });
     render(<Workshop />);
-    expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-color")).toBe("#54d994");
-    expect(screen.getByRole("button", { name: "P2" }).style.getPropertyValue("--player-color")).toBe("#c98bff");
+    const p1Color = markingColor("P1", usePlayerColors.getState());
+    const p2Color = markingColor("P2", usePlayerColors.getState());
+    expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-color")).toBe(cssPlayerColor(p1Color));
+    expect(screen.getByRole("button", { name: "P2" }).style.getPropertyValue("--player-color")).toBe(cssPlayerColor(p2Color));
     const p1 = screen.getByRole("region", { name: "P1" });
-    expect(p1.style.getPropertyValue("--player-color")).toBe("#54d994");
+    expect(p1.style.getPropertyValue("--player-color")).toBe(cssPlayerColor(p1Color));
     const images = [...p1.querySelectorAll("image")];
     expect(images.slice(1, 4).map((image) => image.getAttribute("href"))).toEqual(Object.values(tankArmorLayers));
     expect(images[2]).toHaveAttribute("filter");
     expect(images[4]).toHaveAttribute("filter");
     expect(images[2]?.getAttribute("filter")).not.toBe(images[4]?.getAttribute("filter"));
     const p2 = screen.getByRole("region", { name: "P2" });
-    expect(p2.style.getPropertyValue("--player-color")).toBe("#c98bff");
+    expect(p2.style.getPropertyValue("--player-color")).toBe(cssPlayerColor(p2Color));
     expect(p2.querySelector("feColorMatrix")).toHaveAttribute(
       "values",
-      `${((PLAYER_COLORS.purple >> 16) & 255) / 255} 0 0 0 0 0 ${((PLAYER_COLORS.purple >> 8) & 255) / 255} 0 0 0 0 0 ${(PLAYER_COLORS.purple & 255) / 255} 0 0 0 0 0 1 0`,
+      `${((p2Color >> 16) & 255) / 255} 0 0 0 0 0 ${((p2Color >> 8) & 255) / 255} 0 0 0 0 0 ${(p2Color & 255) / 255} 0 0 0 0 0 1 0`,
     );
   });
 
-  it("keeps a black tank and its player controls legible", () => {
-    usePlayerColors.setState({ colors: { P1: "black", P2: "white" } });
+  it("keeps a neutral marking and its player controls legible", () => {
+    usePlayerColors.setState({ colors: { P1: "white", P2: "white" } });
     render(<Workshop />);
     const p1 = screen.getByRole("region", { name: "P1" });
-    expect(p1.style.getPropertyValue("--player-color")).toBe("#000000");
-    expect(p1.style.getPropertyValue("--player-accent")).toBe("#b9c7d6");
-    expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-accent")).toBe("#b9c7d6");
+    const color = markingColor("P1", usePlayerColors.getState());
+    expect(p1.style.getPropertyValue("--player-color")).toBe(cssPlayerColor(color));
+    expect(p1.style.getPropertyValue("--player-accent")).toBe(cssPlayerColor(playerAccent(color)));
+    expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-accent")).toBe(cssPlayerColor(playerAccent(color)));
     const matrix = p1.querySelector("feColorMatrix")?.getAttribute("values");
-    const channel = 0x77 / 255;
+    const channel = (color & 255) / 255;
     expect(matrix).toBe(`${channel} 0 0 0 0 0 ${channel} 0 0 0 0 0 ${channel} 0 0 0 0 0 1 0`);
-    expect(screen.getByRole("region", { name: "P2" }).style.getPropertyValue("--player-accent")).toBe("#ffffff");
+    expect(screen.getByRole("region", { name: "P2" }).style.getPropertyValue("--player-accent")).toBe(cssPlayerColor(playerAccent(color)));
   });
 
   it("shows how to acquire the shield and persists equipment shared with the station", async () => {
@@ -229,8 +232,8 @@ describe("workshop", () => {
     usePlayerColors.setState({ colors: { P1: "green", P2: "purple" } });
     useCampaignStore.getState().complete("alpha-01");
     render(<CampaignMap />);
-    expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-color")).toBe("#54d994");
-    expect(screen.getByRole("button", { name: "P2" }).style.getPropertyValue("--player-color")).toBe("#c98bff");
+    expect(screen.getByRole("button", { name: "P1" }).style.getPropertyValue("--player-color")).toBe(cssPlayerColor(markingColor("P1", usePlayerColors.getState())));
+    expect(screen.getByRole("button", { name: "P2" }).style.getPropertyValue("--player-color")).toBe(cssPlayerColor(markingColor("P2", usePlayerColors.getState())));
     expect(screen.getByText("Teljesítve: 1 / 6")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("button", { name: "P2" })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: "P2" }));

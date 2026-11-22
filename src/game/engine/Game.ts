@@ -1,4 +1,4 @@
-import { Application, Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
+import { Application, Assets, ColorMatrixFilter, Container, Graphics, Sprite, type Texture } from "pixi.js";
 import { GlowFilter } from "pixi-filters";
 import { TerrainBloomFilter } from "./TerrainBloomFilter";
 import { bloomSettings } from "./bloomQuality";
@@ -67,7 +67,7 @@ import { MAX_ANGLE, MIN_POWER, useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useCommandStore } from "@/game/state/commandStore";
 import { playerName } from "@/game/state/playerNames";
-import { ARMOR_COLORS, playerAccent, playerColor, tankTint, usePlayerColors } from "@/game/state/playerColors";
+import { armorColorMatrix, armorTint, markingColor, playerAccent, tankTint, usePlayerColors } from "@/game/state/playerColors";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import type { MatchMode } from "@/game/state/gameStore";
@@ -160,6 +160,7 @@ interface TankView {
   barrel: Sprite;
   anim: BarrelState;
   glow: GlowFilter;
+  paint?: ColorMatrixFilter;
 }
 
 /** Pixi-t és a játéklogikát összefogó engine; Reacttől független, így tesztelhető. */
@@ -431,10 +432,10 @@ export class Game {
           }))
         : [];
     this.buildingDecor.draw(this.sector.id, this.terrain.mask, this.strategicObjectives);
-    const colors = usePlayerColors.getState().colors;
+    const colors = usePlayerColors.getState();
     this.tanks = [
-      createTank("P1", width * 0.12, playerColor("P1", colors), 45, this.statsFor("P1")),
-      createTank("P2", width * 0.88, playerColor("P2", colors), 135, this.statsFor("P2")),
+      createTank("P1", width * 0.12, markingColor("P1", colors), 45, this.statsFor("P1")),
+      createTank("P2", width * 0.88, markingColor("P2", colors), 135, this.statsFor("P2")),
     ];
     this.tanks.forEach((t) => settleTank(t, this.terrain!.mask));
     this.buildTankViews();
@@ -603,7 +604,7 @@ export class Game {
     if (!textures) return;
     this.destroyTankViews();
     const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
-    const { armorColors } = usePlayerColors.getState();
+    const colors = usePlayerColors.getState();
     const bodySprite = (texture: Texture) => {
       const sprite = new Sprite(texture);
       sprite.anchor.set(0.5, 1);
@@ -616,14 +617,16 @@ export class Game {
       barrel.scale.y = TANK_VISUAL_SCALE;
       const root = new Container();
       root.addChild(barrel);
-      const armorColor = t.id === "P1" || t.id === "P2" ? armorColors[t.id] : "steel";
-      if (armorColor === "steel") {
+      let paint: ColorMatrixFilter | undefined;
+      if (t.id !== "P1" && t.id !== "P2") {
         root.addChild(bodySprite(textures.body));
       } else {
         const armor = bodySprite(textures.armor);
-        const tint = ARMOR_COLORS[armorColor].tint;
-        barrel.tint = tint;
-        armor.tint = tint;
+        const tint = armorTint(t.id, colors);
+        paint = new ColorMatrixFilter();
+        paint.matrix = armorColorMatrix(tint);
+        barrel.filters = [paint];
+        armor.filters = [paint];
         root.addChild(bodySprite(textures.chassis), armor, bodySprite(textures.details));
       }
       const markings = bodySprite(textures.markings);
@@ -639,12 +642,15 @@ export class Game {
       });
       root.filters = [glow];
       this.tankLayer.addChild(root);
-      this.tankViews.set(t.id, { root, barrel, glow, anim: { angle: t.angle, recoil: 0 } });
+      this.tankViews.set(t.id, { root, barrel, glow, paint, anim: { angle: t.angle, recoil: 0 } });
     }
   }
 
   private destroyTankViews(): void {
-    for (const view of this.tankViews.values()) view.glow.destroy();
+    for (const view of this.tankViews.values()) {
+      view.glow.destroy();
+      view.paint?.destroy();
+    }
     for (const child of this.tankLayer.removeChildren()) child.destroy({ children: true });
     this.tankViews.clear();
   }
