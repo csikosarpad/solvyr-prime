@@ -1,5 +1,6 @@
 import { SECTORS, sectorById, sectorStatus, type SectorId } from "@/game/data/sectors";
 import { useT } from "@/i18n";
+import { useCampaignStore } from "@/game/state/campaignStore";
 
 interface CampaignSectorCardProps {
   inspectedId: SectorId;
@@ -21,6 +22,7 @@ export function CampaignSectorCard({
   onStart,
 }: CampaignSectorCardProps) {
   const t = useT();
+  const player = useCampaignStore((state) => state.playerId);
   const panels = SECTORS.map((sector) => ({ sector, departing: false }));
   if (departingId !== null) panels.push({ sector: sectorById(departingId), departing: true });
 
@@ -58,7 +60,7 @@ export function CampaignSectorCard({
               )}
               <div>
                 <dt>{t("menu.opponent")}</dt>
-                <dd>{t("campaign.opponent")}</dd>
+                <dd>{t("campaign.opponent", { player, ai: player === "P1" ? "P2" : "P1" })}</dd>
               </div>
               <div>
                 <dt>{t("campaign.rules")}</dt>

@@ -1,0 +1,16 @@
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source("../");
+@import "./panels.css";
+@import "./core.ui.css";
+@import "./hud-base.ui.css";
+@import "./overlay.ui.css";
+@import "./main-menu.ui.css";
+@import "./result.ui.css";
+@import "./multiplayer.ui.css";
+@import "./controls.ui.css";
+@import "./result-actions.ui.css";
+@import "./responsive.ui.css";
+@import "./hud-effects.ui.css";
+@import "./settings.ui.css";
+@import "./hud-layout.ui.css";

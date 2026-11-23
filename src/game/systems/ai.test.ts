@@ -8,6 +8,8 @@ import {
   AiBrain,
   chooseUpgrades,
   experienceStrength,
+  moveTankAvoidingFire,
+  planFireEscape,
   planShot,
   planPreciseShot,
   rankStars,
@@ -113,6 +115,16 @@ describe("AiBrain", () => {
     expect(brain.planMove(near, target, mask, 0, DEFAULT_WORLD.gravity)).toBe(0);
   });
 
+  it("does not plan an advance through fire even when the target is out of range", () => {
+    const { mask, target } = setup();
+    const shooter = createTank("P2", 960, 0, 135);
+    shooter.y = 400;
+    const brain = new AiBrain({ skill: 0.9, random: () => 0.5 });
+    expect(brain.planMove(shooter, target, mask, 0, DEFAULT_WORLD.gravity)).toBeGreaterThan(0);
+    expect(brain.planMove(shooter, target, mask, 0, DEFAULT_WORLD.gravity, [{ x: 916, radius: 42 }])).toBe(0);
+    expect(brain.planMove(shooter, target, mask, 0, DEFAULT_WORLD.gravity, [{ x: 960, radius: 42 }])).toBe(0);
+  });
+
   it("alacsony tudásnál a zaj miatt eltér a tökéletes lövéstől", () => {
     const { mask, shooter, target } = setup();
     const brain = new AiBrain({ skill: 0.3, random: sequence([0.2, 0.7, 0.4, 0.9, 0.1]) });
@@ -161,6 +173,49 @@ describe("AiBrain", () => {
       expect(shot.angle).toBeLessThanOrEqual(180);
       expect(shot.power).toBeLessThanOrEqual(shooter.stats.maxPower);
     }
+  });
+});
+
+describe("AI fire safety", () => {
+  it.each([-1, 1] as const)("does not spend movement entering fire in direction %i", (dir) => {
+    const { mask, shooter } = setup();
+    const before = { ...shooter };
+    expect(moveTankAvoidingFire(shooter, dir, mask, [{ x: shooter.x + dir * 44, radius: 42 }])).toBe(false);
+    expect(shooter).toEqual(before);
+  });
+
+  it("finds the shortest exit even when it leads away from the enemy, without mutating the tank", () => {
+    const { mask, shooter } = setup();
+    const before = { ...shooter };
+    expect(planFireEscape(shooter, mask, [{ x: 440, radius: 20 }])).toEqual({ dir: 1, steps: 6 });
+    expect(shooter).toEqual(before);
+  });
+
+  it("uses the longer exit when terrain blocks the closer one", () => {
+    const { shooter } = setup();
+    const mask = TerrainMask.fromHeightmap(
+      Array.from({ length: WIDTH }, (_, x) => x >= 452 ? 390 : 400), HEIGHT,
+    );
+    expect(planFireEscape(shooter, mask, [{ x: 440, radius: 20 }])).toEqual({ dir: -1, steps: 16 });
+  });
+
+  it("does not escape one fire by entering a different burning zone", () => {
+    const { mask, shooter } = setup();
+    const zones = [{ x: 440, radius: 20 }, { x: 480, radius: 20 }];
+    expect(planFireEscape(shooter, mask, zones)).toEqual({ dir: -1, steps: 16 });
+  });
+
+  it("moves toward safety with a limited budget, but stops when there is no usable movement or exit", () => {
+    const { mask, shooter } = setup();
+    shooter.moveLeft = 2;
+    const zones = [{ x: 440, radius: 20 }];
+    const escape = planFireEscape(shooter, mask, zones)!;
+    expect(escape.dir).toBe(1);
+    expect(moveTankAvoidingFire(shooter, escape.dir, mask, zones)).toBe(true);
+    expect(shooter).toMatchObject({ x: 452, moveLeft: 0 });
+    expect(planFireEscape(shooter, mask, zones)).toBeNull();
+    shooter.moveLeft = 60;
+    expect(planFireEscape(shooter, mask, [{ x: 500, radius: 1000 }])).toBeNull();
   });
 });
 

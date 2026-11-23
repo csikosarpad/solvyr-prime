@@ -181,7 +181,7 @@ describe("Hud billentyűk", () => {
     fireEvent.click(screen.getByRole("button", { name: "Átcsoportosítás balra" }));
     fireEvent.click(screen.getByRole("button", { name: "Átcsoportosítás jobbra" }));
     fireEvent.click(screen.getByRole("button", { name: /Tűzvezetés/i }));
-    fireEvent.click(screen.getByRole("button", { name: "TÜZET!" }));
+    fireEvent.click(screen.getByRole("button", { name: "TŰZ!" }));
     fireEvent.click(screen.getByRole("button", { name: "Kommunikáció: aktív (M)" }));
 
     expect(move.mock.calls).toEqual([[-1], [1]]);
@@ -219,7 +219,8 @@ describe("Hud billentyűk", () => {
         ],
       }),
     );
-    expect(screen.getByText("P1: 80/100 HP")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "P1" })).toHaveTextContent("P1");
+    expect(screen.getByRole("region", { name: "P1" })).toHaveTextContent("80/100 HP");
     const meters = screen.getAllByRole("meter");
     // P1: HP + pajzs + páncél, P2: csak HP.
     expect(meters).toHaveLength(4);
@@ -229,12 +230,84 @@ describe("Hud billentyűk", () => {
     expect(screen.getByRole("meter", { name: "Páncélzat" })).toHaveAttribute("aria-valuetext", "15/60");
   });
 
-  it("az M billentyű némítást kapcsol, lövés közben is", () => {
-    act(() => useGameStore.setState({ muted: false, phase: "flying" }));
-    fireEvent.keyDown(window, { key: "m" });
-    expect(useGameStore.getState().muted).toBe(true);
-    fireEvent.keyDown(window, { key: "M" });
-    expect(useGameStore.getState().muted).toBe(false);
+  it("a játékosszín jelenik meg mindkét panelen, és a HP-csík a HP-értékhez igazodik", () => {
+    act(() =>
+      useGameStore.setState({
+        tanks: [
+          {
+            id: "P1",
+            hp: 75,
+            maxHp: 100,
+            shield: 0,
+            maxShield: 0,
+            armor: 0,
+            maxArmor: 0,
+            moveLeft: 0,
+            color: 0x54d994,
+          },
+          {
+            id: "P2",
+            hp: 25,
+            maxHp: 100,
+            shield: 0,
+            maxShield: 0,
+            armor: 0,
+            maxArmor: 0,
+            moveLeft: 0,
+            color: 0xc98bff,
+          },
+        ],
+      }),
+    );
+
+    const p1 = screen.getByRole("region", { name: "P1" });
+    const p2 = screen.getByRole("region", { name: "P2" });
+    expect(p1.style.getPropertyValue("--unit-accent")).toBe("#54d994");
+    expect(p2.style.getPropertyValue("--unit-accent")).toBe("#c98bff");
+    expect(p1.querySelector(".hud-health-fill")).toHaveStyle({ width: "75%" });
+    expect(p2.querySelector(".hud-health-fill")).toHaveStyle({ width: "25%" });
+  });
+
+  it("a lövedék repülése alatt a nyilak és a mozgásgombok kitérést hívnak, ha van keret", () => {
+    const move = vi.fn();
+    gameRef.current = { move } as unknown as Game;
+    act(() => useGameStore.setState({ phase: "flying", canControl: false, canDodge: true }));
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(move.mock.calls).toEqual([[1], [-1]]);
+    expect(screen.getByRole("button", { name: "Átcsoportosítás balra" })).toBeEnabled();
+    // Ctrl+nyíl (szögállítás) kitéréskor nem mozgat.
+    fireEvent.keyDown(window, { key: "ArrowRight", ctrlKey: true });
+    expect(move).toHaveBeenCalledTimes(2);
+    act(() => useGameStore.setState({ canDodge: false }));
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(move).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("button", { name: "Átcsoportosítás balra" })).toBeDisabled();
+  });
+
+  it("a fegyverválasztó gombbal és számbillentyűvel vált, egyetlen fegyvernél rejtett", () => {
+    const selectWeapon = vi.fn();
+    gameRef.current = { selectWeapon } as unknown as Game;
+    act(() =>
+      useGameStore.setState({
+        phase: "aiming",
+        canControl: true,
+        weapon: "standard",
+        weaponOptions: ["standard", "laser"],
+      }),
+    );
+    const laser = screen.getByRole("button", { name: "Lézer" });
+    expect(laser.querySelector(".hud-weapon-icon")).toHaveAttribute("src", expect.stringContaining("laser"));
+    fireEvent.click(laser);
+    expect(selectWeapon).toHaveBeenCalledWith("laser");
+    fireEvent.keyDown(window, { key: "2" });
+    expect(selectWeapon).toHaveBeenCalledTimes(2);
+    expect(selectWeapon).toHaveBeenLastCalledWith("laser");
+    // Nem létező sorszám nem vált.
+    fireEvent.keyDown(window, { key: "5" });
+    expect(selectWeapon).toHaveBeenCalledTimes(2);
+    act(() => useGameStore.setState({ weaponOptions: ["standard"] }));
+    expect(screen.queryByRole("group", { name: "Fegyver" })).toBeNull();
   });
 
   it("a szög a [0, 180] tartományban marad", () => {

@@ -11,6 +11,10 @@ describe("MenuCredits", () => {
     const credits = screen.getByRole("complementary", { name: "Köszönet" });
     expect(credits).toHaveTextContent("Cyberpunk Neon City");
     expect(credits).toHaveTextContent("Kenney Vleugels");
+    expect(credits).toHaveTextContent("Nano Banana");
+    expect(credits).toHaveTextContent("Felületi koncepciók és újratervezés");
+    expect(credits).toHaveTextContent("GitHub Copilot");
+    expect(credits).toHaveTextContent("AI-támogatott szoftverfejlesztés");
     expect(credits).toHaveTextContent("Lövés · robbanás · tankmozgás");
     expect(credits).not.toHaveTextContent("Jamii");
     const links = within(credits).getAllByRole("link");

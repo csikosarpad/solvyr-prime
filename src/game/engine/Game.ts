@@ -1,10 +1,19 @@
-import { Application, Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
+import { Application, Assets, ColorMatrixFilter, Container, Graphics, Sprite, type Texture } from "pixi.js";
 import { GlowFilter } from "pixi-filters";
 import { TerrainBloomFilter } from "./TerrainBloomFilter";
 import { bloomSettings } from "./bloomQuality";
-import tankBodyUrl from "../assets/tank-body.svg?url";
-import tankBarrelUrl from "../assets/tank-barrel.svg?url";
-import { kick, stepBarrel, type BarrelState } from "../systems/barrelAnimation";
+import tankBodyUrl from "@/game/assets/tank-body.svg?url";
+import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
+import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
+import { tankArmorLayers } from "@/game/assets/tankArmorLayers";
+import forgeReactorUrl from "@/game/assets/forge-reactor.png?url";
+import habitatUrl from "@/game/assets/buildings/habitat.png?url";
+import labUrl from "@/game/assets/buildings/research-lab.png?url";
+import radarUrl from "@/game/assets/buildings/radar.png?url";
+import defenseUrl from "@/game/assets/buildings/defense.png?url";
+import foundryUrl from "@/game/assets/buildings/foundry.png?url";
+import { BuildingDecor } from "./BuildingDecor";
+import { kick, stepBarrel, type BarrelState } from "@/game/systems/barrelAnimation";
 import {
   DEFAULT_WORLD,
   dashPolyline,
@@ -12,45 +21,67 @@ import {
   predictTrajectory,
   stepBody,
   type BallisticBody,
-} from "../physics/ballistics";
-import { PreviewAllowance } from "../systems/previewAllowance";
-import { dragToAim, DRAG_POWER_PER_PX } from "../systems/dragAim";
-import { createSeededRandom, type MatchSetup } from "../systems/seededRandom";
-import { ScreenShake } from "../systems/screenShake";
-import { ShellTrail } from "../systems/shellTrail";
+  type Vec2,
+} from "@/game/physics/ballistics";
+import { PreviewAllowance } from "@/game/systems/previewAllowance";
+import { dragToAim, DRAG_POWER_PER_PX } from "@/game/systems/dragAim";
+import { createSeededRandom, type MatchSetup } from "@/game/systems/seededRandom";
+import { ScreenShake } from "@/game/systems/screenShake";
+import { ShellTrail } from "@/game/systems/shellTrail";
 import { Terrain } from "../terrain/Terrain";
-import { ParticleSystem } from "../systems/particles";
+import { ParticleSystem } from "@/game/systems/particles";
 import { DEFAULT_THEME, type Theme } from "../theme";
 import { FxRenderer } from "./FxRenderer";
+import { GroundFireRenderer } from "./GroundFireRenderer";
+import groundFlameUrl from "../assets/fx/ground-flame.svg?url";
 import { loadFxTextures } from "./fxTextures";
 import { AudioManager } from "./AudioManager";
 import { BattlefieldLayers } from "./BattlefieldLayers";
-import { TurnManager } from "../systems/turnManager";
+import { TurnManager } from "@/game/systems/turnManager";
 import {
   applyDamage,
   barrelTip,
   createTank,
-  explosionDamage,
   isAlive,
   moveTank,
   regenTankShield,
   settleTank,
   tankContains,
   type Tank,
-} from "../entities/tank";
-import { awardXp, buyUpgrade, computeStats, newProfile, type Profile } from "../systems/upgrades";
-import { newMatchStats, recordDamage, recordShot, recordXp, type MatchStats } from "../systems/matchStats";
-import { loadProfiles, saveProfiles } from "../systems/profileStorage";
-import { MAX_ANGLE, MIN_POWER, useGameStore } from "../state/gameStore";
-import { useMultiplayerStore } from "../state/multiplayerStore";
-import { useCommandStore } from "../state/commandStore";
-import { playerName } from "../state/playerNames";
-import { useAiSettings } from "../state/aiSettings";
-import { useCampaignStore } from "../state/campaignStore";
-import type { MatchMode } from "../state/gameStore";
-import { AiBrain, chooseUpgrades, simulateImpact, skillFromMemory } from "../systems/ai";
-import type { RoomEvent } from "../multiplayer/protocol";
-import { TRAINING_SECTOR, sectorById, type Sector, type SectorId } from "../data/sectors";
+} from "@/game/entities/tank";
+import { awardXp, buyUpgrade, computeStats, newProfile, type Profile } from "@/game/systems/upgrades";
+import { weaponById, type WeaponDefinition, type WeaponId } from "@/game/data/weapons";
+import {
+  buyWeapon,
+  resolveShotEffect,
+  shotDamageAt,
+  steerHoming,
+  traceHitscan,
+  unlockedWeapons,
+  type ShotEffect,
+} from "@/game/systems/weapons";
+import { resolveDamage } from "@/game/systems/damage";
+import { newMatchStats, recordDamage, recordShot, recordXp, type MatchStats } from "@/game/systems/matchStats";
+import { loadProfiles, saveProfiles } from "@/game/systems/profileStorage";
+import { MAX_ANGLE, MIN_POWER, useGameStore } from "@/game/state/gameStore";
+import { useMultiplayerStore } from "@/game/state/multiplayerStore";
+import { useCommandStore } from "@/game/state/commandStore";
+import { playerName } from "@/game/state/playerNames";
+import { armorColorMatrix, armorTint, markingColor, playerAccent, tankTint, usePlayerColors } from "@/game/state/playerColors";
+import { useAiSettings } from "@/game/state/aiSettings";
+import { useCampaignStore } from "@/game/state/campaignStore";
+import type { MatchMode } from "@/game/state/gameStore";
+import {
+  AiBrain,
+  chooseUpgrades,
+  moveTankAvoidingFire,
+  planFireEscape,
+  planLaserAngle,
+  simulateImpact,
+  skillFromMemory,
+} from "@/game/systems/ai";
+import type { RoomEvent } from "@/game/multiplayer/protocol";
+import { TRAINING_SECTOR, sectorById, type Sector, type SectorId } from "@/game/data/sectors";
 import {
   applyStrategicDamage,
   createStrategicObjective,
@@ -58,17 +89,28 @@ import {
   strategicExplosionDamage,
   structureState,
   type PlacedStrategicObjective,
-} from "../systems/strategicObjectives";
+} from "@/game/systems/strategicObjectives";
 import { StrategicObjectiveGraphics } from "./StrategicObjectiveGraphics";
-import { missionById, missionBattlefield, type CampaignMission } from "../data/campaignContent";
-import { useVeyloraStore } from "../state/veyloraStore";
-import { missionSucceeded } from "../systems/campaignMission";
-import { BASE_STATS } from "../data/upgrades";
-import { applyCampaignUpgrades, type CampaignSave } from "../systems/campaignEconomy";
+import { missionById, missionBattlefield, type CampaignMission } from "@/game/data/campaignContent";
+import { useVeyloraStore } from "@/game/state/veyloraStore";
+import { missionSucceeded } from "@/game/systems/campaignMission";
+import { BASE_STATS } from "@/game/data/upgrades";
+import { applyCampaignUpgrades, type CampaignSave } from "@/game/systems/campaignEconomy";
+import type { LocalPlayerId } from "@/game/state/playerId";
 
 /** Ennyi HP-arány alatt kritikus a tank állapota. */
 const CRITICAL_HP_FRACTION = 0.3;
-/** A fanfár hossza; ennyi idő után hangzik el a győztes neve. */
+const LAST_STAND_MESSAGES = [
+  "command.lastStand.fought",
+  "command.lastStand.end",
+  "command.lastStand.served",
+] as const;
+const VICTORY_MESSAGES = [
+  "command.victory.goodBattle",
+  "command.victory.cameToWin",
+  "command.victory.countOnUs",
+] as const;
+/** A fanfár hossza; ennyi idő után hangzik el a győztes zárómondata. */
 const VICTORY_ANNOUNCE_DELAY_MS = 1800;
 /** A gép „gondolkodási” ideje, majd a célzás látható ideje a lövés előtt. */
 const AI_THINK_MS = 900;
@@ -76,6 +118,13 @@ const AI_AIM_MS = 700;
 const AI_MOVE_STEP_MS = 45;
 /** Esélye, hogy a gép a Smart Aimet is bekapcsolja, ha van még töltete. */
 const AI_PREVIEW_CHANCE = 0.5;
+/** A kitérő gép alap reakcióideje a játékos lövése után (ms); a tudásszint gyorsítja. */
+const AI_DODGE_REACTION_MS = 700;
+/** Kitérési esély: alap + tudásszint-arányos rész. */
+const AI_DODGE_BASE_CHANCE = 0.2;
+const AI_DODGE_SKILL_CHANCE = 0.7;
+/** Ennyivel nagyobb a kerülendő zóna a robbanási sugárnál (px). */
+const DODGE_SAFETY_MARGIN = 12;
 
 interface ImpactReport {
   tank: Tank;
@@ -94,8 +143,15 @@ const PREVIEW_DASH = 2;
 const PREVIEW_GAP = 4;
 /** Ennyi ideig nem találhatja el a lövedék a lövő tankot (tick). */
 const SELF_HIT_GRACE = 30;
+/** A lézersugár visszajelzésének hossza (s). */
+const LASER_BEAM_TTL = 0.35;
+/** Eddig a tickig él a célkövető rávezetés; utána a lövedék szabadon repül (nincs végtelen körözés). */
+const HOMING_GUIDANCE_MAX_TICKS = 900;
+const LAST_STAND_LOOKAHEAD_TICKS = 60;
 /** A cső forgáspontja a tank talajszintje fölött (px); egyezik a tank.ts-ben lévővel. */
 const BARREL_PIVOT_HEIGHT = 10;
+/** Csak a megjelenítés nagyobb; a löveg hossza és a találati terület nem változik. */
+const TANK_VISUAL_SCALE = 1.25;
 /** Ekkora (képernyő-px) sugarú körben a tank körül indított húzás célzást jelent. */
 const DRAG_GRAB_RADIUS = 64;
 
@@ -104,6 +160,7 @@ interface TankView {
   barrel: Sprite;
   anim: BarrelState;
   glow: GlowFilter;
+  paint?: ColorMatrixFilter;
 }
 
 /** Pixi-t és a játéklogikát összefogó engine; Reacttől független, így tesztelhető. */
@@ -113,14 +170,23 @@ export class Game {
   private tanksGfx = new Graphics();
   private strategicObjectives: PlacedStrategicObjective[] = [];
   private objectiveGraphics = new StrategicObjectiveGraphics();
+  private buildingDecor = new BuildingDecor();
   private tankLayer = new Container();
   private battlefieldLayers = new BattlefieldLayers();
   private tankViews = new Map<string, TankView>();
-  private tankTextures: { body: Texture; barrel: Texture } | null = null;
+  private tankTextures: {
+    body: Texture;
+    barrel: Texture;
+    markings: Texture;
+    chassis: Texture;
+    armor: Texture;
+    details: Texture;
+  } | null = null;
   private shellGfx = new Graphics();
   private shellGlow = new Sprite();
   private trailGfx = new Graphics();
   private shellTrail = new ShellTrail();
+  private shellVisual = { ...DEFAULT_THEME.shell, scale: 1, intensity: 1 };
   private shake = new ScreenShake();
   private shakeEnabled = true;
   private stageBase = { x: 0, y: 0 };
@@ -136,6 +202,7 @@ export class Game {
   private tanks: Tank[] = [];
   /** A meccsek között megmaradó fejlődés (meta-progresszió). */
   private profiles: Record<string, Profile> = loadProfiles(["P1", "P2"]);
+  private aiProfile: Profile = loadProfiles(["AI"]).AI!;
   private matchStats: MatchStats = newMatchStats(["P1", "P2"]);
   private turns = new TurnManager([]);
   private nextStarter = Math.floor(Math.random() * 2);
@@ -144,10 +211,12 @@ export class Game {
   private matchMode: MatchMode = "skirmish";
   private campaignMission: CampaignMission | null = null;
   private campaignEconomy: CampaignSave | null = null;
+  private campaignPlayer: LocalPlayerId = "P1";
   private sector: Sector = TRAINING_SECTOR;
   private matchActive = true;
   private matchProfiles: Record<string, Profile> | null = null;
   private profilesBeforeMatch: Record<string, Profile> | null = null;
+  private aiProfileBeforeMatch: Profile | null = null;
   private lastMultiplayerRevision = 0;
   private pendingMultiplayerEvents: RoomEvent[] = [];
   private pendingMultiplayerStart: { setup: MatchSetup; profiles: Record<string, Profile>; revision: number } | null =
@@ -160,9 +229,29 @@ export class Game {
   private aiActive = false;
   private aiBrain: AiBrain | null = null;
   private aiTimers: number[] = [];
+  private aiEscapingFire = false;
+  private aiFireEscapeCooldown = 0;
   private aiHits = 0;
   private shell: BallisticBody | null = null;
   private shellAge = 0;
+  /** Az úton lévő lövés fegyvere és feloldott hatása; a tesztbeli közvetlen robbantásnál standard. */
+  private activeShot: { weapon: WeaponDefinition; effect: ShotEffect } | null = null;
+  /** Játékosonként kiválasztott fegyver; a meccs alatt megmarad, új meccsnél ürül. */
+  private selectedWeapons: Record<string, WeaponId> = {};
+  /** Égő talajzónák (gyújtólövedék); a fix szimulációs lépésekben sebeznek és öregszenek. */
+  private burnZones: {
+    x: number;
+    radius: number;
+    secondsLeft: number;
+    damagePerSecond: number;
+    ownerId: string;
+    exposure: Map<string, { pendingDamage: number; notified: boolean }>;
+  }[] = [];
+  private lastStandAnnounced = new Set<string>();
+  private groundFire: GroundFireRenderer | null = null;
+  /** A lézersugár rövid, halványuló visszajelzése. */
+  private laserBeam: { from: Vec2; to: Vec2; ttl: number } | null = null;
+  private beamGfx = new Graphics();
   private acc = 0;
   private destroyed = false;
 
@@ -173,10 +262,21 @@ export class Game {
     host.appendChild(this.app.canvas);
     this.setupDragAim(this.app.canvas);
 
-    const [body, barrel, fxTextures] = await Promise.all([
+    const [body, barrel, markings, chassis, armor, details, reactor, habitat, lab, radar, defense, foundry, fxTextures, groundFlame] = await Promise.all([
       Assets.load<Texture>({ src: tankBodyUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankBarrelUrl, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: tankMarkingsUrl, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: tankArmorLayers.chassis, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: tankArmorLayers.armor, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: tankArmorLayers.details, data: { resolution: 3 } }),
+      Assets.load<Texture>(forgeReactorUrl),
+      Assets.load<Texture>(habitatUrl),
+      Assets.load<Texture>(labUrl),
+      Assets.load<Texture>(radarUrl),
+      Assets.load<Texture>(defenseUrl),
+      Assets.load<Texture>(foundryUrl),
       loadFxTextures(),
+      Assets.load<Texture>(groundFlameUrl),
       this.battlefieldLayers.loadAssets(),
     ]);
     // Az asset-betöltés alatt is megszúnhetett a komponens (StrictMode).
@@ -187,8 +287,13 @@ export class Game {
         this.lockTarget();
       }
     });
-    this.tankTextures = { body, barrel };
+    this.tankTextures = { body, barrel, markings, chassis, armor, details };
+    this.objectiveGraphics.setReactorTexture(reactor);
+    this.objectiveGraphics.setHabitatTexture(habitat);
+    this.objectiveGraphics.setLabTexture(lab);
+    this.buildingDecor.setTextures({ radar, defense, foundry });
     this.fx = new FxRenderer(fxTextures);
+    this.groundFire = new GroundFireRenderer(groundFlame, fxTextures);
     this.shellGlow.texture = fxTextures.glow;
     this.shellGlow.anchor.set(0.5);
     this.shellGlow.scale.set(30 / fxTextures.glow.width);
@@ -196,6 +301,7 @@ export class Game {
     this.shellGlow.blendMode = "add";
     this.shellGlow.visible = false;
     this.trailGfx.blendMode = "add";
+    this.beamGfx.blendMode = "add";
 
     this.terrain = new Terrain(this.app.renderer, this.theme.terrain);
     const bloom = bloomSettings(window.matchMedia("(pointer: coarse)").matches);
@@ -211,13 +317,17 @@ export class Game {
     this.app.stage.addChild(
       backdrop,
       this.battlefieldLayers,
+      this.buildingDecor,
       this.terrain.sprite,
+      this.buildingDecor.healthBars,
       this.objectiveGraphics,
+      this.groundFire.layer,
       this.previewGfx,
       this.tankLayer,
       this.tanksGfx,
       this.shellGfx,
       this.trailGfx,
+      this.beamGfx,
       this.shellGlow,
       this.fx.layer,
     );
@@ -230,11 +340,6 @@ export class Game {
     if (useGameStore.getState().screen !== "playing") this.leaveBattle();
     this.app.renderer.on("resize", () => this.layout());
     this.app.ticker.add((t) => this.update(t.deltaMS / 1000));
-  }
-
-  private playerColor(index: number): number {
-    const { players } = this.theme;
-    return players[index % players.length]!;
   }
 
   /** A pályát középre illeszti az ablakba, arányt tartva. */
@@ -297,6 +402,7 @@ export class Game {
       this.profilesBeforeMatch = Object.fromEntries(
         Object.entries(this.profiles).map(([id, profile]) => [id, { ...profile, levels: { ...profile.levels } }]),
       );
+      this.aiProfileBeforeMatch = structuredClone(this.aiProfile);
     }
     useCommandStore.getState().clear();
     window.clearTimeout(this.victoryTimer);
@@ -325,9 +431,11 @@ export class Game {
             worldY: this.terrain!.mask.surfaceY(placement.worldX),
           }))
         : [];
+    this.buildingDecor.draw(this.sector.id, this.terrain.mask, this.strategicObjectives);
+    const colors = usePlayerColors.getState();
     this.tanks = [
-      createTank("P1", width * 0.12, this.playerColor(0), 45, this.statsFor("P1")),
-      createTank("P2", width * 0.88, this.playerColor(1), 135, this.statsFor("P2")),
+      createTank("P1", width * 0.12, markingColor("P1", colors), 45, this.statsFor("P1")),
+      createTank("P2", width * 0.88, markingColor("P2", colors), 135, this.statsFor("P2")),
     ];
     this.tanks.forEach((t) => settleTank(t, this.terrain!.mask));
     this.buildTankViews();
@@ -341,6 +449,13 @@ export class Game {
     this.matchStats = newMatchStats(this.tanks.map((t) => t.id));
     this.previewAllowance.reset(Object.fromEntries(this.tanks.map((tank) => [tank.id, tank.stats.previewCharges])));
     this.shell = null;
+    this.activeShot = null;
+    this.shellTrail.clear();
+    this.selectedWeapons = {};
+    this.burnZones = [];
+    this.groundFire?.clear();
+    this.lastStandAnnounced.clear();
+    this.laserBeam = null;
     useGameStore.getState().sync({
       matchSequence: useGameStore.getState().matchSequence + 1,
       matchId: crypto.randomUUID(),
@@ -350,6 +465,7 @@ export class Game {
       missionSuccess: null,
       opponentSkill: this.campaignMission?.opponent.skill ?? null,
       missionGeneration: this.campaignEconomy?.generation ?? null,
+      campaignPlayer: this.campaignPlayer,
     });
     this.beginTurn();
   }
@@ -366,11 +482,19 @@ export class Game {
     this.pendingMultiplayerStart = null;
     this.multiplayer = true;
     this.profilesBeforeMatch = null;
+    this.aiProfileBeforeMatch = null;
     this.matchProfiles = profiles;
     this.profiles = Object.fromEntries(
-      Object.entries(profiles).map(([id, profile]) => [id, { xp: profile.xp, levels: { ...profile.levels } }]),
+      Object.entries(profiles).map(([id, profile]) => {
+        // A fegyverfeloldás helyi profiladat; az online meccs nem törölheti.
+        const weapons = profile.weapons ?? this.profiles[id]?.weapons;
+        return [
+          id,
+          { xp: profile.xp, levels: { ...profile.levels }, ...(weapons && weapons.length > 0 ? { weapons } : {}) },
+        ];
+      }),
     );
-    saveProfiles(this.profiles);
+    this.saveProfiles();
     this.lastMultiplayerRevision = revision;
     this.pendingMultiplayerEvents = [];
     this.unsubscribeMultiplayer?.();
@@ -410,6 +534,7 @@ export class Game {
   startCampaign(id: SectorId = useCampaignStore.getState().selectedId): boolean {
     const sector = sectorById(id);
     if (!useCampaignStore.getState().select(id)) return false;
+    this.campaignPlayer = useCampaignStore.getState().playerId;
     this.sector = sector;
     this.startOffline("campaign");
     return true;
@@ -421,7 +546,12 @@ export class Game {
       console.error("Cannot start VEYLORA before the battlefield is ready");
       return false;
     }
+    if (useVeyloraStore.getState().playerId !== useCampaignStore.getState().playerId) {
+      console.error("Campaign player does not match the selected economy");
+      return false;
+    }
     if (!await useVeyloraStore.getState().select(id)) return false;
+    this.campaignPlayer = useVeyloraStore.getState().playerId;
     this.campaignMission = mission;
     this.campaignEconomy = structuredClone(useVeyloraStore.getState().economy);
     this.sector = missionBattlefield(mission);
@@ -432,6 +562,7 @@ export class Game {
   leaveBattle(): void {
     this.discardMatchXp();
     this.matchActive = false;
+    this.groundFire?.clear();
     this.clearAiTimers();
     window.clearTimeout(this.victoryTimer);
     this.pendingMultiplayerStart = null;
@@ -442,39 +573,67 @@ export class Game {
     this.acc = 0;
     this.dragPointerId = null;
     useCommandStore.getState().clear();
-    useGameStore.getState().sync({ canControl: false, profiles: this.profiles, matchStats: this.matchStats });
+    useGameStore.getState().sync({ canControl: false, aiOpponent: null, profiles: this.profiles, matchStats: this.matchStats });
   }
 
   private discardMatchXp(): void {
     if (!this.profilesBeforeMatch) return;
     this.profiles = this.profilesBeforeMatch;
     this.profilesBeforeMatch = null;
+    if (this.aiProfileBeforeMatch) this.aiProfile = this.aiProfileBeforeMatch;
+    this.aiProfileBeforeMatch = null;
     this.matchStats = newMatchStats(Object.keys(this.profiles));
   }
 
   private statsFor(id: string) {
-    if (id === "P2" && this.campaignMission)
+    if (id === this.aiId() && this.campaignMission)
       return { ...BASE_STATS, maxArmor: this.campaignMission.opponent.armor };
+    if (this.aiActive && id === this.aiId()) return computeStats(this.aiProfile.levels);
     const stats = computeStats((this.matchProfiles?.[id] ?? this.profiles[id]!).levels);
-    return id === "P1" && this.campaignMission && this.campaignEconomy
+    return id === this.campaignPlayer && this.campaignMission && this.campaignEconomy
       ? applyCampaignUpgrades(stats, this.campaignEconomy) : stats;
   }
 
-  /** Tankonként egy sprite-pár: a cső a test mögött forog a saját forgáspontja körü. */
+  private aiId(): LocalPlayerId {
+    return this.matchMode !== "skirmish" && this.campaignPlayer === "P2" ? "P1" : "P2";
+  }
+
+  /** A cső a test mögött forog, a játékosszínű jelzések a testet követik. */
   private buildTankViews(): void {
-    if (!this.tankTextures) return;
+    const textures = this.tankTextures;
+    if (!textures) return;
     this.destroyTankViews();
     const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const colors = usePlayerColors.getState();
+    const bodySprite = (texture: Texture) => {
+      const sprite = new Sprite(texture);
+      sprite.anchor.set(0.5, 1);
+      sprite.scale.set(TANK_VISUAL_SCALE);
+      return sprite;
+    };
     for (const t of this.tanks) {
-      const barrel = new Sprite(this.tankTextures.barrel);
+      const barrel = new Sprite(textures.barrel);
       barrel.anchor.set(0, 0.5);
-      const body = new Sprite(this.tankTextures.body);
-      body.anchor.set(0.5, 1);
-      body.tint = t.color;
+      barrel.scale.y = TANK_VISUAL_SCALE;
       const root = new Container();
-      root.addChild(barrel, body);
+      root.addChild(barrel);
+      let paint: ColorMatrixFilter | undefined;
+      if (t.id !== "P1" && t.id !== "P2") {
+        root.addChild(bodySprite(textures.body));
+      } else {
+        const armor = bodySprite(textures.armor);
+        const tint = armorTint(t.id, colors);
+        paint = new ColorMatrixFilter();
+        paint.matrix = armorColorMatrix(tint);
+        barrel.filters = [paint];
+        armor.filters = [paint];
+        root.addChild(bodySprite(textures.chassis), armor, bodySprite(textures.details));
+      }
+      const markings = bodySprite(textures.markings);
+      markings.tint = tankTint(t.color);
+      root.addChild(markings);
       const glow = new GlowFilter({
-        color: t.color,
+        color: playerAccent(t.color),
         distance: coarsePointer ? 3 : 4,
         outerStrength: 2,
         innerStrength: 0.4,
@@ -483,44 +642,62 @@ export class Game {
       });
       root.filters = [glow];
       this.tankLayer.addChild(root);
-      this.tankViews.set(t.id, { root, barrel, glow, anim: { angle: t.angle, recoil: 0 } });
+      this.tankViews.set(t.id, { root, barrel, glow, paint, anim: { angle: t.angle, recoil: 0 } });
     }
   }
 
   private destroyTankViews(): void {
-    for (const view of this.tankViews.values()) view.glow.destroy();
+    for (const view of this.tankViews.values()) {
+      view.glow.destroy();
+      view.paint?.destroy();
+    }
     for (const child of this.tankLayer.removeChildren()) child.destroy({ children: true });
     this.tankViews.clear();
   }
 
   private award(id: string, xp: number): void {
-    if (!this.campaignMission || id !== "P2")
+    if (this.aiActive && id === this.aiId()) {
+      if (!this.campaignMission) this.aiProfile = awardXp(this.aiProfile, xp);
+    } else {
       this.profiles[id] = awardXp(this.profiles[id]!, xp);
+    }
     this.matchStats = recordXp(this.matchStats, id, xp);
-    if (this.multiplayer) saveProfiles(this.profiles);
+    if (this.multiplayer) this.saveProfiles();
   }
 
-  /** Minden játékos XP-jének és fejlesztéseinek törlése. */
+  private saveProfiles(profiles = this.profiles): boolean {
+    return saveProfiles({ ...profiles, AI: this.aiProfile });
+  }
+
+  /** Minden játékos XP-jének és fejlesztéseinek törlése; a kampányhaladást nem érinti. */
   resetProgress(): void {
     this.profilesBeforeMatch = null;
+    this.aiProfileBeforeMatch = null;
     this.profiles = Object.fromEntries(Object.keys(this.profiles).map((id) => [id, newProfile()]));
-    saveProfiles(this.profiles);
-    useCampaignStore.getState().reset();
+    this.aiProfile = newProfile();
+    this.saveProfiles();
     this.syncStore();
   }
 
-  /** Fejlesztés vásárlása; csak meccsek között (játék végén) működik. */
+  /** Fejlesztés vásárlása meccsek között vagy a lezárt meccs után. */
   buy(playerId: string, upgradeId: string): void {
-    if (this.turns.phase !== "gameOver") return;
-    if (this.multiplayer) {
+    if (this.matchActive && this.turns.phase !== "gameOver") return;
+    if (this.matchActive && this.multiplayer) {
       if (useMultiplayerStore.getState().credentials?.playerId !== playerId) return;
       void useMultiplayerStore.getState().publish("upgrade_purchased", { upgradeId });
       return;
     }
-    const next = buyUpgrade(this.profiles[playerId]!, upgradeId);
+    const profile = this.profiles[playerId];
+    if (!profile) return;
+    const next = buyUpgrade(profile, upgradeId);
     if (!next) return;
-    this.profiles[playerId] = next;
-    saveProfiles(this.profiles);
+    const profiles = { ...this.profiles, [playerId]: next };
+    if (!this.saveProfiles(profiles)) {
+      useGameStore.getState().sync({ workshopError: "workshop.saveError" });
+      return;
+    }
+    this.profiles = profiles;
+    useGameStore.getState().sync({ workshopError: null });
     this.syncStore();
   }
 
@@ -558,14 +735,17 @@ export class Game {
     else announce("command.miss", undefined, "warning", shooter.id);
   }
 
-  /** Fanfár, majd a fanfár lecsengése után a győztes bemondása. */
+  /** Fanfár, majd a győztes záróüzenete. */
   private announceVictory(winnerId: string): void {
     this.audio?.playFanfare();
     window.clearTimeout(this.victoryTimer);
-    this.victoryTimer = window.setTimeout(
-      () => useCommandStore.getState().announce("command.victory", { name: playerName(winnerId) }, "info", winnerId),
-      VICTORY_ANNOUNCE_DELAY_MS,
-    );
+    this.victoryTimer = window.setTimeout(() => {
+      const { log, announce } = useCommandStore.getState();
+      const name = playerName(winnerId);
+      log("command.victory", { name }, "info");
+      const message = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)]!;
+      announce(message, { user: name }, "info", winnerId);
+    }, VICTORY_ANNOUNCE_DELAY_MS);
   }
 
   /** Körönként egyszer, az első célzás vagy mozgás után jelzi, hogy a cél be van fogva. */
@@ -579,6 +759,7 @@ export class Game {
     // A kör elején beállított szög/erő még nem játékos-beavatkozás.
     this.targetLocked = true;
     const tank = this.current;
+    if (this.isAiTurn()) delete this.selectedWeapons[tank.id];
     regenTankShield(tank);
     tank.moveLeft = tank.stats.moveBudget;
     this.previewActive = false;
@@ -592,12 +773,127 @@ export class Game {
     if (this.isAiTurn()) this.scheduleAiTurn();
   }
 
+  private announceLastStand(tank: Tank): void {
+    if (!isAlive(tank) || this.lastStandAnnounced.has(tank.id)) return;
+    this.lastStandAnnounced.add(tank.id);
+    const message = LAST_STAND_MESSAGES[Math.floor(Math.random() * LAST_STAND_MESSAGES.length)]!;
+    useCommandStore.getState().announce(message, { id: playerName(tank.id) }, "critical", tank.id);
+  }
+
+  private announceBurnLastStand(tank: Tank): void {
+    if (!isAlive(tank) || tank.hp / tank.stats.maxHp > CRITICAL_HP_FRACTION || this.lastStandAnnounced.has(tank.id)) {
+      return;
+    }
+    const remainingDamage = this.burnDamageWithin(tank);
+    if (remainingDamage < tank.hp + tank.shield + tank.armor) return;
+    if (this.terrain) {
+      const escape = planFireEscape(tank, this.terrain.mask, this.burnZones);
+      if (escape) {
+        const probe = { ...tank };
+        let stepsLeft = escape.steps;
+        while (stepsLeft > 0 && moveTankAvoidingFire(probe, escape.dir, this.terrain.mask, this.burnZones)) {
+          stepsLeft--;
+        }
+        if (stepsLeft === 0) return;
+      }
+    }
+    this.announceLastStand(tank);
+  }
+
+  private burnDamageWithin(tank: Tank, seconds = Infinity): number {
+    return this.burnZones.reduce((total, zone) => {
+      if (Math.abs(tank.x - zone.x) > zone.radius) return total;
+      const pending = zone.exposure.get(tank.id)?.pendingDamage ?? 0;
+      return total + Math.floor(Math.min(seconds, zone.secondsLeft) * zone.damagePerSecond + pending + 1e-9);
+    }, 0);
+  }
+
+  private announceLethalImpact(pos: Vec2, direct: Tank | null, effect: ShotEffect, imminent = false): void {
+    if (!this.terrain) return;
+    for (const tank of this.tanks) {
+      if (!isAlive(tank) || this.lastStandAnnounced.has(tank.id)) continue;
+      const lethal = (probe: Tank) => resolveDamage(
+        probe,
+        shotDamageAt(probe, pos, effect, direct === tank && tankContains(probe, pos.x, pos.y)),
+        effect.armorPierce,
+      ).hp === 0;
+      if (!lethal(tank)) continue;
+      let escape = false;
+      for (const dir of [-1, 1] as const) {
+        const probe = { ...tank };
+        while (moveTank(probe, dir, this.terrain.mask)) {
+          // Mozgó célpontnál a távolabbi becsapódás helye még megváltozhat.
+          if (!imminent || !lethal(probe)) {
+            escape = true;
+            break;
+          }
+        }
+        if (escape) break;
+      }
+      if (!escape) this.announceLastStand(tank);
+    }
+  }
+
+  private stepBurnZones(dt: number): void {
+    if (!this.matchActive || this.turns.phase === "gameOver" || this.burnZones.length === 0) return;
+    for (const tank of this.tanks) this.announceBurnLastStand(tank);
+    let changed = false;
+    let eliminated = false;
+    for (const zone of this.burnZones) {
+      const elapsed = Math.min(dt, zone.secondsLeft);
+      zone.secondsLeft = Math.max(0, zone.secondsLeft - dt);
+      for (const tank of this.tanks) {
+        const previous = zone.exposure.get(tank.id);
+        if (!isAlive(tank) || Math.abs(tank.x - zone.x) > zone.radius) {
+          if (previous) previous.notified = false;
+          continue;
+        }
+        const exposure = previous ?? { pendingDamage: 0, notified: false };
+        zone.exposure.set(tank.id, exposure);
+        // Egész sebzéspontok, de a tört kitettség megmarad a fix lépések között.
+        exposure.pendingDamage += zone.damagePerSecond * elapsed;
+        const damage = Math.floor(exposure.pendingDamage + 1e-9);
+        if (damage === 0) continue;
+        exposure.pendingDamage = Math.max(0, exposure.pendingDamage - damage);
+        const before = tank.hp + tank.shield + tank.armor;
+        applyDamage(tank, damage);
+        const dealt = before - (tank.hp + tank.shield + tank.armor);
+        if (dealt <= 0) continue;
+        changed = true;
+        if (zone.ownerId !== tank.id) {
+          this.award(zone.ownerId, dealt);
+          this.matchStats = recordDamage(this.matchStats, zone.ownerId, dealt);
+        }
+        if (!exposure.notified && !this.lastStandAnnounced.has(tank.id)) {
+          useCommandStore.getState().announce(
+            "command.burning", { id: playerName(tank.id), damage: dealt }, "warning", tank.id,
+          );
+          exposure.notified = true;
+        }
+        if (!isAlive(tank)) {
+          eliminated = true;
+          useCommandStore.getState().announce("command.destroyed", undefined, "critical", zone.ownerId);
+        }
+      }
+    }
+    this.burnZones = this.burnZones.filter((zone) => zone.secondsLeft > 1e-9);
+    if (eliminated) {
+      this.clearAiTimers();
+      this.shell = null;
+      this.activeShot = null;
+      this.turns.resolveElimination(this.tanks.filter(isAlive).map((tank) => tank.id));
+      this.concludeMatch();
+    } else if (changed) {
+      this.syncStore();
+    }
+  }
+
   private isAiTurn(): boolean {
     return (
       this.matchActive &&
       this.aiActive &&
       !this.multiplayer &&
-      this.turns.current === "P2" &&
+      this.turns.current === this.aiId() &&
       this.turns.phase === "aiming"
     );
   }
@@ -605,6 +901,8 @@ export class Game {
   private clearAiTimers(): void {
     for (const id of this.aiTimers) window.clearTimeout(id);
     this.aiTimers = [];
+    this.aiEscapingFire = false;
+    this.aiFireEscapeCooldown = 0;
   }
 
   private afterAi(ms: number, action: () => void): void {
@@ -619,16 +917,22 @@ export class Game {
   private scheduleAiTurn(): void {
     this.clearAiTimers();
     this.afterAi(AI_THINK_MS, () => {
-      const target = this.tanks.find((t) => t.id === "P1");
+      const target = this.tanks.find((t) => t.id !== this.aiId());
       if (!this.terrain || !this.aiBrain || !target) return;
       const wind = useGameStore.getState().wind;
-      const steps = this.aiBrain.planMove(this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity);
+      const steps = this.aiBrain.planMove(
+        this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity, this.burnZones,
+      );
       this.aiMove(target.x < this.current.x ? -1 : 1, steps);
     });
   }
 
   private aiMove(dir: -1 | 1, stepsLeft: number): void {
-    if (stepsLeft > 0 && this.terrain && moveTank(this.current, dir, this.terrain.mask)) {
+    if (
+      stepsLeft > 0 &&
+      this.terrain &&
+      moveTankAvoidingFire(this.current, dir, this.terrain.mask, this.burnZones)
+    ) {
       this.audio?.moveTick();
       this.syncStore();
       this.afterAi(AI_MOVE_STEP_MS, () => this.aiMove(dir, stepsLeft - 1));
@@ -637,52 +941,125 @@ export class Game {
     this.aiAimAndFire();
   }
 
+  private stepAiFireEscape(dt: number): void {
+    if (!this.aiActive || this.multiplayer || this.turns.phase === "gameOver" || !this.terrain) return;
+    const ai = this.tanks.find((tank) => tank.id === this.aiId());
+    if (!ai || !isAlive(ai)) return;
+    this.aiFireEscapeCooldown = Math.max(0, this.aiFireEscapeCooldown - dt);
+    if (this.aiFireEscapeCooldown > 0) return;
+    const escape = planFireEscape(ai, this.terrain.mask, this.burnZones);
+    if (!escape) {
+      if (this.aiEscapingFire) {
+        this.aiEscapingFire = false;
+        if (this.isAiTurn()) this.scheduleAiTurn();
+      }
+      return;
+    }
+    if (!this.aiEscapingFire) {
+      this.clearAiTimers();
+      this.aiEscapingFire = true;
+    }
+    if (!moveTankAvoidingFire(ai, escape.dir, this.terrain.mask, this.burnZones)) return;
+    this.aiFireEscapeCooldown = AI_MOVE_STEP_MS / 1000;
+    this.audio?.moveTick();
+    this.syncStore();
+  }
+
   private aiAimAndFire(): void {
-    const target = this.tanks.find((t) => t.id === "P1");
+    const target = this.tanks.find((t) => t.id !== this.aiId());
     if (!this.terrain || !this.aiBrain || !target) return;
+    const shooter = this.current;
+    const mask = this.terrain.mask;
+    const options = this.weaponOptionsFor(shooter.id);
+    if (options.includes("laser")) {
+      const angle = planLaserAngle(shooter, target, mask);
+      if (angle !== null) {
+        this.scheduleAiShot("laser", angle, shooter.power);
+        return;
+      }
+    }
+
     const wind = useGameStore.getState().wind;
-    const trySmartAim = this.previewAllowance.canUse("P2") && Math.random() < AI_PREVIEW_CHANCE;
+    const trySmartAim = this.previewAllowance.canUse(this.aiId()) && Math.random() < AI_PREVIEW_CHANCE;
     const precise = trySmartAim
-      ? this.aiBrain.decide(this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity, true)
+      ? this.aiBrain.decide(shooter, target, mask, wind, DEFAULT_WORLD.gravity, true)
       : null;
+    const plan = precise ?? this.aiBrain.decide(shooter, target, mask, wind, DEFAULT_WORLD.gravity);
+    const angle = Math.round(plan?.angle ?? (this.aiId() === "P1" ? 45 : 135));
+    const power = Math.round(plan?.power ?? shooter.stats.maxPower * 0.6);
+    let weapon: WeaponId = "standard";
+    if (plan && options.length > 1) {
+      const impact = simulateImpact(barrelTip({ ...shooter, angle }), angle, power, { gravity: DEFAULT_WORLD.gravity, wind }, mask, target);
+      for (const option of options) {
+        if (option === "ap" && impact?.hitTarget) {
+          weapon = option;
+          break;
+        }
+        if (option === "incendiary" && impact) {
+          const burnRadius = weaponById(option).burn!.radius;
+          if (Math.abs(impact.pos.x - shooter.x) > burnRadius && Math.abs(impact.pos.x - target.x) < burnRadius) {
+            weapon = option;
+            break;
+          }
+        }
+        if (option === "homing") {
+          weapon = option;
+          break;
+        }
+      }
+    }
     if (precise) this.activatePreview();
-    const plan = precise ?? this.aiBrain.decide(this.current, target, this.terrain.mask, wind, DEFAULT_WORLD.gravity);
-    const angle = Math.round(plan?.angle ?? 135);
-    const power = Math.round(plan?.power ?? this.current.stats.maxPower * 0.6);
+    this.scheduleAiShot(weapon, angle, power);
+  }
+
+  private scheduleAiShot(weapon: WeaponId, angle: number, power: number): void {
+    const changed = this.weaponFor(this.current.id).id !== weapon;
+    this.selectedWeapons[this.current.id] = weapon;
     useGameStore.getState().setAim(angle, power);
+    if (changed) this.syncStore();
     this.afterAi(AI_AIM_MS, () => this.launchShot(angle, power));
   }
 
   /** A gép a lövés végén tanul a becsapódásból. */
   private aiObserveImpact(shooterId: string, x: number, dealt: number): void {
-    if (!this.aiActive || shooterId !== "P2") return;
-    this.aiBrain?.observe(x);
+    if (!this.aiActive || shooterId !== this.aiId()) return;
+    if (this.activeShot?.weapon.kind !== "hitscan" && !this.activeShot?.weapon.homing) this.aiBrain?.observe(x);
     if (dealt > 0) this.aiHits++;
   }
 
   /** Meccs végén a gép rögzíti a tapasztalatot, és maga választja ki a fejlesztéseit. */
   private finishAiMatch(): void {
     if (!this.aiActive || !this.aiBrain || this.campaignMission) return;
-    const own = this.matchStats["P2"];
-    const other = this.matchStats["P1"];
+    const own = this.matchStats[this.aiId()];
+    const other = this.matchStats[this.aiId() === "P1" ? "P2" : "P1"];
     if (!own || !other) return;
-    const won = this.turns.winner === "P2";
+    const won = this.turns.winner === this.aiId();
     useAiSettings.getState().recordMatch({ won, shots: own.shots, hits: this.aiHits });
-    const { profile } = chooseUpgrades(this.profiles["P2"]!, {
+    const { profile } = chooseUpgrades(this.aiProfile, {
       shots: own.shots,
       damageDealt: own.damage,
       damageTaken: other.damage,
       won,
     });
-    this.profiles["P2"] = profile;
-    saveProfiles(this.profiles);
+    this.aiProfile = profile;
+    this.saveProfiles();
   }
 
   private syncStore(): void {
+    const dodger = this.humanDodger();
+    const aiSlot = this.matchActive && this.aiActive ? this.aiId() : null;
     useGameStore.getState().sync({
       matchMode: this.matchMode,
       strategicObjectives: this.strategicObjectives,
       aiActive: this.aiActive,
+      aiOpponent: aiSlot ? {
+        slot: aiSlot,
+        profile: {
+          ...(this.campaignMission ? newProfile() : this.aiProfile),
+          weapons: this.weaponOptionsFor(aiSlot).filter((weapon) => weapon !== "standard"),
+        },
+        fixedArmor: this.campaignMission?.opponent.armor ?? null,
+      } : null,
       phase: this.turns.phase,
       currentId: this.turns.current,
       canControl:
@@ -691,6 +1068,9 @@ export class Game {
         (!this.multiplayer || useMultiplayerStore.getState().credentials?.playerId === this.turns.current) &&
         this.pendingMultiplayerEvents.length === 0,
       winner: this.turns.winner,
+      canDodge: dodger !== null && dodger.moveLeft > 0,
+      weapon: this.weaponFor(this.turns.current).id,
+      weaponOptions: this.weaponOptionsFor(this.turns.current),
       tanks: this.tanks.map((t) => ({
         id: t.id,
         hp: t.hp,
@@ -745,18 +1125,36 @@ export class Game {
     }
   }
 
-  /** Mozgás a jelenlegi tankkal; zárolt bemenetnél nem csinál semmit. */
+  /** Mozgás; célzáskor a soron lévő tank lép, a lövedék repülése alatt a védekező emberi tank térhet ki. */
   move(dir: -1 | 1): void {
-    if (!this.matchActive || this.turns.inputLocked || !this.terrain || this.isAiTurn()) return;
+    if (!this.matchActive || !this.terrain) return;
     if (this.multiplayer) {
-      if (this.canControlCurrentTurn()) void useMultiplayerStore.getState().publish("move", { direction: dir });
+      if (!this.turns.inputLocked && this.canControlCurrentTurn())
+        void useMultiplayerStore.getState().publish("move", { direction: dir });
       return;
     }
+    if (this.turns.phase === "flying") {
+      const dodger = this.humanDodger();
+      if (dodger && moveTank(dodger, dir, this.terrain.mask)) {
+        this.audio?.moveTick();
+        this.syncStore();
+      }
+      return;
+    }
+    if (this.turns.inputLocked || this.isAiTurn()) return;
     if (moveTank(this.current, dir, this.terrain.mask)) {
       this.audio?.moveTick();
       this.lockTarget();
       this.syncStore();
     }
+  }
+
+  /** A lövedék repülése alatt kitérésre jogosult emberi tank (csak offline); különben null. */
+  private humanDodger(): Tank | null {
+    if (this.multiplayer || !this.matchActive || this.turns.phase !== "flying") return null;
+    const dodger = this.tanks.find((t) => isAlive(t) && t.id !== this.turns.current);
+    if (!dodger || (this.aiActive && dodger.id === this.aiId())) return null;
+    return dodger;
   }
 
   /** Lövés a store-ban beállított szöggel és erővel. */
@@ -779,15 +1177,113 @@ export class Game {
     tank.power = power;
     useGameStore.getState().setAim(angle, power);
     this.matchStats = recordShot(this.matchStats, tank.id);
+    const weapon = this.weaponFor(tank.id);
+    this.activeShot = { weapon, effect: resolveShotEffect(weapon, tank.stats) };
+    this.setShellVisual(weapon, tank.stats.damage);
     const tip = barrelTip(tank);
     this.particles.spawnMuzzleFlash(tip.x, tip.y, angle);
     this.audio?.play("shot", { rate: 0.95 + Math.random() * 0.1 });
-    this.shell = { pos: tip, vel: launchVelocity(angle, power) };
     const view = this.tankViews.get(tank.id);
     if (view) view.anim = kick(angle);
+    if (weapon.kind === "hitscan") {
+      this.fireHitscan(tank, angle, tip);
+      return;
+    }
+    this.shell = { pos: tip, vel: launchVelocity(angle, power) };
     this.shellAge = 0;
     this.shellTrail.clear();
+    this.scheduleAiDodge(tank, angle, power, tip);
     this.syncStore();
+  }
+
+  /** Lézer: azonnali, egyenes vonalú találat; nincs röppálya, szél- és kitérési ablak. */
+  private fireHitscan(tank: Tank, angle: number, tip: Vec2): void {
+    if (!this.terrain) return;
+    const targets = this.tanks.filter((t) => isAlive(t) && t.id !== tank.id);
+    const result = traceHitscan(tip, angle, this.terrain.mask, targets, WORLD_HEIGHT);
+    this.laserBeam = { from: tip, to: result.pos, ttl: LASER_BEAM_TTL };
+    this.explode(result.pos.x, result.pos.y, result.hit);
+  }
+
+  /** Az adott játékos lövéshez használt, a készletében elérhető fegyver. */
+  private weaponFor(id: string): WeaponDefinition {
+    const selected = this.selectedWeapons[id] ?? "standard";
+    return weaponById(this.weaponOptionsFor(id).includes(selected) ? selected : "standard");
+  }
+
+  /** A kampányellenfél felszerelése független a mentett játékosprofiloktól. */
+  private weaponOptionsFor(id: string): WeaponId[] {
+    if (this.multiplayer) return ["standard"];
+    if (this.aiActive && id === this.aiId()) {
+      const specials = this.matchMode === "operation" ? this.campaignMission?.opponent.weapons
+        : this.matchMode === "campaign" ? sectorById(this.sector.id).opponentWeapons
+          : undefined;
+      return ["standard", ...(specials ?? [])];
+    }
+    return unlockedWeapons(this.profiles[id]);
+  }
+
+  /** Lövésenkénti fegyverválasztás a soron lévő játékosnak; csak feloldott fegyver választható. */
+  selectWeapon(id: WeaponId): void {
+    if (!this.matchActive || this.turns.inputLocked || this.isAiTurn() || this.multiplayer) return;
+    if (!this.canControlCurrentTurn()) return;
+    if (!this.weaponOptionsFor(this.turns.current).includes(id)) return;
+    this.selectedWeapons[this.turns.current] = id;
+    this.syncStore();
+  }
+
+  /** Fegyver tartós feloldása XP-ért a profilban; online feloldás később érkezik. */
+  buyWeapon(playerId: string, weaponId: string): void {
+    if (this.matchActive && this.turns.phase !== "gameOver") return;
+    if (this.matchActive && this.multiplayer) return;
+    const profile = this.profiles[playerId];
+    if (!profile) return;
+    const next = buyWeapon(profile, weaponId);
+    if (!next) return;
+    const profiles = { ...this.profiles, [playerId]: next };
+    if (!this.saveProfiles(profiles)) {
+      useGameStore.getState().sync({ workshopError: "workshop.saveError" });
+      return;
+    }
+    this.profiles = profiles;
+    useGameStore.getState().sync({ workshopError: null });
+    this.syncStore();
+  }
+
+  /** A gép az előre jelzett becsapódás alapján, tudásszint-függő eséllyel kitér a játékos lövése elől. */
+  private scheduleAiDodge(shooter: Tank, angle: number, power: number, tip: Vec2): void {
+    if (this.multiplayer || !this.aiActive || shooter.id === this.aiId() || !this.terrain || !this.aiBrain) return;
+    const ai = this.tanks.find((t) => t.id === this.aiId());
+    if (!ai || !isAlive(ai) || ai.moveLeft <= 0) return;
+    const skill = this.aiBrain.skill;
+    if (Math.random() > AI_DODGE_BASE_CHANCE + skill * AI_DODGE_SKILL_CHANCE) return;
+    const wind = useGameStore.getState().wind;
+    const impact = simulateImpact(tip, angle, power, { gravity: DEFAULT_WORLD.gravity, wind }, this.terrain.mask, ai);
+    if (!impact) return;
+    const danger = shooter.stats.blastRadius + DODGE_SAFETY_MARGIN;
+    if (Math.abs(impact.pos.x - ai.x) >= danger) return;
+    const dir: -1 | 1 = impact.pos.x > ai.x ? -1 : 1;
+    this.afterDodge(AI_DODGE_REACTION_MS * (1 - skill * 0.5), () => this.aiDodgeStep(dir, impact.pos.x, danger));
+  }
+
+  /** Lépésenként távolodik a becsapódási ponttól, amíg van keret és veszélyzónában áll. */
+  private aiDodgeStep(dir: -1 | 1, impactX: number, danger: number): void {
+    const ai = this.tanks.find((t) => t.id === this.aiId());
+    if (!ai || !isAlive(ai) || !this.terrain) return;
+    if (Math.abs(ai.x - impactX) >= danger) return;
+    if (!moveTankAvoidingFire(ai, dir, this.terrain.mask, this.burnZones)) return;
+    this.audio?.moveTick();
+    this.syncStore();
+    this.afterDodge(AI_MOVE_STEP_MS, () => this.aiDodgeStep(dir, impactX, danger));
+  }
+
+  /** Időzítő, ami csak a lövedék repülése alatt fut le. */
+  private afterDodge(ms: number, action: () => void): void {
+    const id = window.setTimeout(() => {
+      this.aiTimers = this.aiTimers.filter((t) => t !== id);
+      if (!this.destroyed && this.turns.phase === "flying") action();
+    }, ms);
+    this.aiTimers.push(id);
   }
 
   private canControlCurrentTurn(): boolean {
@@ -826,12 +1322,16 @@ export class Game {
         this.pendingMultiplayerEvents.shift();
         this.matchProfiles = profiles as Record<string, Profile>;
         this.profiles = Object.fromEntries(
-          Object.entries(this.matchProfiles).map(([id, profile]) => [
-            id,
-            { xp: profile.xp, levels: { ...profile.levels } },
-          ]),
+          Object.entries(this.matchProfiles).map(([id, profile]) => {
+            // A fegyverfeloldás helyi profiladat; az online meccs nem törölheti.
+            const weapons = profile.weapons ?? this.profiles[id]?.weapons;
+            return [
+              id,
+              { xp: profile.xp, levels: { ...profile.levels }, ...(weapons && weapons.length > 0 ? { weapons } : {}) },
+            ];
+          }),
         );
-        saveProfiles(this.profiles);
+        this.saveProfiles();
         this.lastMultiplayerRevision = event.revision;
         this.restart(setup as MatchSetup);
         useGameStore.getState().setScreen("playing");
@@ -845,7 +1345,7 @@ export class Game {
         const next = buyUpgrade(this.profiles[event.playerId]!, upgradeId);
         if (!next) continue;
         this.profiles[event.playerId] = next;
-        saveProfiles(this.profiles);
+        this.saveProfiles();
         this.syncStore();
         continue;
       }
@@ -886,11 +1386,21 @@ export class Game {
     if (changed && !this.turns.inputLocked) this.syncStore();
   }
 
-  private explode(x: number, y: number): void {
+  private explode(x: number, y: number, direct: Tank | null = null): void {
     const shooter = this.current;
-    const radius = shooter.stats.blastRadius;
+    const shot =
+      this.activeShot ?? { weapon: weaponById("standard"), effect: resolveShotEffect(weaponById("standard"), shooter.stats) };
+    const { effect } = shot;
+    this.announceLethalImpact({ x, y }, direct, effect, true);
+    // Épület- és látványhatásokhoz használt sugár; a csak direkt találatú fegyvereknek is van kis hatása.
+    const radius = Math.max(effect.blastRadius, effect.carveRadius, 6);
+    const mask = this.terrain?.mask;
+    const surface = mask?.surfaceY(x);
+    const terrainImpact = mask !== undefined && surface !== undefined && surface < mask.height &&
+      (mask.isSolid(x, y) || Math.abs(surface - y) <= radius);
     const objectivesBefore = this.strategicObjectives;
     this.battlefieldLayers.reactToImpact(Math.min(1, radius / 80));
+    this.buildingDecor.applyExplosion(x, y, radius * 2, effect.damage);
     this.strategicObjectives = this.strategicObjectives.map((objective) => ({
       ...objective,
       ...applyStrategicDamage(
@@ -898,12 +1408,12 @@ export class Game {
         strategicExplosionDamage(
           Math.hypot(objective.worldX - x, objective.worldY - objective.height / 2 - y),
           radius * 2,
-          60 * shooter.stats.damage,
+          effect.damage,
         ),
-        shooter.id === "P1" ? "PLAYER" : "AI",
+        this.aiActive && shooter.id === this.aiId() ? "AI" : "PLAYER",
       ),
     }));
-    this.terrain?.carve(x, y, radius);
+    this.terrain?.carve(x, y, effect.carveRadius);
     if (this.terrain) {
       const mask = this.terrain.mask;
       this.strategicObjectives = this.strategicObjectives.map((objective) => ({
@@ -912,6 +1422,7 @@ export class Game {
       }));
     }
     this.particles.spawnExplosion(x, y, radius);
+    if (terrainImpact && this.shakeEnabled) this.particles.spawnGroundImpact(x, y, radius);
     this.audio?.play("explosion", { rate: 0.9 + Math.random() * 0.2 });
     // XP: az ellenfélnek okozott sérülés (1 HP, pajzs- vagy páncélpont = 1 XP).
     let dealt = 0;
@@ -921,7 +1432,8 @@ export class Game {
       const shieldBefore = t.shield;
       const armorBefore = t.armor;
       const hpBefore = t.hp;
-      applyDamage(t, explosionDamage(t, x, y, radius, shooter.stats.damage));
+      const damage = shotDamageAt(t, { x, y }, effect, t === direct);
+      applyDamage(t, damage, effect.armorPierce);
       if (t !== shooter) dealt += before - (t.hp + t.shield + t.armor);
       if (before === t.hp + t.shield + t.armor) continue;
       hurt.push({
@@ -939,7 +1451,7 @@ export class Game {
       useCommandStore.getState().log(
         `command.${objective.type}${destroyed ? "Destroyed" : "Damaged"}`,
         {
-          source: shooter.id === "P1" ? playerName(shooter.id) : `AI (${playerName(shooter.id)})`,
+          source: this.aiActive && shooter.id === this.aiId() ? `AI (${playerName(shooter.id)})` : playerName(shooter.id),
           damage: Number((before.hp - objective.hp).toFixed(2)),
           hp: Number(objective.hp.toFixed(2)),
           maxHp: objective.maxHp,
@@ -952,52 +1464,110 @@ export class Game {
     this.matchStats = recordDamage(this.matchStats, shooter.id, dealt);
     this.shake.trigger(Math.min(1, radius / 80) * 0.75 + (dealt > 0 ? 0.25 : 0));
     for (const t of this.tanks) if (this.terrain) settleTank(t, this.terrain.mask);
+    // Gyújtólövedék: időalapú, folyamatosan sebző égő talajzóna.
+    if (effect.burn) {
+      this.burnZones.push({
+        x,
+        radius: effect.burn.radius,
+        secondsLeft: effect.burn.durationSeconds,
+        damagePerSecond: effect.burn.damagePerSecond,
+        ownerId: shooter.id,
+        exposure: new Map(),
+      });
+    }
     this.shell = null;
+    this.activeShot = null;
     this.turns.endShot(this.tanks.filter(isAlive).map((t) => t.id));
     if (this.turns.phase === "aiming") this.beginTurn();
-    else {
-      if (this.matchMode === "campaign" && this.turns.winner === "P1") {
-        const routes = useCampaignStore.getState().complete(sectorById(this.sector.id).id);
-        useGameStore.getState().sync({ campaignNewRoutes: routes });
+    else this.concludeMatch();
+  }
+
+  /** A meccs lezárása (kampányteljesítés, győzelmi jutalom, mentés, online zárás). */
+  private concludeMatch(): void {
+    if (this.matchMode === "campaign" && this.turns.winner === this.campaignPlayer) {
+      const routes = useCampaignStore.getState().complete(sectorById(this.sector.id).id);
+      useGameStore.getState().sync({ campaignNewRoutes: routes });
+    }
+    if (this.campaignMission) {
+      const success = missionSucceeded(this.campaignMission, this.turns.winner, this.strategicObjectives, this.campaignPlayer);
+      useGameStore.getState().sync({ missionSuccess: success });
+      if (success && this.campaignEconomy)
+        void useVeyloraStore.getState().complete(this.campaignMission.id, this.campaignEconomy.generation);
+    }
+    if (this.turns.winner) {
+      this.award(this.turns.winner, WIN_BONUS_XP);
+      this.finishAiMatch();
+      this.announceVictory(this.turns.winner);
+    }
+    if (!this.multiplayer) {
+      this.saveProfiles();
+      this.profilesBeforeMatch = null;
+      this.aiProfileBeforeMatch = null;
+    }
+    const onlineRoom = useMultiplayerStore.getState();
+    if (this.multiplayer && onlineRoom.credentials?.playerId === "P1" && onlineRoom.session?.status === "playing") {
+      void useMultiplayerStore.getState().publish("match_finished", { winner: this.turns.winner });
+    }
+    this.syncStore();
+  }
+
+  private advanceShell(body: BallisticBody, age: number, wind: number): BallisticBody {
+    const guidance = this.activeShot?.weapon.homing;
+    if (guidance && age <= HOMING_GUIDANCE_MAX_TICKS) {
+      const target = this.tanks.find((t) => isAlive(t) && t.id !== this.turns.current);
+      if (target) {
+        body = {
+          pos: body.pos,
+          vel: steerHoming(body.pos, body.vel, { x: target.x, y: target.y - 6 }, guidance),
+        };
       }
-      if (this.campaignMission) {
-        const success = missionSucceeded(this.campaignMission, this.turns.winner, this.strategicObjectives);
-        useGameStore.getState().sync({ missionSuccess: success });
-        if (success && this.campaignEconomy)
-          void useVeyloraStore.getState().complete(this.campaignMission.id, this.campaignEconomy.generation);
+    }
+    return stepBody(body, { ...DEFAULT_WORLD, wind }, FIXED_DT);
+  }
+
+  private directShellHit(pos: Vec2, age: number): Tank | null {
+    return this.tanks.find(
+      (tank) => isAlive(tank) && (tank.id !== this.turns.current || age > SELF_HIT_GRACE) &&
+        tankContains(tank, pos.x, pos.y),
+    ) ?? null;
+  }
+
+  private predictIncomingLastStand(wind: number): void {
+    if (!this.shell || !this.terrain || !this.activeShot || this.aiEscapingFire) return;
+    const mask = this.terrain.mask;
+    if (!this.tanks.some((tank) => isAlive(tank) && !this.lastStandAnnounced.has(tank.id) &&
+      !([-1, 1] as const).some((dir) => moveTank({ ...tank }, dir, mask)))) return;
+    let body = this.shell;
+    for (let tick = 0; tick < LAST_STAND_LOOKAHEAD_TICKS; tick++) {
+      const age = this.shellAge + tick;
+      body = this.advanceShell(body, age, wind);
+      const direct = this.directShellHit(body.pos, age + 1);
+      if (direct || mask.isSolid(body.pos.x, body.pos.y)) {
+        if (this.tanks.some((tank) => isAlive(tank) &&
+          this.burnDamageWithin(tank, tick * FIXED_DT) >= tank.hp + tank.shield + tank.armor)) return;
+        this.announceLethalImpact(body.pos, direct, this.activeShot.effect);
+        return;
       }
-      if (this.turns.winner) {
-        this.award(this.turns.winner, WIN_BONUS_XP);
-        this.finishAiMatch();
-        this.announceVictory(this.turns.winner);
-      }
-      if (!this.multiplayer) {
-        saveProfiles(this.profiles);
-        this.profilesBeforeMatch = null;
-      }
-      const onlineRoom = useMultiplayerStore.getState();
-      if (this.multiplayer && onlineRoom.credentials?.playerId === "P1" && onlineRoom.session?.status === "playing") {
-        void useMultiplayerStore.getState().publish("match_finished", { winner: this.turns.winner });
-      }
-      this.syncStore();
+      if (body.pos.x < 0 || body.pos.x > mask.width || body.pos.y > WORLD_HEIGHT) return;
     }
   }
 
   private stepShell(): void {
     if (!this.shell || !this.terrain) return;
-    this.shell = stepBody(this.shell, { ...DEFAULT_WORLD, wind: useGameStore.getState().wind }, FIXED_DT);
+    const wind = useGameStore.getState().wind;
+    this.predictIncomingLastStand(wind);
+    this.shell = this.advanceShell(this.shell, this.shellAge, wind);
     this.shellAge++;
     const { x, y } = this.shell.pos;
     this.shellTrail.push(x, y);
     if (this.shellAge % 3 === 0) this.particles.spawnTrail(x, y);
-    const hitTank = this.tanks.some(
-      (t) => isAlive(t) && (t.id !== this.turns.current || this.shellAge > SELF_HIT_GRACE) && tankContains(t, x, y),
-    );
-    if (hitTank || this.terrain.mask.isSolid(x, y)) this.explode(x, y);
+    const direct = this.directShellHit(this.shell.pos, this.shellAge);
+    if (direct || this.terrain.mask.isSolid(x, y)) this.explode(x, y, direct);
     else if (x < 0 || x > this.terrain.mask.width || y > WORLD_HEIGHT) {
       // Pályán kívül: nincs robbanás, a kör véget ér.
       this.aiObserveImpact(this.turns.current, x, 0);
       this.shell = null;
+      this.activeShot = null;
       this.turns.endShot(this.tanks.filter(isAlive).map((t) => t.id));
       this.beginTurn();
     }
@@ -1010,6 +1580,8 @@ export class Game {
     this.acc += Math.min(frameDt, 0.1);
     while (this.acc >= FIXED_DT) {
       this.acc -= FIXED_DT;
+      this.stepAiFireEscape(FIXED_DT);
+      this.stepBurnZones(FIXED_DT);
       this.stepShell();
     }
     this.processPendingMultiplayerEvents();
@@ -1026,6 +1598,19 @@ export class Game {
     const { angle, power, wind } = useGameStore.getState();
     const mask = this.terrain.mask;
     const target = this.tanks.find((t) => t.id !== tank.id && isAlive(t));
+    // Lézernél az előnézet is egyenes sugár: azonos szabály, mint a lövésnél.
+    if (this.weaponFor(tank.id).kind === "hitscan") {
+      const ray = traceHitscan(barrelTip({ ...tank, angle }), angle, mask, target ? [target] : [], WORLD_HEIGHT);
+      const locked = ray.hit !== null;
+      if (locked && !this.previewLocked) {
+        useCommandStore.getState().announce("command.aimed", undefined, "info", this.turns.current);
+      }
+      this.previewLocked = locked;
+      for (const [a, b] of dashPolyline([barrelTip({ ...tank, angle }), ray.pos], PREVIEW_DASH, PREVIEW_GAP))
+        g.moveTo(a.x, a.y).lineTo(b.x, b.y);
+      g.stroke({ width: 1.5, color: this.theme.hud.previewLine, alpha: 0.68 });
+      return;
+    }
     const impact = target
       ? simulateImpact(
           barrelTip({ ...tank, angle }),
@@ -1058,6 +1643,22 @@ export class Game {
     g.stroke({ width: 1.5, color: this.theme.hud.previewLine, alpha: 0.68 });
   }
 
+  /** Vibráló lángnyelvek az égő talajzónák felszínén. */
+  /** A lézersugár rövid, halványuló csíkja. */
+  private drawLaserBeam(dt: number): void {
+    const g = this.beamGfx.clear();
+    if (!this.laserBeam) return;
+    this.laserBeam.ttl -= dt;
+    if (this.laserBeam.ttl <= 0) {
+      this.laserBeam = null;
+      return;
+    }
+    const { from, to, ttl } = this.laserBeam;
+    const alpha = Math.min(1, ttl / LASER_BEAM_TTL);
+    g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ width: 6, color: 0xff2e4d, alpha: alpha * 0.25, cap: "round" });
+    g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ width: 2, color: 0xff8296, alpha: alpha * 0.9, cap: "round" });
+  }
+
   /** Vékony (3 px) csík a tank fölött; a háttér a hiányzó részt jelzi. */
   private drawStripe(x: number, y: number, fraction: number, color: number): void {
     const filled = 28 * Math.min(1, Math.max(0, fraction));
@@ -1079,22 +1680,40 @@ export class Game {
     this.tanksGfx.circle(ex, ey, 7).fill({ color, alpha: 0.9 });
   }
 
+  private setShellVisual(weapon: WeaponDefinition, damage: number): void {
+    const palette: Record<WeaponId, { core: number; glow: number; scale: number }> = {
+      standard: { ...this.theme.shell, scale: 1 },
+      ap: { core: 0xeef4ff, glow: 0x8cafff, scale: 0.8 },
+      incendiary: { core: 0xffedb5, glow: 0xff792e, scale: 1.1 },
+      laser: { core: 0xff8296, glow: 0xff2e4d, scale: 1 },
+      homing: { core: 0xe2ffe8, glow: 0x70edb0, scale: 1.05 },
+    };
+    // A becsapódás után elhalványuló csík is az eredeti lövés stílusát tartja meg.
+    const boost = weapon.usesTankStats ? Math.min(0.75, Math.max(0, damage - 1)) : 0;
+    this.shellVisual = {
+      ...palette[weapon.id],
+      scale: palette[weapon.id].scale * (1 + boost * 0.35),
+      intensity: 1 + boost * 0.6,
+    };
+  }
+
   /** Plazmanyom: két rétegű, additív, a lövedék felé vastagodó és erősödő fénycsík. */
   private drawShellTrail(): void {
+    const { core, glow, scale, intensity } = this.shellVisual;
     for (const { from, to, t } of this.shellTrail.segments()) {
       this.trailGfx
         .moveTo(from.x, from.y)
         .lineTo(to.x, to.y)
-        .stroke({ width: 2 + t * 7, color: this.theme.shell.glow, alpha: t * 0.22, cap: "round" });
+        .stroke({ width: (2 + t * 7) * scale, color: glow, alpha: t * 0.22 * intensity, cap: "round" });
       this.trailGfx
         .moveTo(from.x, from.y)
         .lineTo(to.x, to.y)
-        .stroke({ width: 1 + t * 2, color: this.theme.shell.core, alpha: t * 0.7, cap: "round" });
+        .stroke({ width: (1 + t * 2) * scale, color: core, alpha: Math.min(1, t * 0.7 * intensity), cap: "round" });
     }
   }
 
   private draw(dt: number): void {
-    if (this.terrain) this.objectiveGraphics.draw(this.strategicObjectives, this.terrain.mask, dt, this.shakeEnabled);
+    if (this.terrain) this.objectiveGraphics.draw(this.strategicObjectives, this.terrain.mask, dt, this.shakeEnabled, this.sector.id === "forge-17");
     const aiming = this.turns.phase === "aiming";
     const aimAngle = useGameStore.getState().angle;
     for (const t of this.tanks) {
@@ -1137,6 +1756,8 @@ export class Game {
     }
 
     this.fx?.render(this.particles.particles);
+    if (this.terrain) this.groundFire?.draw(this.burnZones, this.terrain.mask, dt, this.shakeEnabled);
+    this.drawLaserBeam(dt);
     this.shellGfx.clear();
     this.trailGfx.clear();
     if (!this.shell) this.shellTrail.shrink();
@@ -1145,8 +1766,11 @@ export class Game {
     this.applyShake();
     this.shellGlow.visible = !!this.shell;
     if (this.shell) {
+      const { core, glow, scale } = this.shellVisual;
       this.shellGlow.position.set(this.shell.pos.x, this.shell.pos.y);
-      this.shellGfx.circle(this.shell.pos.x, this.shell.pos.y, 3).fill(this.theme.shell.core);
+      this.shellGlow.tint = glow;
+      this.shellGlow.width = this.shellGlow.height = 30 * scale;
+      this.shellGfx.circle(this.shell.pos.x, this.shell.pos.y, 3 * scale).fill(core);
     }
   }
 
@@ -1161,7 +1785,9 @@ export class Game {
     this.pendingMultiplayerEvents = [];
     this.audio?.destroy();
     this.destroyTankViews();
-    this.objectiveGraphics.destroy();
+    this.objectiveGraphics.destroy({ children: true });
+    this.buildingDecor.healthBars.destroy();
+    this.buildingDecor.destroy({ children: true });
     if (this.app.renderer) this.app.destroy({ removeView: true }, { children: true });
   }
 }

@@ -39,6 +39,16 @@ describe("profileStorage", () => {
     expect(loadProfiles(["P1"], fakeStorage(bad))).toEqual({ P1: { xp: 0, levels: { engine: 2 } } });
   });
 
+  it("a fegyverfeloldásokat menti, a hibás bejegyzéseket és duplikátumokat kiszűri", () => {
+    const s = fakeStorage();
+    saveProfiles({ P1: { xp: 10, levels: {}, weapons: ["ap", "laser"] } }, s);
+    expect(loadProfiles(["P1"], s).P1).toEqual({ xp: 10, levels: {}, weapons: ["ap", "laser"] });
+    const bad = JSON.stringify({ P1: { xp: 1, levels: {}, weapons: ["ap", 5, "ap", null] } });
+    expect(loadProfiles(["P1"], fakeStorage(bad)).P1).toEqual({ xp: 1, levels: {}, weapons: ["ap"] });
+    const none = JSON.stringify({ P1: { xp: 1, levels: {}, weapons: "x" } });
+    expect(loadProfiles(["P1"], fakeStorage(none)).P1).toEqual({ xp: 1, levels: {} });
+  });
+
   it("verziózott borítékban ment", () => {
     const s = fakeStorage();
     saveProfiles({ P1: { xp: 5, levels: {} } }, s);

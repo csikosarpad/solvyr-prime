@@ -147,6 +147,25 @@ export class ParticleSystem {
     }
   }
 
+  spawnGroundImpact(x: number, y: number, radius: number): void {
+    for (let i = 0; i < 6; i++) {
+      const direction = i < 3 ? -1 : 1;
+      this.add({
+        kind: "debris",
+        x,
+        y,
+        vx: direction * this.between(radius * 1.2, radius * 2.4),
+        vy: -this.between(radius * 1.2, radius * 2.2),
+        size: this.between(4, 8),
+        grow: -4,
+        life: this.between(0.25, 0.45),
+        color: this.colors.debris,
+        gravity: 420,
+        opacity: 0.65,
+      });
+    }
+  }
+
   /** Torkolattűz a csővégen; a lángsprite felfelé néz, ezért a cső irányába forgatjuk. */
   spawnMuzzleFlash(x: number, y: number, angleDeg: number): void {
     this.add({

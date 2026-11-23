@@ -4,9 +4,11 @@ import type { HudFrame } from "../pixi/HudFrame";
 import type { GlowLine } from "../pixi/GlowLine";
 import { accentColor, PIXI_UI_THEME } from "../pixi/PixiUiTheme";
 import type { ResultBackgroundEffects } from "../pixi/ResultBackgroundEffects";
+import type { PixiUiAccent } from "../pixi/PixiUiTheme";
+import { playerAccent, markingColor, usePlayerColors } from "@/game/state/playerColors";
 
 interface ResultDecorCanvasProps {
-  accent?: "cyan" | "gold" | "orange";
+  accent?: PixiUiAccent | number;
 }
 
 function drawGrid(graphics: Graphics, width: number, height: number) {
@@ -87,6 +89,8 @@ function drawDecorations(
   width: number,
   height: number,
   accent: number,
+  p1Color: number,
+  p2Color: number,
   GraphicsClass: typeof Graphics,
   HudFrameClass: typeof HudFrame,
   GlowLineClass: typeof GlowLine,
@@ -119,7 +123,7 @@ function drawDecorations(
   const panelY = 102;
   const panelHeight = Math.max(100, height - panelY - 14);
   const panelWidth = Math.max(100, (width - panelGap * 3) / 2);
-  drawPanelFill(GraphicsClass, container, panelGap, panelY, panelWidth, panelHeight, PIXI_UI_THEME.colors.cyan);
+  drawPanelFill(GraphicsClass, container, panelGap, panelY, panelWidth, panelHeight, p1Color);
   drawPanelFill(
     GraphicsClass,
     container,
@@ -127,7 +131,7 @@ function drawDecorations(
     panelY,
     panelWidth,
     panelHeight,
-    PIXI_UI_THEME.colors.gold,
+    p2Color,
   );
   drawVictoryFrame(GraphicsClass, HudFrameClass, container, width, PIXI_UI_THEME.colors.gold);
 
@@ -146,6 +150,9 @@ function drawDecorations(
 
 export function ResultDecorCanvas({ accent = "gold" }: ResultDecorCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const colors = usePlayerColors();
+  const p1Color = playerAccent(markingColor("P1", colors));
+  const p2Color = playerAccent(markingColor("P2", colors));
 
   useEffect(() => {
     const host = hostRef.current;
@@ -190,7 +197,9 @@ export function ResultDecorCanvas({ accent = "gold" }: ResultDecorCanvasProps) {
                 app.stage,
                 host.clientWidth,
                 host.clientHeight,
-                accentColor(accent),
+                typeof accent === "number" ? accent : accentColor(accent),
+                p1Color,
+                p2Color,
                 Graphics,
                 HudFrame,
                 GlowLine,
@@ -228,7 +237,7 @@ export function ResultDecorCanvas({ accent = "gold" }: ResultDecorCanvasProps) {
         app.destroy(false);
       }
     };
-  }, [accent]);
+  }, [accent, p1Color, p2Color]);
 
   return <div ref={hostRef} className="result-decor-canvas" aria-hidden="true" />;
 }

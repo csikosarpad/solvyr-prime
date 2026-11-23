@@ -1,10 +1,10 @@
 import { useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { usePlayerName } from "@/game/state/playerNames";
+import { playerAccent, markingColor, usePlayerColors } from "@/game/state/playerColors";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import { useT } from "@/i18n";
 import { gameRef } from "./gameRef";
-import { Shop } from "./Shop";
 import { ResultDecorCanvas } from "./result/ResultDecorCanvas";
 import { getUnitPresentation } from "./result/unitPresentation";
 import { sectorById } from "@/game/data/sectors";
@@ -17,17 +17,18 @@ import { useState } from "react";
 export function ResultScreen() {
   const t = useT();
   const name = usePlayerName();
+  const colors = usePlayerColors();
   const {
     winner,
     matchStats,
     setScreen,
     matchMode,
-    aiActive,
     sector,
     campaignNewRoutes,
     missionSuccess,
     campaignMission,
     missionGeneration,
+    campaignPlayer,
   } = useGameStore();
   const campaign = matchMode === "campaign";
   const operation = matchMode === "operation";
@@ -37,19 +38,18 @@ export function ResultScreen() {
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState(false);
   const campaignError = useCampaignStore((s) => s.error);
-  const completedIds = useCampaignStore((s) => s.completedIds);
   const credentials = useMultiplayerStore((state) => state.credentials);
   const session = useMultiplayerStore((state) => state.session);
   const multiplayerError = useMultiplayerStore((state) => state.error);
   const onlineMatch = credentials !== null;
-  const aiOpponent = aiActive || campaign;
   const matchFinished = session?.status === "finished";
 
   return (
     <div className="overlay">
       <div className="panel result-panel">
-        <ResultDecorCanvas accent={getUnitPresentation(winner ?? "P1").accent} />
+        <ResultDecorCanvas accent={winner === "P1" || winner === "P2" ? playerAccent(markingColor(winner, colors)) : getUnitPresentation("P1").accent} />
         <div className="winner-banner">
+          <span className="winner-wing-art" aria-hidden="true" />
           <span className="winner-trophy" aria-hidden="true">
             ★
           </span>
@@ -58,7 +58,7 @@ export function ResultScreen() {
         </div>
         {campaign && (
           <p className="campaign-result" role="status">
-            {winner === "P1" ? t("campaign.secured", { code: sector.code }) : t("campaign.notSecured")}
+            {winner === campaignPlayer ? t("campaign.secured", { code: sector.code }) : t("campaign.notSecured")}
           </p>
         )}
         {operation && (
@@ -89,14 +89,9 @@ export function ResultScreen() {
             {startError && <p role="alert">{t("campaign.startError")}</p>}
           </div>
         )}
-        {campaign && winner === "P1" && campaignNewRoutes.length > 0 && (
+        {campaign && winner === campaignPlayer && campaignNewRoutes.length > 0 && (
           <p className="campaign-result" role="status">
             {t("campaign.newRoutes", { names: campaignNewRoutes.map((id) => sectorById(id).name).join(", ") })}
-          </p>
-        )}
-        {campaign && winner === "P1" && completedIds.includes("prime-00") && (
-          <p className="campaign-result" role="status">
-            {t("campaign.operationComplete")}
           </p>
         )}
         {campaign && campaignError && (
@@ -115,9 +110,9 @@ export function ResultScreen() {
           </thead>
           <tbody>
             {Object.entries(matchStats).map(([id, s]) => (
-              <tr key={id}>
+              <tr key={id} className={winner ? (winner === id ? "is-winner" : "is-runner-up") : "is-draw"}>
                 <td>
-                  <u>{name(id)}</u>
+                  <strong>{name(id)}</strong>
                 </td>
                 <td>{s.shots}</td>
                 <td>{s.damage}</td>
@@ -126,15 +121,6 @@ export function ResultScreen() {
             ))}
           </tbody>
         </table>
-        <div className="result-shop">
-          {onlineMatch ? (
-            <Shop editablePlayerId={credentials.playerId} disabled={!matchFinished} />
-          ) : aiOpponent ? (
-            <Shop editablePlayerId="P1" />
-          ) : (
-            <Shop />
-          )}
-        </div>
         {onlineMatch && !matchFinished && <p role="status">{t("result.syncing")}</p>}
         {multiplayerError && onlineMatch && (
           <p className="lobby-error" role="alert">
@@ -142,9 +128,16 @@ export function ResultScreen() {
           </p>
         )}
         <div className="result-actions">
+          <button
+            className="btn hud-button hud-button-primary result-workshop-action"
+            disabled={(onlineMatch && !matchFinished) || (operation && (operationPending > 0 || starting))}
+            onClick={() => useGameStore.getState().openWorkshop()}
+          >
+            {t("workshop.title")}
+          </button>
           {operation && (
             <button
-              className="btn hud-button hud-button-primary"
+              className="btn hud-button hud-button-primary result-extra-action"
               disabled={operationPending > 0 || starting}
               onClick={() => {
                 gameRef.current?.leaveBattle();
@@ -156,7 +149,7 @@ export function ResultScreen() {
           )}
           {campaign && (
             <button
-              className="btn hud-button hud-button-primary"
+              className="btn hud-button hud-button-primary result-extra-action"
               onClick={() => {
                 gameRef.current?.leaveBattle();
                 setScreen("campaignMap");
@@ -167,7 +160,7 @@ export function ResultScreen() {
           )}
           {!onlineMatch ? (
             <button
-              className="btn hud-button hud-button-primary"
+              className="btn hud-button hud-button-primary result-rematch-action"
               disabled={operation && (operationPending > 0 || starting)}
               onClick={async () => {
                 if (!operation || !campaignMission) {
@@ -186,7 +179,7 @@ export function ResultScreen() {
             </button>
           ) : credentials.playerId === "P1" ? (
             <button
-              className="btn hud-button hud-button-primary"
+              className="btn hud-button hud-button-primary result-rematch-action"
               disabled={!matchFinished}
               onClick={() => gameRef.current?.requestMultiplayerRematch()}
             >
@@ -196,7 +189,7 @@ export function ResultScreen() {
             <p role="status">{t("result.waitingRematch")}</p>
           )}
           <button
-            className="btn secondary hud-button hud-button-secondary"
+            className="btn secondary hud-button hud-button-secondary result-menu-action"
             disabled={operation && (operationPending > 0 || starting)}
             onClick={() => {
               if (onlineMatch) useMultiplayerStore.getState().leave();

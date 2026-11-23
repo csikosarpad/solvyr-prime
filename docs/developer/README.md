@@ -11,6 +11,7 @@ Technikai működés, fejlesztési tervek és projektelőzmények. Játékosokna
 | [Fejlesztői kontextus](./dev-notes.md) | Jelenlegi architektúra és bővítési korlátok |
 | [Roadmap](./roadmap.md) | Központi fejlesztési státuszok, milestone-ok és nyitott döntések |
 | [Gameplay és fejlődés](./gameplay-progression.md) | Térképközpontú fejlesztési irány, megvalósíthatóság és még nyitott mechanikai döntések |
+| [Kampányhoz kötött fegyverfeloldás](./campaign-weapon-progression.md) | Kampányjutalmak, technológia és gyártás, fegyvertár-UX, térképbővítés és migrációs terv |
 | [Progressziós TODO](./gameplay-progression-todo.md) | A roadmap progressziós részfeladatai, szektoridentitás és a későbbi döntési kapuk |
 | [Játék redesign](./game-redesign.md) | Vizuális/UX részletek, referenciák, mobil és asset-hatókör |
 | [Hang-redesign](./sound-redesign.md) | Hangarchitektúra és részletes hangfejlesztési feladatok |

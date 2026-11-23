@@ -5,8 +5,9 @@ export function missionSucceeded(
   mission: CampaignMission,
   winner: string | null,
   objectives: readonly PlacedStrategicObjective[],
+  playerId = "P1",
 ): boolean {
-  if (winner !== "P1") return false;
+  if (winner !== playerId) return false;
   if (!mission.protection) return true;
   const protection = mission.protection;
   const objective = objectives.find((entry) => entry.id === protection.objectiveId);

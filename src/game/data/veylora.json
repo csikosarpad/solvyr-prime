@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": 1,
+  "contentVersion": 3,
   "sector": {
     "id": "veylora-03",
     "name": "veylora.title",
@@ -11,7 +11,7 @@
         "id": "veylora-station",
         "kind": "station",
         "name": "veylora.station",
-        "missionIds": [],
+        "missionIds": ["secure-station"],
         "recipeIds": ["reinforced-shield"]
       }
     ]
@@ -20,15 +20,22 @@
     {
       "id": "secure-mine",
       "battlefieldId": "veylora-mine",
-      "opponent": { "armor": 0, "skill": 0.35 },
+      "opponent": { "armor": 0, "skill": 0.35, "weapons": ["incendiary"] },
       "rewards": { "resources": { "industrial-ore": 20 }, "technologies": [] }
     },
     {
       "id": "secure-lab",
       "battlefieldId": "veylora-lab",
-      "opponent": { "armor": 20, "skill": 0.55 },
+      "opponent": { "armor": 20, "skill": 0.55, "weapons": ["ap"] },
       "protection": { "objectiveId": "research-lab-01", "minimumHpRatio": 0.2 },
       "rewards": { "resources": {}, "technologies": ["materials-blueprint"] }
+    },
+    {
+      "id": "secure-station",
+      "battlefieldId": "veylora-station",
+      "prerequisites": ["secure-mine", "secure-lab"],
+      "opponent": { "armor": 30, "skill": 0.65, "weapons": ["laser", "homing"] },
+      "rewards": { "resources": {}, "technologies": [] }
     }
   ],
   "resources": [{ "id": "industrial-ore", "name": "economy.ore" }],
@@ -39,7 +46,7 @@
       "name": "economy.shield",
       "cost": { "industrial-ore": 20 },
       "technologies": ["materials-blueprint"],
-      "effect": { "maxEnergyShieldMultiplier": 1.1 }
+      "effect": { "maxEnergyShieldBonus": 20, "maxEnergyShieldMultiplier": 1.1 }
     }
   ],
   "battlefields": [
@@ -92,6 +99,29 @@
         { "id": "research-lab-01", "type": "RESEARCH_LAB", "worldX": 640, "width": 64, "height": 40 }
       ],
       "strategicObjectiveSlots": [510, 640, 770]
+    },
+    {
+      "id": "veylora-station",
+      "code": "VEYLORA-STATION",
+      "name": "Orbital Dock Approach",
+      "briefing": "veylora.stationBrief",
+      "terrain": {
+        "layout": "full",
+        "points": [
+          [0, 0.64],
+          [0.18, 0.64],
+          [0.3, 0.59],
+          [0.48, 0.61],
+          [0.64, 0.55],
+          [0.82, 0.57],
+          [1, 0.55]
+        ],
+        "amplitude": 0.002
+      },
+      "colors": { "fill": 2370661, "grass": 7040898, "surfaceHighlight": 12441029 },
+      "atmosphere": { "tint": 13294078, "mountain": 2574911, "fog": 8236730, "cityIntensity": 0.8 },
+      "strategicObjectives": [],
+      "strategicObjectiveSlots": []
     }
   ]
 }

@@ -36,6 +36,16 @@ export function MenuCredits() {
             <small>CC0</small>
           </section>
           <section>
+            <h3>{t("credits.design")}</h3>
+            <strong>Nano Banana</strong>
+            <small>{t("credits.designContribution")}</small>
+          </section>
+          <section>
+            <h3>{t("credits.development")}</h3>
+            <strong>GitHub Copilot</strong>
+            <small>{t("credits.developmentContribution")}</small>
+          </section>
+          <section>
             <h3>{t("credits.sound")}</h3>
             <strong>{t("credits.soundEffects")}</strong>
             <a href="https://freesound.org" target="_blank" rel="noopener noreferrer">

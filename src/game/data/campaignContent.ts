@@ -3,12 +3,14 @@ import { DEFAULT_THEME } from "../theme";
 import { validateTerrainProfile } from "../terrain/heightmap";
 import type { Sector, TerrainProfile } from "./sectors";
 import type { StrategicObjectivePlacement } from "../systems/strategicObjectives";
+import { isWeaponId, type SpecialWeaponId } from "./weapons";
 import veyloraJson from "./veylora.json?raw";
 
 export interface CampaignMission {
   id: string;
   battlefieldId: string;
-  opponent: { armor: number; skill: number };
+  prerequisites: string[];
+  opponent: { armor: number; skill: number; weapons?: readonly SpecialWeaponId[] };
   protection?: { objectiveId: string; minimumHpRatio: number };
   rewards: CampaignRewards;
 }
@@ -23,7 +25,7 @@ export interface CampaignRecipe {
   name: MessageKey;
   cost: Record<string, number>;
   technologies: string[];
-  effect: { maxEnergyShieldMultiplier: number };
+  effect: { maxEnergyShieldBonus: number; maxEnergyShieldMultiplier: number };
 }
 
 export interface CampaignLocation {
@@ -180,13 +182,16 @@ export function parseCampaignContent(value: unknown): CampaignContent {
   const recipes = list(raw.recipes).map((value): CampaignRecipe => {
     const entry = record(value);
     const effect = record(entry.effect);
-    if (Object.keys(effect).length !== 1) throw new Error("Unsupported campaign upgrade effect");
+    if (Object.keys(effect).length !== 2) throw new Error("Unsupported campaign upgrade effect");
     return {
       id: identifier(entry.id),
       name: message(entry.name),
       cost: quantities(entry.cost),
       technologies: list(entry.technologies).map(text),
-      effect: { maxEnergyShieldMultiplier: number(effect.maxEnergyShieldMultiplier, 1.01, 2) },
+      effect: {
+        maxEnergyShieldBonus: number(effect.maxEnergyShieldBonus, 0, 1000),
+        maxEnergyShieldMultiplier: number(effect.maxEnergyShieldMultiplier, 1.01, 2),
+      },
     };
   });
   const checkReferences = (amounts: Record<string, number>, techIds: string[]) => {
@@ -219,13 +224,19 @@ export function parseCampaignContent(value: unknown): CampaignContent {
     const entry = record(value);
     const opponent = record(entry.opponent);
     const armor = number(opponent.armor, 0, 100);
+    const weapons = opponent.weapons === undefined ? undefined : list(opponent.weapons).map((id) => {
+      if (!isWeaponId(id) || id === "standard") throw new Error("Invalid opponent special weapon");
+      return id;
+    });
+    if (weapons) unique(weapons);
     const reward = record(entry.rewards);
     const rewards = { resources: quantities(reward.resources), technologies: list(reward.technologies).map(text) };
     checkReferences(rewards.resources, rewards.technologies);
     const mission: CampaignMission = {
       id: text(entry.id),
       battlefieldId: text(entry.battlefieldId),
-      opponent: { armor, skill: number(opponent.skill, 0, 0.9) },
+      prerequisites: entry.prerequisites === undefined ? [] : list(entry.prerequisites).map(text),
+      opponent: { armor, skill: number(opponent.skill, 0, 0.9), ...(weapons ? { weapons } : {}) },
       rewards,
     };
     if (entry.protection !== undefined) {
@@ -253,9 +264,26 @@ export function parseCampaignContent(value: unknown): CampaignContent {
   for (const mission of missions) {
     const field = battlefields.find((entry) => entry.id === mission.battlefieldId);
     if (!field) throw new Error("Missing campaign battlefield reference");
+    unique(mission.prerequisites);
+    if (
+      mission.prerequisites.includes(mission.id) ||
+      mission.prerequisites.some((id) => !missions.some((entry) => entry.id === id))
+    )
+      throw new Error("Invalid campaign mission prerequisite");
     if (mission.protection && !field.strategicObjectives?.some((entry) => entry.id === mission.protection?.objectiveId))
       throw new Error("Missing campaign protection objective");
   }
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visitMission = (id: string) => {
+    if (visiting.has(id)) throw new Error("Cyclic campaign mission prerequisites");
+    if (visited.has(id)) return;
+    visiting.add(id);
+    missions.find((mission) => mission.id === id)!.prerequisites.forEach(visitMission);
+    visiting.delete(id);
+    visited.add(id);
+  };
+  missions.forEach((mission) => visitMission(mission.id));
   return {
     schemaVersion: 1,
     contentVersion,
@@ -280,4 +308,8 @@ export function missionBattlefield(mission: CampaignMission): Sector {
   const field = VEYLORA.battlefields.find((entry) => entry.id === mission.battlefieldId);
   if (!field) throw new Error(`Unknown VEYLORA battlefield: ${mission.battlefieldId}`);
   return field;
+}
+
+export function missionAvailable(mission: CampaignMission, completedMissionIds: readonly string[]): boolean {
+  return mission.prerequisites.every((id) => completedMissionIds.includes(id));
 }

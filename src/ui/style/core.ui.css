@@ -1,0 +1,28 @@
+/* Skin: a színeket CSS változók adják; másik kinézethez elég a :root[data-skin="…"] felülírása. */
+:root {
+  --bf-text: #fff;
+  --bf-overlay: rgba(6, 10, 24, 0.82);
+  --bf-panel: #16224a;
+  --bf-input-bg: #101a38;
+  --bf-border: #60729d;
+  --bf-divider: #33406b;
+  --bf-primary: #4da3ff;
+  --bf-on-accent: #04122b;
+  --bf-highlight: #ffd34d;
+  --bf-muted: #aebbd7;
+  --bf-error: #ff8b82;
+  --bf-hp: #55dd66;
+  --bf-shield: #4dd0ff;
+  --bf-armor: #ffb347;
+  --bf-stripe-back: #222;
+  --bf-font-ui: "Oxanium", "Segoe UI", system-ui, sans-serif;
+  --bf-font-data: "Rajdhani", "Oxanium", "Segoe UI", system-ui, sans-serif;
+  /* HUD sizing tokens can be overridden by a later stylesheet. */
+  --hud-top-padding: 8px;
+  --hud-player-padding: 8px 12px;
+  --hud-player-gauge-size: 76px;
+  --hud-health-bar-height: 7px;
+  --hud-center-padding: 8px 14px;
+  --hud-console-width: 260px;
+}
+

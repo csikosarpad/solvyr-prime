@@ -1,10 +1,10 @@
 import { missionById, VEYLORA } from "../data/campaignContent";
 import { newCampaignSave, parseCampaignSave, type CampaignSave } from "../systems/campaignEconomy";
+import type { LocalPlayerId } from "./playerId";
 
 export const CAMPAIGN_DATABASE = "ballistic-front:campaign-economy";
 export const LEGACY_VEYLORA_KEY = "ballistic-front:veylora-progress";
 const STORE = "commander";
-const KEY = "P1";
 
 export class CampaignDataError extends Error {}
 
@@ -19,7 +19,7 @@ function migratePrototype(): CampaignSave {
     !("version" in raw) ||
     raw.version !== 1 ||
     !("contentVersion" in raw) ||
-    raw.contentVersion !== VEYLORA.contentVersion ||
+    (raw.contentVersion !== 1 && raw.contentVersion !== 2 && raw.contentVersion !== VEYLORA.contentVersion) ||
     !("sectorId" in raw) ||
     raw.sectorId !== VEYLORA.sector.id ||
     !("selectedMissionId" in raw) ||
@@ -43,6 +43,7 @@ function migratePrototype(): CampaignSave {
 export function campaignTransaction(
   change?: (save: CampaignSave) => CampaignSave,
   resetEconomy = false,
+  playerId: LocalPlayerId = "P1",
 ): Promise<CampaignSave> {
   return new Promise((resolve, reject) => {
     const open = indexedDB.open(CAMPAIGN_DATABASE, 1);
@@ -71,7 +72,7 @@ export function campaignTransaction(
       const store = tx.objectStore(STORE);
       let next: CampaignSave;
       let failure: unknown;
-      const request = store.get(KEY);
+      const request = store.get(playerId);
       request.onsuccess = () => {
         try {
           let current: CampaignSave;
@@ -79,13 +80,13 @@ export function campaignTransaction(
             current = resetEconomy
               ? newCampaignSave()
               : request.result === undefined
-                ? migratePrototype()
+                ? playerId === "P1" ? migratePrototype() : newCampaignSave()
                 : parseCampaignSave(request.result);
           } catch (error) {
             throw new CampaignDataError("Campaign save could not be decoded", { cause: error });
           }
           next = change ? change(current) : current;
-          if (change || resetEconomy || request.result === undefined) store.put(parseCampaignSave(next), KEY);
+          if (change || resetEconomy || request.result === undefined) store.put(parseCampaignSave(next), playerId);
         } catch (error) {
           failure = error;
           tx.abort();

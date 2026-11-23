@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { MessageKey } from "@/i18n";
+import type { LocalPlayerId } from "./playerId";
 import {
   CAMPAIGN_CONTENT_VERSION,
   isSectorId,
@@ -14,17 +15,25 @@ export const CAMPAIGN_STORAGE_KEY = "ballistic-front:campaign";
 const VERSION = 2;
 
 interface CampaignState {
+  playerId: LocalPlayerId;
   completedIds: SectorId[];
   selectedId: SectorId;
   error: MessageKey | null;
   select: (id: SectorId) => boolean;
   complete: (id: SectorId) => SectorId[];
   reset: () => void;
+  /** Mindkét helyi játékos kampányhaladásának törlése. */
+  resetAll: () => void;
+  switchPlayer: (id: LocalPlayerId) => void;
 }
 
-function load(): Pick<CampaignState, "completedIds" | "selectedId" | "error"> {
+function storageKey(playerId: LocalPlayerId): string {
+  return playerId === "P1" ? CAMPAIGN_STORAGE_KEY : `${CAMPAIGN_STORAGE_KEY}:P2`;
+}
+
+function load(playerId: LocalPlayerId): Pick<CampaignState, "completedIds" | "selectedId" | "error"> {
   try {
-    const text = localStorage.getItem(CAMPAIGN_STORAGE_KEY);
+    const text = localStorage.getItem(storageKey(playerId));
     if (text === null) return { completedIds: [], selectedId: "alpha-01", error: null };
     const raw: unknown = JSON.parse(text);
     if (typeof raw !== "object" || raw === null || !("version" in raw)) {
@@ -33,12 +42,12 @@ function load(): Pick<CampaignState, "completedIds" | "selectedId" | "error"> {
     if (raw.version === 1 && "completed" in raw && typeof raw.completed === "boolean") {
       const completedIds: SectorId[] = raw.completed ? ["alpha-01"] : [];
       const selectedId = nextOperation(completedIds);
-      return { completedIds, selectedId, error: save(completedIds, selectedId) };
+      return { completedIds, selectedId, error: save(completedIds, selectedId, playerId) };
     }
     if (
       raw.version !== VERSION ||
       !("contentVersion" in raw) ||
-      (raw.contentVersion !== 1 && raw.contentVersion !== CAMPAIGN_CONTENT_VERSION) ||
+      (raw.contentVersion !== 1 && raw.contentVersion !== 2 && raw.contentVersion !== CAMPAIGN_CONTENT_VERSION) ||
       !("completedIds" in raw) ||
       !Array.isArray(raw.completedIds) ||
       !raw.completedIds.every(isSectorId) ||
@@ -50,19 +59,15 @@ function load(): Pick<CampaignState, "completedIds" | "selectedId" | "error"> {
     const completedIds = raw.completedIds;
     if (
       completedIds.some((id) => {
-        // Completed C3 sectors stay valid even if Vanguard was reached through Delta.
-        const prerequisites = id === "vanguard-12" ? (["delta-08", "forge-17"] as const) : sectorById(id).prerequisites;
-        return prerequisites.length > 0 && !prerequisites.some((required) => completedIds.includes(required));
+        const { prerequisites } = sectorById(id);
+        return prerequisites.some((required) => !completedIds.includes(required));
       })
     )
       throw new Error("Invalid campaign progression");
-    if (raw.contentVersion === 1) {
-      const legacySelectedAvailable = raw.selectedId === "vanguard-12" && completedIds.includes("delta-08");
-      if (!legacySelectedAvailable && sectorStatus(raw.selectedId, completedIds) === "locked")
-        throw new Error("Invalid campaign progression");
-      const selectedId =
-        sectorStatus(raw.selectedId, completedIds) === "locked" ? nextOperation(completedIds) : raw.selectedId;
-      return { completedIds, selectedId, error: save(completedIds, selectedId) };
+    if (raw.contentVersion < CAMPAIGN_CONTENT_VERSION) {
+      if (sectorStatus(raw.selectedId, completedIds) === "locked") throw new Error("Invalid campaign progression");
+      const selectedId = raw.selectedId;
+      return { completedIds, selectedId, error: save(completedIds, selectedId, playerId) };
     }
     if (sectorStatus(raw.selectedId, completedIds) === "locked") throw new Error("Invalid campaign progression");
     return { completedIds, selectedId: raw.selectedId, error: null };
@@ -72,10 +77,10 @@ function load(): Pick<CampaignState, "completedIds" | "selectedId" | "error"> {
   }
 }
 
-function save(completedIds: readonly SectorId[], selectedId: SectorId): MessageKey | null {
+function save(completedIds: readonly SectorId[], selectedId: SectorId, playerId: LocalPlayerId): MessageKey | null {
   try {
     localStorage.setItem(
-      CAMPAIGN_STORAGE_KEY,
+      storageKey(playerId),
       JSON.stringify({
         version: VERSION,
         contentVersion: CAMPAIGN_CONTENT_VERSION,
@@ -91,16 +96,18 @@ function save(completedIds: readonly SectorId[], selectedId: SectorId): MessageK
 }
 
 export const useCampaignStore = create<CampaignState>((set, get) => ({
-  ...load(),
+  playerId: "P1",
+  ...load("P1"),
+  switchPlayer: (id) => set({ playerId: id, ...load(id) }),
   select: (id) => {
     sectorById(id);
-    const { completedIds, error } = get();
+    const { completedIds, error, playerId } = get();
     if (error === "campaign.loadError") return false;
     if (sectorStatus(id, completedIds) === "locked") {
       console.error(`Locked campaign operation: ${id}`);
       return false;
     }
-    set({ selectedId: id, error: save(completedIds, id) });
+    set({ selectedId: id, error: save(completedIds, id, playerId) });
     return true;
   },
   complete: (id) => {
@@ -112,7 +119,7 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
       return [];
     }
     if (state.completedIds.includes(id)) {
-      if (state.error) set({ error: save(state.completedIds, state.selectedId) });
+      if (state.error) set({ error: save(state.completedIds, state.selectedId, state.playerId) });
       return [];
     }
     const completedIds = [...state.completedIds, id];
@@ -122,8 +129,13 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
         sectorStatus(sector.id, completedIds) === "available",
     ).map((sector) => sector.id);
     const selectedId = nextOperation(completedIds);
-    set({ completedIds, selectedId, error: save(completedIds, selectedId) });
+    set({ completedIds, selectedId, error: save(completedIds, selectedId, state.playerId) });
     return routes;
   },
-  reset: () => set({ completedIds: [], selectedId: "alpha-01", error: save([], "alpha-01") }),
+  reset: () => set((state) => ({ completedIds: [], selectedId: "alpha-01", error: save([], "alpha-01", state.playerId) })),
+  resetAll: () =>
+    set((state) => {
+      const otherError = save([], "alpha-01", state.playerId === "P1" ? "P2" : "P1");
+      return { completedIds: [], selectedId: "alpha-01", error: save([], "alpha-01", state.playerId) ?? otherError };
+    }),
 }));

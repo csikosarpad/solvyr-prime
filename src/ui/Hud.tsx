@@ -1,21 +1,23 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { SectorBriefing } from "./SectorBriefing";
-import { PowerDial, UnitGauge } from "./gauges";
+import { clamp01, PowerDial, UnitGauge } from "./gauges";
 import { MAX_ANGLE, MIN_ANGLE, MIN_POWER, useGameStore } from "@/game/state/gameStore";
 import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { usePlayerName } from "@/game/state/playerNames";
+import { playerAccent } from "@/game/state/playerColors";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { MAX_RANK, rankStars, rankFromSkill } from "@/game/systems/ai";
 import { newProfile, profileStars } from "@/game/systems/upgrades";
-import { useT } from "@/i18n";
+import { useT, type MessageKey } from "@/i18n";
 import { gameRef } from "./gameRef";
 import { RepeatButton } from "./RepeatButton";
 import { CommandConsole } from "./CommandConsole";
 import { WindIndicator } from "./WindIndicator";
 import { BattleExitDialog } from "./BattleExitDialog";
 import { structureState } from "@/game/systems/strategicObjectives";
+import { getWeaponIcon } from "./result/upgradePresentation";
 
-const toCss = (color?: number) => (color === undefined ? "#ffffff" : `#${color.toString(16).padStart(6, "0")}`);
+const toCss = (color?: number) => (color === undefined ? "#ffffff" : `#${playerAccent(color).toString(16).padStart(6, "0")}`);
 
 export function Hud() {
   const t = useT();
@@ -28,6 +30,7 @@ export function Hud() {
     phase,
     currentId,
     canControl,
+    canDodge,
     tanks,
     previewAvailable,
     previewRemaining,
@@ -35,6 +38,8 @@ export function Hud() {
     muted,
     toggleMuted,
     setAim,
+    weapon,
+    weaponOptions,
     profiles,
     matchSequence,
     matchMode,
@@ -42,18 +47,23 @@ export function Hud() {
     sector,
     strategicObjectives,
     opponentSkill,
+    campaignPlayer,
   } = useGameStore();
   const online = useMultiplayerStore((state) => state.credentials !== null);
   const multiplayerError = useMultiplayerStore((state) => state.error);
   const aiMemory = useAiSettings((state) => state.memory);
   const starsFor = (id: string) =>
-    id === "P2" && aiActive
+    id === (matchMode === "skirmish" ? "P2" : campaignPlayer === "P1" ? "P2" : "P1") && aiActive
       ? opponentSkill !== null
         ? rankFromSkill(opponentSkill)
         : rankStars(aiMemory)
       : profileStars(profiles[id] ?? newProfile(), MAX_RANK);
   const locked = phase !== "aiming" || !canControl;
   const me = tanks.find((t) => t.id === currentId);
+  // A lövedék repülése alatt a védekező (nem soron lévő) tank térhet ki.
+  const dodging = phase === "flying" && canDodge;
+  const dodger = tanks.find((t) => t.id !== currentId);
+  const moveDisabled = phase === "flying" ? !canDodge : locked;
   // Érintőeszközön a billentyűkre utaló jelzések fölöslegesek.
   const touch = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
   const soundState = muted ? t("hud.soundOff") : t("hud.soundOn");
@@ -70,12 +80,24 @@ export function Hud() {
         setExitDestination("menu");
         return;
       }
-      const { phase, canControl, nudgePower, nudgeAngle } = useGameStore.getState();
-      if (e.key === "m" || e.key === "M") {
-        useGameStore.getState().toggleMuted();
+      const { phase, canControl, canDodge, nudgePower, nudgeAngle } = useGameStore.getState();
+      // Kitérés az ellenfél lövedéke alatt: csak balra/jobbra mozgás.
+      if (phase === "flying" && canDodge && !e.ctrlKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+        gameRef.current?.move(e.key === "ArrowLeft" ? -1 : 1);
+        e.preventDefault();
         return;
       }
       if (phase !== "aiming" || !canControl) return;
+      // 1–5: fegyverválasztás a feloldott készletből.
+      const digit = Number(e.key);
+      if (Number.isInteger(digit) && digit >= 1 && digit <= 9) {
+        const weaponId = useGameStore.getState().weaponOptions[digit - 1];
+        if (weaponId) {
+          gameRef.current?.selectWeapon(weaponId);
+          e.preventDefault();
+        }
+        return;
+      }
       const step = e.shiftKey ? 50 : 10;
       const angleStep = e.shiftKey ? 5 : 1;
       switch (e.key) {
@@ -129,9 +151,15 @@ export function Hud() {
             aria-label={unit.id}
           >
             <div className="hud-unit-heading">
-              <span style={{ fontWeight: unit.id === currentId ? "bold" : "normal" }}>
-                {name(unit.id)}: {unit.hp}/{unit.maxHp} HP
-              </span>
+              <div className="hud-unit-title">
+                <strong className="hud-unit-name" style={{ fontWeight: unit.id === currentId ? "bold" : "normal" }}>
+                  {name(unit.id)}
+                </strong>
+                <span className="hud-unit-health">{unit.hp}/{unit.maxHp} HP</span>
+              </div>
+              <div className="hud-health-bar" aria-hidden="true">
+                <span className="hud-health-fill" style={{ width: `${clamp01(unit.hp, unit.maxHp) * 100}%` }} />
+              </div>
               <span
                 className="hud-rank"
                 role="img"
@@ -179,7 +207,7 @@ export function Hud() {
           <div className="hud-readout">
             {t("hud.turn")} <strong style={{ color: toCss(me?.color) }}>{name(currentId)}</strong>
             <span aria-hidden="true">·</span>
-            {t("hud.move", { value: me?.moveLeft ?? 0 })}
+            {dodging ? t("hud.dodge", { value: dodger?.moveLeft ?? 0 }) : t("hud.move", { value: me?.moveLeft ?? 0 })}
           </div>
           {online && (
             <div className="hud-status-message" role={multiplayerError ? "alert" : "status"}>
@@ -196,6 +224,28 @@ export function Hud() {
       </div>
       {matchSequence > 0 && <SectorBriefing key={matchSequence} />}
       <div className="hud-command-dock">
+        {weaponOptions.length > 1 && (
+          <div className="hud-weapons" role="group" aria-label={t("hud.weapons")}>
+            <span className="hud-weapons-label">{t("hud.weapons")}</span>
+            {weaponOptions.map((id) => (
+            // {weaponOptions.map((id, index) => (
+              <button
+                key={id}
+                aria-label={t(`weapon.${id}.name` as MessageKey)}
+                aria-pressed={weapon === id}
+                disabled={locked}
+                title={t(`weapon.${id}.desc` as MessageKey)}
+                onClick={() => gameRef.current?.selectWeapon(id)}
+              >
+                {/* <span className="hud-weapon-key" aria-hidden="true">
+                  {index + 1}
+                </span> */}
+                <img className="hud-weapon-icon" src={getWeaponIcon(id)} alt={t(`weapon.${id}.name` as MessageKey)} aria-hidden="true" />
+                {/* <span className="hud-weapon-name">{t(`weapon.${id}.name` as MessageKey)}</span> */}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="hud-controls">
           <div className="hud-control">
             <span id="hud-angle-label">{t("hud.angle", { value: angle })}</span>
@@ -267,7 +317,7 @@ export function Hud() {
           <RepeatButton
             aria-label={t("hud.moveLeft")}
             title={t("hud.moveLeft")}
-            disabled={locked}
+            disabled={moveDisabled}
             intervalMs={140}
             onPress={() => gameRef.current?.move(-1)}
           >
@@ -279,7 +329,7 @@ export function Hud() {
           <RepeatButton
             aria-label={t("hud.moveRight")}
             title={t("hud.moveRight")}
-            disabled={locked}
+            disabled={moveDisabled}
             intervalMs={140}
             onPress={() => gameRef.current?.move(1)}
           >

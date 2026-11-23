@@ -8,6 +8,7 @@ export interface ConfirmDialogProps {
   confirmLabel: string;
   /** A visszafordíthatatlan műveletek (pl. mentés törlése) piros megerősítő gombot kapnak. */
   destructive?: boolean;
+  mobileSheet?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -19,6 +20,7 @@ export function ConfirmDialog({
   cancelLabel,
   confirmLabel,
   destructive = false,
+  mobileSheet = false,
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -34,7 +36,7 @@ export function ConfirmDialog({
   return (
     <dialog
       ref={dialogRef}
-      className={destructive ? "confirm-dialog confirm-dialog-destructive" : "confirm-dialog"}
+      className={`confirm-dialog${destructive ? " confirm-dialog-destructive" : ""}${mobileSheet ? " confirm-dialog-mobile-sheet" : ""}`}
       aria-labelledby={`${id}-title`}
       aria-describedby={`${id}-message`}
       onCancel={(event) => {

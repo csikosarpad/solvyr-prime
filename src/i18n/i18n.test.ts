@@ -49,7 +49,7 @@ describe("i18n", () => {
     expect(localStorage.getItem("ballistic-front:locale")).toBe("en");
     expect(document.documentElement.lang).toBe("en");
     useLocaleStore.getState().setLocale("hu");
-    expect(t("hud.fire")).toBe("TÜZET!");
+    expect(t("hud.fire")).toBe("TŰZ!");
     expect(document.documentElement.lang).toBe("hu");
     useLocaleStore.getState().setLocale("de");
     expect(t("hud.fire")).toBe("FEUER!");
