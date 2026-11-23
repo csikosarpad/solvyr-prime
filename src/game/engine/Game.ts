@@ -42,6 +42,7 @@ import {
   applyDamage,
   barrelTip,
   createTank,
+  explosionDamage,
   isAlive,
   moveTank,
   regenTankShield,
@@ -54,13 +55,11 @@ import { weaponById, type WeaponDefinition, type WeaponId } from "@/game/data/we
 import {
   buyWeapon,
   resolveShotEffect,
-  shotDamageAt,
   steerHoming,
   traceHitscan,
   unlockedWeapons,
   type ShotEffect,
 } from "@/game/systems/weapons";
-import { resolveDamage } from "@/game/systems/damage";
 import { newMatchStats, recordDamage, recordShot, recordXp, type MatchStats } from "@/game/systems/matchStats";
 import { loadProfiles, saveProfiles } from "@/game/systems/profileStorage";
 import { MAX_ANGLE, MIN_POWER, useGameStore } from "@/game/state/gameStore";
@@ -100,11 +99,6 @@ import type { LocalPlayerId } from "@/game/state/playerId";
 
 /** Ennyi HP-arány alatt kritikus a tank állapota. */
 const CRITICAL_HP_FRACTION = 0.3;
-const LAST_STAND_MESSAGES = [
-  "command.lastStand.fought",
-  "command.lastStand.end",
-  "command.lastStand.served",
-] as const;
 const VICTORY_MESSAGES = [
   "command.victory.goodBattle",
   "command.victory.cameToWin",
@@ -147,7 +141,6 @@ const SELF_HIT_GRACE = 30;
 const LASER_BEAM_TTL = 0.35;
 /** Eddig a tickig él a célkövető rávezetés; utána a lövedék szabadon repül (nincs végtelen körözés). */
 const HOMING_GUIDANCE_MAX_TICKS = 900;
-const LAST_STAND_LOOKAHEAD_TICKS = 60;
 /** A cső forgáspontja a tank talajszintje fölött (px); egyezik a tank.ts-ben lévővel. */
 const BARREL_PIVOT_HEIGHT = 10;
 /** Csak a megjelenítés nagyobb; a löveg hossza és a találati terület nem változik. */
@@ -247,7 +240,6 @@ export class Game {
     ownerId: string;
     exposure: Map<string, { pendingDamage: number; notified: boolean }>;
   }[] = [];
-  private lastStandAnnounced = new Set<string>();
   private groundFire: GroundFireRenderer | null = null;
   /** A lézersugár rövid, halványuló visszajelzése. */
   private laserBeam: { from: Vec2; to: Vec2; ttl: number } | null = null;
@@ -454,7 +446,6 @@ export class Game {
     this.selectedWeapons = {};
     this.burnZones = [];
     this.groundFire?.clear();
-    this.lastStandAnnounced.clear();
     this.laserBeam = null;
     useGameStore.getState().sync({
       matchSequence: useGameStore.getState().matchSequence + 1,
@@ -773,70 +764,8 @@ export class Game {
     if (this.isAiTurn()) this.scheduleAiTurn();
   }
 
-  private announceLastStand(tank: Tank): void {
-    if (!isAlive(tank) || this.lastStandAnnounced.has(tank.id)) return;
-    this.lastStandAnnounced.add(tank.id);
-    const message = LAST_STAND_MESSAGES[Math.floor(Math.random() * LAST_STAND_MESSAGES.length)]!;
-    useCommandStore.getState().announce(message, { id: playerName(tank.id) }, "critical", tank.id);
-  }
-
-  private announceBurnLastStand(tank: Tank): void {
-    if (!isAlive(tank) || tank.hp / tank.stats.maxHp > CRITICAL_HP_FRACTION || this.lastStandAnnounced.has(tank.id)) {
-      return;
-    }
-    const remainingDamage = this.burnDamageWithin(tank);
-    if (remainingDamage < tank.hp + tank.shield + tank.armor) return;
-    if (this.terrain) {
-      const escape = planFireEscape(tank, this.terrain.mask, this.burnZones);
-      if (escape) {
-        const probe = { ...tank };
-        let stepsLeft = escape.steps;
-        while (stepsLeft > 0 && moveTankAvoidingFire(probe, escape.dir, this.terrain.mask, this.burnZones)) {
-          stepsLeft--;
-        }
-        if (stepsLeft === 0) return;
-      }
-    }
-    this.announceLastStand(tank);
-  }
-
-  private burnDamageWithin(tank: Tank, seconds = Infinity): number {
-    return this.burnZones.reduce((total, zone) => {
-      if (Math.abs(tank.x - zone.x) > zone.radius) return total;
-      const pending = zone.exposure.get(tank.id)?.pendingDamage ?? 0;
-      return total + Math.floor(Math.min(seconds, zone.secondsLeft) * zone.damagePerSecond + pending + 1e-9);
-    }, 0);
-  }
-
-  private announceLethalImpact(pos: Vec2, direct: Tank | null, effect: ShotEffect, imminent = false): void {
-    if (!this.terrain) return;
-    for (const tank of this.tanks) {
-      if (!isAlive(tank) || this.lastStandAnnounced.has(tank.id)) continue;
-      const lethal = (probe: Tank) => resolveDamage(
-        probe,
-        shotDamageAt(probe, pos, effect, direct === tank && tankContains(probe, pos.x, pos.y)),
-        effect.armorPierce,
-      ).hp === 0;
-      if (!lethal(tank)) continue;
-      let escape = false;
-      for (const dir of [-1, 1] as const) {
-        const probe = { ...tank };
-        while (moveTank(probe, dir, this.terrain.mask)) {
-          // Mozgó célpontnál a távolabbi becsapódás helye még megváltozhat.
-          if (!imminent || !lethal(probe)) {
-            escape = true;
-            break;
-          }
-        }
-        if (escape) break;
-      }
-      if (!escape) this.announceLastStand(tank);
-    }
-  }
-
   private stepBurnZones(dt: number): void {
     if (!this.matchActive || this.turns.phase === "gameOver" || this.burnZones.length === 0) return;
-    for (const tank of this.tanks) this.announceBurnLastStand(tank);
     let changed = false;
     let eliminated = false;
     for (const zone of this.burnZones) {
@@ -864,7 +793,7 @@ export class Game {
           this.award(zone.ownerId, dealt);
           this.matchStats = recordDamage(this.matchStats, zone.ownerId, dealt);
         }
-        if (!exposure.notified && !this.lastStandAnnounced.has(tank.id)) {
+        if (!exposure.notified) {
           useCommandStore.getState().announce(
             "command.burning", { id: playerName(tank.id), damage: dealt }, "warning", tank.id,
           );
@@ -1391,7 +1320,6 @@ export class Game {
     const shot =
       this.activeShot ?? { weapon: weaponById("standard"), effect: resolveShotEffect(weaponById("standard"), shooter.stats) };
     const { effect } = shot;
-    this.announceLethalImpact({ x, y }, direct, effect, true);
     // Épület- és látványhatásokhoz használt sugár; a csak direkt találatú fegyvereknek is van kis hatása.
     const radius = Math.max(effect.blastRadius, effect.carveRadius, 6);
     const mask = this.terrain?.mask;
@@ -1432,7 +1360,11 @@ export class Game {
       const shieldBefore = t.shield;
       const armorBefore = t.armor;
       const hpBefore = t.hp;
-      const damage = shotDamageAt(t, { x, y }, effect, t === direct);
+      const damage = effect.directOnly
+        ? t === direct
+          ? Math.round(effect.damage)
+          : 0
+        : explosionDamage(t, x, y, effect.blastRadius, 1, effect.damage);
       applyDamage(t, damage, effect.armorPierce);
       if (t !== shooter) dealt += before - (t.hp + t.shield + t.armor);
       if (before === t.hp + t.shield + t.armor) continue;
@@ -1511,57 +1443,28 @@ export class Game {
     this.syncStore();
   }
 
-  private advanceShell(body: BallisticBody, age: number, wind: number): BallisticBody {
+  private stepShell(): void {
+    if (!this.shell || !this.terrain) return;
+    // Célkövető rakéta: korlátozott fordulás a cél felé, erőnövelés és találatgarancia nélkül.
     const guidance = this.activeShot?.weapon.homing;
-    if (guidance && age <= HOMING_GUIDANCE_MAX_TICKS) {
+    if (guidance && this.shellAge <= HOMING_GUIDANCE_MAX_TICKS) {
       const target = this.tanks.find((t) => isAlive(t) && t.id !== this.turns.current);
       if (target) {
-        body = {
-          pos: body.pos,
-          vel: steerHoming(body.pos, body.vel, { x: target.x, y: target.y - 6 }, guidance),
+        this.shell = {
+          pos: this.shell.pos,
+          vel: steerHoming(this.shell.pos, this.shell.vel, { x: target.x, y: target.y - 6 }, guidance),
         };
       }
     }
-    return stepBody(body, { ...DEFAULT_WORLD, wind }, FIXED_DT);
-  }
-
-  private directShellHit(pos: Vec2, age: number): Tank | null {
-    return this.tanks.find(
-      (tank) => isAlive(tank) && (tank.id !== this.turns.current || age > SELF_HIT_GRACE) &&
-        tankContains(tank, pos.x, pos.y),
-    ) ?? null;
-  }
-
-  private predictIncomingLastStand(wind: number): void {
-    if (!this.shell || !this.terrain || !this.activeShot || this.aiEscapingFire) return;
-    const mask = this.terrain.mask;
-    if (!this.tanks.some((tank) => isAlive(tank) && !this.lastStandAnnounced.has(tank.id) &&
-      !([-1, 1] as const).some((dir) => moveTank({ ...tank }, dir, mask)))) return;
-    let body = this.shell;
-    for (let tick = 0; tick < LAST_STAND_LOOKAHEAD_TICKS; tick++) {
-      const age = this.shellAge + tick;
-      body = this.advanceShell(body, age, wind);
-      const direct = this.directShellHit(body.pos, age + 1);
-      if (direct || mask.isSolid(body.pos.x, body.pos.y)) {
-        if (this.tanks.some((tank) => isAlive(tank) &&
-          this.burnDamageWithin(tank, tick * FIXED_DT) >= tank.hp + tank.shield + tank.armor)) return;
-        this.announceLethalImpact(body.pos, direct, this.activeShot.effect);
-        return;
-      }
-      if (body.pos.x < 0 || body.pos.x > mask.width || body.pos.y > WORLD_HEIGHT) return;
-    }
-  }
-
-  private stepShell(): void {
-    if (!this.shell || !this.terrain) return;
-    const wind = useGameStore.getState().wind;
-    this.predictIncomingLastStand(wind);
-    this.shell = this.advanceShell(this.shell, this.shellAge, wind);
+    this.shell = stepBody(this.shell, { ...DEFAULT_WORLD, wind: useGameStore.getState().wind }, FIXED_DT);
     this.shellAge++;
     const { x, y } = this.shell.pos;
     this.shellTrail.push(x, y);
     if (this.shellAge % 3 === 0) this.particles.spawnTrail(x, y);
-    const direct = this.directShellHit(this.shell.pos, this.shellAge);
+    const direct =
+      this.tanks.find(
+        (t) => isAlive(t) && (t.id !== this.turns.current || this.shellAge > SELF_HIT_GRACE) && tankContains(t, x, y),
+      ) ?? null;
     if (direct || this.terrain.mask.isSolid(x, y)) this.explode(x, y, direct);
     else if (x < 0 || x > this.terrain.mask.width || y > WORLD_HEIGHT) {
       // Pályán kívül: nincs robbanás, a kör véget ér.

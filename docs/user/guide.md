@@ -161,20 +161,6 @@ speciális fegyvereket használhat. A Standard mindig elérhető számára; léz
 csak akkor lő, ha a terep nem takarja a célt. Az ALPHA-01 gyakorlópályán és az
 offline gyorscsatában a gép továbbra is csak Standard lövedéket használ.
 
-Ha egy kritikus állapotú tankra a hátralévő égés már halálos, és a megmaradt
-mozgáskeretéből nincs járható kijárata, egyszeri búcsúüzenetet küld a konzolra
-a saját parancsnoki hangján. Három véletlenszerű változat közül választ:
-„A végsőkig harcoltunk!”, „Itt a vég!”, „Öröm volt önnek szolgálni!”.
-A pajzs és a páncél védelmét is figyelembe veszi; menekülésre képes vagy a tüzet
-túlélő tank nem búcsúzik el előre.
-
-A Last Stand halálos lövedéktalálat előtt is megszólalhat, nem csak égésnél:
-a rövid távú előrejelzés a tényleges ballisztikát és a célkövető rakéta
-rávezetését követi. Előre csak mozgásképtelen célpontnál búcsúzik; a becsapódáskor
-a teljes megmaradt mozgáskerettel elérhető helyeket is ellenőrzi, és csak akkor
-küld búcsúüzenetet, ha egyik sem jelentene túlélést. A pajzs és a páncél itt is számít.
-Egy egység meccsenként csak egyszer búcsúzik, akkor is, ha egyszerre ég és lövedék közelít felé.
-
 A győztes a fanfár után három véletlenszerű zárómondat egyikét mondja:
 „Ez remek csata volt!”, „Győzni jöttünk!”, „Ránk mindig számíthat, {játékosnév}!”.
 A megszólítás a győzteshez beállított játékosnevet használja; a győztes neve

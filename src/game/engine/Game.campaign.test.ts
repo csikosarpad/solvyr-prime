@@ -997,80 +997,18 @@ describe("Game campaign lifecycle", () => {
     return target;
   };
 
-  it("the doomed defender speaks before a lethal homing impact even above the critical HP threshold", () => {
+  it("resolves a lethal homing impact without a farewell", () => {
     const target = incomingShot();
     const announce = vi.spyOn(useCommandStore.getState(), "announce");
     advanceBattle(1 / 60);
     expect(target.hp).toBe(31);
     expect(Reflect.get(game, "shell")).not.toBeNull();
-    expect(announce.mock.calls.filter(([key]) => key.startsWith("command.lastStand."))).toEqual([
-      [expect.any(String), { id: expect.any(String) }, "critical", "P2"],
-    ]);
+    expect(announce.mock.calls.filter(([key]) => key.startsWith("command.lastStand."))).toHaveLength(0);
     advanceBattle(0.5);
     expect(target.hp).toBe(0);
     expect(useGameStore.getState()).toMatchObject({ phase: "gameOver", winner: "P1" });
-    expect(announce.mock.calls.filter(([key]) => key.startsWith("command.lastStand."))).toHaveLength(1);
-  });
-
-  it.each(["shield", "armor"] as const)("does not announce a lethal homing hit when %s prevents destruction", (defense) => {
-    const target = incomingShot();
-    target[defense] = 60;
-    advanceBattle(0.5);
-    expect(target.hp).toBe(31);
-    expect(useCommandStore.getState().messages.some((message) => message.key.startsWith("command.lastStand."))).toBe(false);
-  });
-
-  it("does not mistake homing guidance for a guaranteed hit when the actual trajectory misses", () => {
-    const target = incomingShot();
-    Reflect.set(game, "shell", {
-      pos: { x: target.x - 100, y: target.y - 100 },
-      vel: { x: -600, y: 0 },
-    });
-    advanceBattle(0.5);
-    expect(target.hp).toBe(31);
-    expect(useCommandStore.getState().messages.some((message) => message.key.startsWith("command.lastStand."))).toBe(false);
-  });
-
-  it("does not predict a doomed moving target before its escape choices are resolved", () => {
-    const target = incomingShot();
-    target.moveLeft = 60;
-    advanceBattle(1 / 60);
-    expect(target.hp).toBe(31);
-    expect(useCommandStore.getState().messages.some((message) => message.key.startsWith("command.lastStand."))).toBe(false);
-  });
-
-  it("accounts for armor piercing when predicting a fatal direct hit", () => {
-    const target = incomingShot("ap");
-    target.hp = 20;
-    target.armor = 100;
-    Reflect.set(game, "shell", {
-      pos: { x: target.x - 80, y: target.y - 6 },
-      vel: { x: 1000, y: 0 },
-    });
-    advanceBattle(1 / 60);
-    expect(target.hp).toBe(20);
-    expect(useCommandStore.getState().messages.filter((message) => message.key.startsWith("command.lastStand."))).toHaveLength(1);
-    advanceBattle(0.25);
-    expect(target.hp).toBe(0);
-  });
-
-  it("does not predict a losing defender if burning will end the match before the incoming impact", () => {
-    const target = incomingShot();
-    const tanks: Tank[] = Reflect.get(game, "tanks");
-    tanks[0]!.hp = 1;
-    tanks[0]!.moveLeft = 0;
-    Reflect.set(game, "burnZones", [{
-      x: tanks[0]!.x, radius: 42, damagePerSecond: 30, secondsLeft: 1, ownerId: "P2", exposure: new Map(),
-    }]);
-    const announce = vi.spyOn(useCommandStore.getState(), "announce");
-    advanceBattle(1 / 60);
-    expect(useGameStore.getState().phase).toBe("flying");
-    expect(announce.mock.calls.filter(([key, , , speaker]) =>
-      key.startsWith("command.lastStand.") && speaker === "P2",
-    )).toHaveLength(0);
-    advanceBattle(1 / 60);
-    expect(target.hp).toBe(31);
-    expect(useGameStore.getState()).toMatchObject({ phase: "gameOver", winner: "P2" });
+    expect(announce.mock.calls.filter(([key]) => key.startsWith("command.lastStand."))).toHaveLength(0);
+    expect(announce).toHaveBeenCalledWith("command.destroyed", undefined, "critical", "P1");
   });
 
   it.each([
@@ -1108,65 +1046,17 @@ describe("Game campaign lifecycle", () => {
     expect(useCommandStore.getState().messages.some((message) => message.key.startsWith("command.victory"))).toBe(false);
   });
 
-  it.each([
-    [0, "command.lastStand.fought"],
-    [0.5, "command.lastStand.end"],
-    [0.99, "command.lastStand.served"],
-  ] as const)("selects farewell variant %s once before a trapped burning tank dies", (random, message) => {
+  it("warns about burning and destruction without a farewell when fire is lethal", () => {
     const { target } = igniteNearTarget();
     target.hp = 4;
     target.moveLeft = 0;
-    vi.spyOn(Math, "random").mockReturnValue(random);
     const announce = vi.spyOn(useCommandStore.getState(), "announce");
-    advanceBattle(1 / 60);
-    expect(target.hp).toBe(4);
-    expect(announce).toHaveBeenCalledWith(message, { id: expect.any(String) }, "critical", "P2");
     advanceBattle(0.6);
     expect(target.hp).toBe(0);
     const keys = announce.mock.calls.map(([key]) => key);
-    expect(keys.filter((key) => key.startsWith("command.lastStand."))).toEqual([message]);
-    expect(keys.indexOf(message)).toBeLessThan(keys.indexOf("command.destroyed"));
-    expect(keys).not.toContain("command.burning");
-  });
-
-  it.each([
-    { state: "healthy", hp: 40, shield: 0, armor: 0, seconds: 4, dps: 20, movement: 0 },
-    { state: "shielded", hp: 4, shield: 40, armor: 0, seconds: 4, dps: 8, movement: 0 },
-    { state: "armored", hp: 4, shield: 0, armor: 40, seconds: 4, dps: 8, movement: 0 },
-    { state: "surviving the remaining fire", hp: 4, shield: 0, armor: 0, seconds: 0.25, dps: 8, movement: 0 },
-    { state: "able to escape", hp: 4, shield: 0, armor: 0, seconds: 4, dps: 8, movement: 60 },
-    { state: "outside the fire", hp: 4, shield: 0, armor: 0, seconds: 4, dps: 8, movement: 0 },
-  ])("does not give a premature farewell when $state", ({ state, hp, shield, armor, seconds, dps, movement }) => {
-    const { target } = igniteNearTarget();
-    Object.assign(target, { hp, shield, armor, moveLeft: movement });
-    const zone = Reflect.get(game, "burnZones")[0];
-    zone.secondsLeft = seconds;
-    zone.damagePerSecond = dps;
-    if (state === "outside the fire") target.x -= 100;
-    advanceBattle(1 / 60);
-    expect(useCommandStore.getState().messages.some((message) => message.key.startsWith("command.lastStand."))).toBe(false);
-  });
-
-  it("counts overlapping fires and remaining defenses when deciding that burning is fatal", () => {
-    const { target } = igniteNearTarget();
-    Object.assign(target, { hp: 12, shield: 10, armor: 10, moveLeft: 0 });
-    const zones = Reflect.get(game, "burnZones");
-    zones[0].secondsLeft = 2;
-    zones.push({ ...zones[0], exposure: new Map() });
-    advanceBattle(1 / 60);
-    expect(useCommandStore.getState().messages.filter((message) => message.key.startsWith("command.lastStand."))).toHaveLength(1);
-    expect(target.hp).toBe(12);
-  });
-
-  it("allows the same unit to send a new farewell in a new battle", () => {
-    const announce = vi.spyOn(useCommandStore.getState(), "announce");
-    for (let battle = 0; battle < 2; battle++) {
-      const { target } = igniteNearTarget();
-      target.hp = 4;
-      target.moveLeft = 0;
-      advanceBattle(1 / 60);
-    }
-    expect(announce.mock.calls.filter(([key]) => key.startsWith("command.lastStand."))).toHaveLength(2);
+    expect(keys.filter((key) => key.startsWith("command.lastStand."))).toHaveLength(0);
+    expect(keys.filter((key) => key === "command.burning")).toHaveLength(1);
+    expect(keys.indexOf("command.burning")).toBeLessThan(keys.indexOf("command.destroyed"));
   });
 
   it.each([30, 60, 120])("burns for exactly four seconds at eight damage per second at %i FPS", (fps) => {
