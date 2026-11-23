@@ -1,9 +1,11 @@
 import { BASE_STATS, UPGRADES, type TankStats, type UpgradeDef } from "../data/upgrades";
 
-/** Meta-progresszió: a játékosnál maradó XP és fejlesztési szintek. */
+/** Meta-progresszió: a játékosnál maradó XP, fejlesztési szintek és feloldott fegyverek. */
 export interface Profile {
   xp: number;
   levels: Record<string, number>;
+  /** Feloldott fegyver-ID-k (a kezdő standard nem szerepel benne); régi mentésben hiányozhat. */
+  weapons?: string[];
 }
 
 export const newProfile = (): Profile => ({ xp: 0, levels: {} });
@@ -30,7 +32,7 @@ export function buyUpgrade(profile: Profile, id: string, defs: readonly UpgradeD
   if (level >= def.maxLevel) return null;
   const cost = upgradeCost(def, level);
   if (profile.xp < cost) return null;
-  return { xp: profile.xp - cost, levels: { ...profile.levels, [id]: level + 1 } };
+  return { ...profile, xp: profile.xp - cost, levels: { ...profile.levels, [id]: level + 1 } };
 }
 
 export function awardXp(profile: Profile, amount: number): Profile {

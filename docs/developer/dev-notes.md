@@ -48,12 +48,14 @@ A dokumentumok szerepeit a [fejlesztői index](./README.md) rögzíti.
   `BindGroup` figyelmeztetések nélkül; az effekt beállításai változatlanok.
 - Két szárazföldi tank, hot-seat vagy offline P2 AI; online két emberi játékos.
 - A Campaign Map C3 külön `campaignMap` képernyő és `campaign` meccsmód,
-  mindig P1 ember vs P2 AI. Öt valódi célpont: ALPHA → DELTA / FORGE → VANGUARD → PRIME.
-  Szabad ágbejárás, OR feloldás; PRIME műveletzárás akár 4/5 mellett, replay/kimaradt ág megmarad.
+  mindig P1 ember vs P2 AI. Öt C3-harctér és a VEYLORA-03 szektornézete érhető el;
+  csak a VEYLORA-03 függ ALPHA-01 teljesítésétől.
+  A VEYLORA belső térképe jelöli a kész helyszíneket; az állomásbiztosító
+  harctér a két bolygó teljesítése után nyílik meg, ez biztosítja a szektort.
   A `sectors.ts` katalógus adja a gráfot, profilokat, palettát és briefingkulcsot.
   P1 győzelmekor a Game az aktív szektor-ID teljesítését idempotensen menti.
-  A külön `ballistic-front:campaign` v2 boríték `contentVersion: 1`, `completedIds`,
-  `selectedId` mezőket tárol; v1 booleanból csak ALPHA teljesítés migrálódik.
+  A külön `ballistic-front:campaign` v2 boríték `contentVersion: 3`, `completedIds`,
+  `selectedId` mezőket tárol; régi mentésből a korábbi teljesítések megmaradnak.
   Ismeretlen/verzióhibás/ellentmondó mentésnél indítás tiltott, látható hibával.
   A `campaignNewRoutes` csak a csata eredményének prezentációja, nem mentett unlock-boolean.
   XP/profil és AI-memória közös a gyorscsatával; extra jutalom nincs.

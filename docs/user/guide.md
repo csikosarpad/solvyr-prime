@@ -5,7 +5,10 @@ A jelenleg elérhető funkciók leírása. Fejlesztési tervek és technikai ré
 
 ## Játékmódok
 
-A nyitóképernyőn egy kis, felfelé gördülő **Köszönet** panel sorolja fel az ismert
+A nyitóképernyő **START** gombja nyitja meg a főmenüt. A főmenübe visszatérve
+nem kell újra belépni; oldalfrissítéskor újra megjelenik a nyitóképernyő.
+
+A főmenüben egy kis, felfelé gördülő **Köszönet** panel sorolja fel az ismert
 tartalomforrásokat és alkotókat, kattintható linkekkel. Egérrel fölé állva megáll,
 a Megállítás gombbal vagy billentyűzetfókusszal kézzel görgethető listára vált.
 Csökkentett mozgás beállítás mellett nem animálódik. Kis kijelzőn a menü alatt található.
@@ -14,11 +17,13 @@ Csökkentett mozgás beállítás mellett nem animálódik. Kis kijelzőn a men�
 - **Offline AI:** a Beállításokban a „Gép (AI)” ellenfél választható; P1 az ember, P2 a gép.
   Az ellenfélválasztás a következő meccstől érvényes.
 - **Online:** két ember külön böngészőből, szobakódos lobbyval.
-- **Műveleti térkép:** külön menügomb, mindig P1 ember vs P2 AI, a gyorscsata
-  ellenfélbeállításától függetlenül. Öt szektor, elágazó útvonal és helyi haladás.
-- **VEYLORA-03 prototípus:** külön menügomb, két kezdettől elérhető bolygó
-  és egy nem harci állomáskártya. Mindig P1 ember vs rögzített AI-ellenfél;
-  a régi kampány teljesítése nem előfeltétel.
+- **Műveleti térkép:** külön menügomb, a térképen P1 vagy P2 saját kampánya
+  választható; a kiválasztott emberi játékos a másik oldalon álló AI ellen játszik, a gyorscsata
+  ellenfélbeállításától függetlenül. Az öt C3-harctér mellett a VEYLORA-03
+  szektor is elérhető; az ALPHA-01 teljesítése nyitja meg.
+- **VEYLORA-03:** a térkép második szintje, két bolygóval és egy orbitális
+  dokkal. A kiválasztott játékos rögzített AI-ellenféllel küzd; a két bolygóküldetés
+  szabad sorrendben indítható, a dokk biztosítása ezek után nyílik meg.
 
 A régi kampányban öt seed alapján változó, tükrözött terepprofil van;
 VEYLORA két új terepe aszimmetrikus. Egy tanktípus használható.
@@ -32,22 +37,24 @@ Online szektorválasztás, környezeti modifikátorok, orbitális képességek, 
 ### A műveleti térkép használata
 
 Főmenü → Műveleti térkép → szektor kijelölése → Művelet indítása → Csata → Eredmény → Műveleti térkép.
-P1 győzelme teljesíti az adott szektort; vereség és döntetlen nem.
-A teljesítés és az elérhető aktuális művelet helyileg mentett, újratöltés után is megmarad.
+A kiválasztott játékos győzelme teljesíti az adott szektort; vereség és döntetlen nem.
+A teljesítés és az elérhető aktuális művelet játékosonként külön mentett,
+újratöltés után is megmarad. A régi kampánymentés P1-é, P2 saját haladással indul.
 
 | Szektor | Harctér | Elérés |
 | --- | --- | --- |
 | ALPHA-01 | Training Grounds – az eredeti hullámos terep | Kezdettől |
-| DELTA-08 | Crystal Basin – mély központi medence | ALPHA teljesítése |
-| FORGE-17 | Industrial Expanse – teraszok és rámpák | ALPHA teljesítése |
-| VANGUARD-12 | Defense Grid – árkok és központi gerinc | DELTA **vagy** FORGE teljesítése |
-| PRIME-00 | Capital Perimeter – védődombok és sekély teknő | VANGUARD teljesítése |
+| VEYLORA-03 | Bányászati szektor – bánya, kutatótelep és orbitális dokk | ALPHA-01 teljesítése |
+| DELTA-08 | Crystal Basin – mély központi medence | Nincs beállítva |
+| FORGE-17 | Industrial Expanse – teraszok és rámpák | Nincs beállítva |
+| VANGUARD-12 | Defense Grid – árkok és központi gerinc | Nincs beállítva |
+| PRIME-00 | Capital Perimeter – védődombok és sekély teknő | Nincs beállítva |
 
-Az ágak nem zárják ki egymást. A zárolt pont részletei megtekinthetők, de nem indítható.
-PRIME biztosításakor a művelet lezárul akár 4/5 mellett; a kihagyott ág később is
-teljesíthető az 5/5-höz. A teljesített szektorok újrajátszhatók, a visszavágó ugyanazon
-szektort használja. „Új útvonal” csak tényleges új feloldáskor jelenik meg.
-Győzelem után a következő még nem teljesített, elérhető művelet kerül kijelölésre.
+A térképen a dobozok csak a szektorkódot mutatják; a név és leírás a jobb oldali
+részletkártyán látható. A VEYLORA-03 csak ALPHA-01 teljesítése után nyílik meg.
+A többi felső szektor közti függést még nem határoztuk meg; mindegyik saját
+küldetéseket kap, azok egymás közti függései későbbi döntések. A C3-szektorok
+jelenleg újrajátszható harcteret adnak; a visszavágó ugyanazt a szektort használja.
 
 Mindegyik szektoron a megszokott gravitáció és szél működik, az AI-tapasztalat közös;
 nincs szektorhoz rendelt rögzített AI-nehézség. A régi 1/1 mentés ALPHA teljesítésként
@@ -56,56 +63,65 @@ Nincs külön kampányjutalom, a megszokott harci XP és +50 győzelmi XP jár.
 A gyorscsata győzelme nem teljesít térképes szektort.
 
 Harc közben a „Vissza a térképre” megerősítés után elhagyja a csatát.
-Az addig szerzett XP megmarad, de a szektor nem teljesül. Meccsvégi boltban
-csak P1 fejleszthető; P2 AI maga vásárol. A profilok és az AI-tapasztalat a
+Az addig szerzett XP megmarad, de a szektor nem teljesül. A meccsvégi Fejlesztésben
+csak az aktuális emberi játékos fejleszthető. Az AI külön profilban kap és
+költ XP-t, nem használja egyik emberi profil egyenlegét sem. A profilok és az AI-tapasztalat a
 gyorscsatával közösek, külön kampánynehézség még nincs.
 
-A térképen a „Kampányhaladás törlése” csak a teljesítést törli.
-A főmenü „Mentés törlése” az XP-t, XP-fejlesztéseket és a régi kampány
-haladását törli; az új kampánygazdaságot és VEYLORA-haladást nem.
+A haladás törlése a Beállítások „Játékmenet” szakaszában érhető el: kapcsolókkal
+jelölhető ki, hogy az XP és fejlesztések, a kampányhaladás, a VEYLORA-haladás és
+kampánygazdaság, illetve az AI-tapasztalat közül mi törlődjön. A törlés megerősítés
+után fut le, és mindkét helyi játékosra érvényes.
 Tárolási hibánál figyelmeztetés jelenik meg; sikertelen mentés után a kijelzett
 haladás csak az aktuális munkamenetben érvényes. Hibás/nem támogatott kampánymentés
-esetén az indítás tiltott; a kampányreset új mentést hozhat létre, a régi XP megtartásával.
+esetén az indítás tiltott; a Beállításokban elvégzett kampánytörlés új mentést hozhat
+létre, a régi XP megtartásával.
 Félbehagyott offline csata refresh után nem folytatható, a művelet újra indítható.
 
 ### VEYLORA-03 – első játszható prototípus
 
-Főmenü → VEYLORA-03 → bolygó küldetésének indítása → csata → eredmény.
-A két bolygó sorrendje szabad, az utazás és az újrapróbálás ingyenes.
+Főmenü → Műveleti térkép → ALPHA-01 teljesítése → VEYLORA-03 →
+bolygó küldetésének indítása → csata → eredmény. A térkép szektorai az első
+szintet, a VEYLORA bolygói és állomása a szektor belső nézetét adják.
+A két bolygó sorrendje szabad; a térképen minden teljesített helyszín jelölést
+kap. Az orbitális dokk végső biztosító küldetése csak mindkét bolygó
+teljesítése után nyílik meg. Az utazás és az újrapróbálás ingyenes.
 
 - **Bányabolygó:** rozsdavörös, lépcsőzetes külszíni fejtés. A könnyű
   küldetéshez az ellenséges tankot kell megsemmisíteni.
 - **Kutatóbolygó:** kékesszürke völgyek és központi fennsík. A közepes
   küldetéshez tankgyőzelem és legalább 20/100 kutatóépület-HP szükséges.
   Mindkét fél épületsebzése számít. Minden új próbálkozás teljes épület-HP-val indul.
-- **Orbitális dokk:** közös P1-kampánykészlet, tervrajz és
-  kampányfejlesztés-vásárlás; nem harctér.
+- **Orbitális dokk:** az aktuális játékos kampánykészlete és a fejlesztésvásárlás
+  mellett külön harci küldetésben kell felszabadítani az ellenséges őrségtől.
+  Ez a harmadik, szektorzáró művelet.
 
 Tankgyőzelem mellett is elbukhat a kutatótelepi küldetés. Ilyenkor a harci
 eredmény és annak XP-je megmarad, de nem jár küldetésteljesítés.
-Mindkét küldetés sikerével VEYLORA biztosított, de továbbra is újrajátszható.
+Mindhárom küldetés sikerével VEYLORA biztosított, de továbbra is újrajátszható.
 A küldetéshaladás és a gazdaság helyileg, IndexedDB-ben mentődik. Mentési
 hibánál figyelmeztetés látszik; az eredményképernyőn a sikertelen
 teljesítés-/jutalommentés újrapróbálható. Hibás mentésnél az indítás tiltott;
-a szektorhaladás törlése nem kerülheti meg a sérült gazdasági mentést.
+a helyreállításhoz a Beállítások „Játékmenet” szakaszában törölhető a kampánygazdaság.
 
 - A bánya első sikeres teljesítése **20 ipari ércet** ad.
 - A kutatótelep első sikeres, épületvédelmet is teljesítő küldetése
   **anyagtechnológiai tervrajzot** ad. A két jutalom azonnal használható.
 - Az állomáson **20 érc és a tervrajz megléte** ellenében egyszer
   megvehető a **Megerősített pajzs**. Csak az érc fogy el.
-- A fejlesztés az XP-ből számolt maximális energiapajzsot **10%-kal növeli**,
-  kizárólag P1 következő, új rendszerű kampánycsatáiban. A régi kampány,
-  gyorscsata és PvP változatlan. Nulla alap-pajzsnál megvehető, de még nincs
-  hatása; későbbi XP-pajzsfejlesztés után automatikusan érvényesül.
+- A megvett pajzs automatikusan felszerelődik, és az állomáson levehető vagy
+  újra felszerelhető. Az XP-alaphoz **20 pajzspontot ad**, majd a teljes összeget
+  **10%-kal növeli**: nulla XP-alappal 22 pajzspontot ad. A következő, új
+  rendszerű kampánycsatáiban hat a tulajdonosnak; a régi kampány, gyorscsata és PvP változatlan.
+  A korábban megvásárolt pajzs is felszerelve marad.
 - Az újrajátszás nem ad újabb gazdasági jutalmat, a megszokott XP viszont jár.
   A küldetés teljesítése és a jutalom elszámolása külön látszik.
-- **VEYLORA-haladás törlése:** csak a küldetésállapot törlődik. A készlet,
-  tervrajz, vásárlás és korábbi jutalomfelvétel megmarad, nincs újrakifizetés.
-- **Teljes kampánygazdaság törlése:** külön megerősítés után az új kampányok
-  haladása, vagyona, fejlesztései és jutalomnyilvántartása együtt törlődik.
-  A jutalmak újra megszerezhetők; az XP, XP-fejlesztések és a régi kampány
-  megmaradnak. Másik lapon korábban indult csata nem írhat az új gazdaságba.
+- **Törlés:** a VEYLORA-haladás és a kampánygazdaság együtt, külön megerősítés
+  után törölhető a Beállítások „Játékmenet” szakaszában. A haladás, vagyon,
+  fejlesztések és jutalomnyilvántartás együtt törlődik, és a jutalmak újra
+  megszerezhetők. Az XP, az XP-fejlesztések és a régi kampány csak akkor törlődik,
+  ha a saját águk is ki van jelölve. Másik lapon korábban indult csata nem írhat
+  az új gazdaságba.
 
 A korábbi, gazdaság nélküli prototípus haladása átemelődik, de nem ad
 visszamenőleges jutalmat. Az első gazdasági jutalomhoz újra sikeresen teljesítsd
@@ -113,7 +129,7 @@ az érintett küldetést. Az eredeti prototípusmentés biztonsági másolatkén
 Az IndexedDB elérhetősége szükséges; böngészőadat-törlés a készletet is törli.
 
 **Build nélküli tartalomfrissítés még nem érhető el.** Az új ellenfelek
-nem öröklik és nem fejlesztik a gyorscsata P2-profilját vagy az AI-memóriát.
+nem öröklik és nem fejlesztik a másik játékos profilját vagy az AI-memóriát.
 A jelenlegi cél a stabil működés; a nehézség és a látvány még finomhangolható.
 
 ## A csata menete
@@ -121,6 +137,48 @@ A jelenlegi cél a stabil működés; a nehézség és a látvány még finomhan
 A játék körökre osztott. A soron lévő játékos mozoghat a körönkénti mozgáskeretéből,
 beállíthatja a löveg szögét és erejét, majd tüzelhet. A szél minden körben változik
 és eltéríti a lövedéket. A lövés lezárása után a következő élő játékos jön.
+
+A fegyverek fénycsíkja eltér: a standard a pálya alapszínét követi, a páncéltörő
+vékonyabb, kékesfehér, a gyújtólövedék narancsos, a célkövető rakéta zöldes,
+a lézer pedig vörös sugarat húz. A Robbanófej fejlesztése szintenként erősebb
+izzást ad a standard lövedéknek; a többi fegyver látványát nem módosítja.
+
+A gyújtólövedék után a talaj 5 másodpercig ég. A terepet követő vöröses-narancs
+izzás mutatja a zónát; a lángok fölött füst és parázs száll. A csökkentett
+mozgású nézetben az izzás és a lángok megmaradnak, animáció nélkül.
+A tűz másodpercenként 8 sebzést
+okoz minden rajta álló tanknak, a lövő saját tankjának is, függetlenül attól,
+ki van soron. A sebzés először a pajzsot, majd a páncélt, végül a HP-t fogyasztja.
+A zónából kilépve a sebzés megszűnik, visszalépve folytatódik.
+Az AI előrenyomulás és kitérés közben sem hajt újabb égő területre.
+Ha tűzben áll, a lövés helyett először menekül: a legrövidebb járható kijárat
+felé használja a megmaradt mozgáskeretét, akár a másik játékos köre alatt is.
+Ha nincs járható menekülőút vagy elfogyott a kerete, helyben marad, és a saját
+körében onnan lő.
+
+A kampányban és a VEYLORA-műveletekben az ellenfél küldetésenként eltérő
+speciális fegyvereket használhat. A Standard mindig elérhető számára; lézerrel
+csak akkor lő, ha a terep nem takarja a célt. Az ALPHA-01 gyakorlópályán és az
+offline gyorscsatában a gép továbbra is csak Standard lövedéket használ.
+
+Ha egy kritikus állapotú tankra a hátralévő égés már halálos, és a megmaradt
+mozgáskeretéből nincs járható kijárata, egyszeri búcsúüzenetet küld a konzolra
+a saját parancsnoki hangján. Három véletlenszerű változat közül választ:
+„A végsőkig harcoltunk!”, „Itt a vég!”, „Öröm volt önnek szolgálni!”.
+A pajzs és a páncél védelmét is figyelembe veszi; menekülésre képes vagy a tüzet
+túlélő tank nem búcsúzik el előre.
+
+A Last Stand halálos lövedéktalálat előtt is megszólalhat, nem csak égésnél:
+a rövid távú előrejelzés a tényleges ballisztikát és a célkövető rakéta
+rávezetését követi. Előre csak mozgásképtelen célpontnál búcsúzik; a becsapódáskor
+a teljes megmaradt mozgáskerettel elérhető helyeket is ellenőrzi, és csak akkor
+küld búcsúüzenetet, ha egyik sem jelentene túlélést. A pajzs és a páncél itt is számít.
+Egy egység meccsenként csak egyszer búcsúzik, akkor is, ha egyszerre ég és lövedék közelít felé.
+
+A győztes a fanfár után három véletlenszerű zárómondat egyikét mondja:
+„Ez remek csata volt!”, „Győzni jöttünk!”, „Ránk mindig számíthat, {játékosnév}!”.
+A megszólítás a győzteshez beállított játékosnevet használja; a győztes neve
+továbbra is külön megjelenik a konzolon.
 
 A terep rombolható; egy robbanás a későbbi mozgást és lövési lehetőségeket is módosítja.
 A talajról teljesen leszakadt terepdarabok azonnal eltűnnek. Az oldalról még
@@ -133,16 +191,20 @@ az eredményképernyőn összesíti.
 
 | Vezérlő | Művelet |
 | --- | --- |
-| Bal / jobb nyíl | Mozgás |
+| Bal / jobb nyíl | Mozgás; az ellenfél lövedéke alatt kitérés |
 | Fel / le nyíl | Lövési erő ±10; Shift mellett ±50 |
 | Ctrl + bal / jobb nyíl | Szög ±1°; Shift mellett ±5° |
 | Szóköz | Tűz |
 | T | Célzástámogatás / röppálya-előnézet |
-| M | Globális némítás |
+| M | Globális némítás (minden képernyőn működik) |
 | HUD gombok és csúszkák | Mozgás, célzás, tüzelés és hang |
 
 A 0° jobbra, a 180° balra mutat, ezért a Ctrl + bal nyíl növeli a szöget.
 A lövés alatt, az ellenfél körében és meccsvégén a harci vezérlés zárolt.
+Kivétel a kitérés: az ellenfél lövedékének repülése alatt a védekező tank a saját
+körében megmaradt mozgási keretéből elmozdulhat (◀ ▶ vagy a mozgásgombok).
+A gépi ellenfél a tapasztalatától függő eséllyel és reakcióidővel szintén kitérhet
+az előre jelzett becsapódás elől. Online meccsen nincs kitérés.
 
 ### Érintésvezérlés
 
@@ -163,7 +225,7 @@ még hátravan; az emulált mobilnézet nem garantál minden telefonon azonos m�
 A sebzés sorrendben az **erőtér pajzsot → páncélt → HP-t** csökkenti.
 A pajzs a saját kör kezdetén a maximum 20%-ával töltődik vissza, kivéve ha a tankot
 a legutóbbi köre kezdete óta találat érte. A páncél nem regenerálódik.
-Pajzs és páncél alapból nincs; a boltban fejleszthetők.
+Pajzs és páncél alapból nincs; a Fejlesztés menüben fejleszthetők.
 
 A HUD gyűrűmérőket, a tank fölötti kijelzés vékony állapotsávokat használ.
 Pajzs és páncél kijelzése csak akkor látszik, ha az egység rendelkezik velük.
@@ -172,20 +234,31 @@ A Célzástámogatás alapból játékosonként **1 töltet meccsenként**.
 A fejlesztés szintenként +1-et ad, maximum 4 töltetig. Egy aktiválás az aktuális
 kör végéig mutatja a várható röppályát; a töltetek új meccsben visszaállnak.
 
-## XP, bolt és rendfokozat
+## XP, Fejlesztés és rendfokozat
+
+A **Fejlesztés** a főmenüből, a műveleti térképről, VEYLORA nézetéből és
+az eredményképernyőről érhető el. A Vissza gomb az előző képernyőre visz.
+Itt a kiválasztott játékos XP-fejlesztései mellett a saját megvásárolt kampánypajzsa
+is levehető vagy felszerelhető; a vásárlás továbbra is a VEYLORA-állomáson
+történik. Mindkét játékos fejlesztési panelje látható, de a nem kijelölt oldal
+elsötétítve és zárolva jelenik meg. P1 és P2 kampányhaladása, jutalmai és felszerelése különállók.
+A pajzs jelenleg csak tulajdonosa új rendszerű kampánycsatáiban hat; online
+pajzsszinkron még nincs.
 
 - Az ellenfél pajzsának, páncéljának és HP-jának okozott sebzésért XP jár.
 - A győzelem további **50 XP-t** ad.
-- XP-ből meccs után páncél, pajzs, sebzés, robbanási sugár, lőtávolság, motor és
+- XP-ből csaták között páncél, pajzs, sebzés, robbanási sugár, lőtávolság, motor és
   célzástámogatás fejleszthető.
 - A hét fejlesztés összesen 31 szintje nulláról **3768 XP-be** kerül.
 - A fejlesztések együtt érvényesülnek, nincs egymást kizáró specializáció.
-- A bolt XP-je **elkölthető egyenleg**, vásárláskor csökken. Az összes megszerzett
-  XP-re utaló felirat jelenleg félrevezető; életút-XP összesítő nincs.
+- A kijelzett XP **elkölthető egyenleg**, vásárláskor csökken; életút-XP
+  összesítő nincs. Sikertelen profilmentésnél a vásárlás nem történik meg.
 - A maximális fejlesztések után az XP tovább nő, de nincs újabb vásárlási lehetőség.
 
-Hot-seat módban mindkét profil fejleszthető. AI-meccsen csak P1 vásárolhat kézzel:
-a gép a csata statisztikái alapján maga költi el XP-jét. Online csak a saját profil
+Hot-seat módban mindkét profil fejleszthető. AI-meccs után a másik játékos profilja
+helyett az AI-ellenfél fejlesztései és fegyverei látszanak, csak megtekintésre.
+Ahol a küldetés rögzíti az ellenfél felszerelését, a beállított páncél és fegyverek
+jelennek meg. Online csak a saját profil
 módosítható, a vásárlás a meccsvége szinkronizálásáig zárolt.
 
 A HUD rendfokozata 0–5 csillag: embernél a megvásárolt fejlesztések arányát,
@@ -205,11 +278,23 @@ session és a szoba érvényes. Ez nem fiókalapú, eszközök közötti felhőm
 
 ## Beállítások, hang és mentés
 
+A Beállításokban a **Nyelv**, **Hang** és **Játékosok** csoport külön nyitható
+és csukható. Az ellenfél és az AI beállításai a Játékosok csoportban találhatók.
+
 - **Nyelv:** magyar, angol és német. Mentett választás hiányában magyar vagy német
   böngészőnyelv esetén az adott nyelv, egyébként angol indul.
 - **Játékosnevek:** P1/P2 neve legfeljebb 16 karakter. Üres névnél az azonosító marad;
   online a lobbyban megadott név az elsődleges.
-- **Hang:** Zene, Parancsnok és Effektek külön kapcsolhatók egy-egy be/ki kapcsolóval; az M némítás mindet felülírja.
+- **Tankok színe:** P1 és P2 külön választhat fő színt a páncélhoz és a löveghez (acélszürke,
+  kék, piros vagy olívazöld) és kiegészítő színt a jelzésekhez. A tankelőnézet
+  azonnal mutatja a változást. Mindkét választás
+  látszik a következő csatában és a Fejlesztésben; a játékosválasztók továbbra is
+  a kiegészítő színt használják. A beállítás helyben mentődik.
+  Online a színek csak a saját böngésző megjelenítését módosítják, nem szinkronizálódnak.
+  Azonos színek is választhatók, ezért a játékosazonosítókat is érdemes figyelni.
+- **Hang:** a fő hang és a Zene, Parancsnok, Effektek csoportok külön-külön
+  be/ki kapcsolóval kapcsolhatók; az M billentyű bármely képernyőn némít, és a fő
+  hang kapcsolójával azonos állapotot vált. A némítás mindhárom csoportot felülírja.
   A Beállítások **Játék hangereje** csúszkája 0–100% között szabályozza mindhárom hangcsoportot,
   és a választás megmarad újratöltés után. A 100% az eddigi hangkeverésnek felel meg;
   a némítás nem törli a beállított hangerőt. Mindhárom csoport kapcsolója mellett saját
@@ -221,10 +306,11 @@ session és a szoba érvényes. Ez nem fiókalapú, eszközök közötti felhőm
 - **Parancsnoki konzol:** időbélyeges taktikai közlések és böngészős felolvasás.
   A hangok a böngészőtől/operációs rendszertől függnek; P2 magasabban és gyorsabban szól.
   Győzelemkor szintetizált fanfár és győzelmi bemondás hallható.
-- **AI:** a tapasztalata külön törölhető a Beállításokban; normál célzása hibázhat,
-  Smart Aim használatakor pontos találó lövést is kereshet.
-- **Mentés törlése:** megerősítés után a profilok XP-je és fejlesztései törlődnek.
-  Ez nem azonos az AI-tapasztalat külön törlésével.
+- **AI:** a tapasztalata a Játékmenet szakasz „AI-tapasztalat” ágával törölhető;
+  normál célzása hibázhat, Smart Aim használatakor pontos találó lövést is kereshet.
+- **Játékmenet törlése:** kapcsolókkal kijelölhető, hogy az XP és fejlesztések,
+  a kampányhaladás, a VEYLORA-haladás és kampánygazdaság, illetve az AI-tapasztalat
+  közül mi törlődjön. A törlés megerősítés után fut le, és mindkét játékosra érvényes.
 
 A profilok és beállítások a böngésző helyi tárolójában maradnak meg.
 Nincs fiókalapú szinkron; tárolótörlés vagy másik böngésző/eszköz eltérő állapotot jelenthet.

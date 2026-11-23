@@ -10,7 +10,7 @@ import "@fontsource/rajdhani/latin-500.css";
 import "@fontsource/rajdhani/latin-700.css";
 import "@fontsource/rajdhani/latin-ext-500.css";
 import "@fontsource/rajdhani/latin-ext-700.css";
-import "./ui/ui.css";
+import "./ui/style/ui.css";
 import { App } from "./App";
 
 createRoot(document.getElementById("root")!).render(

@@ -7,6 +7,8 @@ import { getUnitPresentation } from "./unitPresentation";
 import { getUpgradePresentation } from "./upgradePresentation";
 import tankBodyUrl from "@/game/assets/tank-body.svg?url";
 import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
+import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
+import { DEFAULT_THEME } from "@/game/theme";
 
 describe("result presentation contract", () => {
   it("ground theme tank presentationt ad a P1/P2 accentet is megtartja", () => {
@@ -20,15 +22,16 @@ describe("result presentation contract", () => {
       accent: "cyan",
     });
     expect(p1.silhouetteAsset).toBe(tankBodyUrl);
+    expect(p1.primaryColor).toBe(DEFAULT_THEME.players[0]);
     expect(p1.secondaryAsset).toBe(tankBarrelUrl);
     expect(p1.illustrationLayout).toBe("body-barrel");
     expect(p1.detailAsset).toBeUndefined();
-    expect(p1.accentAsset).toBeUndefined();
+    expect(p1.accentAsset).toBe(tankMarkingsUrl);
     expect(p2).toMatchObject({
       domain: "ground",
-      primaryColor: 0xffc52e,
-      secondaryColor: 0xb86a12,
-      accent: "gold",
+      primaryColor: DEFAULT_THEME.players[1],
+      secondaryColor: 0xa5352a,
+      accent: "red",
     });
   });
 
@@ -43,7 +46,9 @@ describe("result presentation contract", () => {
       accent: "cyan",
     });
     expect(p1.silhouetteAsset).toBeUndefined();
-    expect(p2.accent).toBe("gold");
+    expect(p2.accent).toBe("red");
+    expect(p1.primaryColor).toBe(DEFAULT_THEME.players[0]);
+    expect(p2.primaryColor).toBe(DEFAULT_THEME.players[1]);
     expect(p2.iconSet).toBe("space-combat");
   });
 
@@ -67,7 +72,7 @@ describe("UnitPanel and Shop presentation contract", () => {
   });
 
   it("a space presentation ugyanazt a panel és upgrade layoutot használja", () => {
-    render(
+    const { container } = render(
       <UnitPanel
         id="P1"
         profile={{ xp: 240, levels: { armor: 1 } }}
@@ -79,8 +84,10 @@ describe("UnitPanel and Shop presentation contract", () => {
 
     expect(screen.getByText("Space fighter")).toBeInTheDocument();
     expect(screen.getByText("P1")).toBeInTheDocument();
-    expect(screen.getAllByRole("button")).toHaveLength(7);
+    // 7 fejlesztés + a fegyvertár 4 feloldható fegyvere.
+    expect(screen.getAllByRole("button")).toHaveLength(11);
     expect(screen.getByText("1/5")).toBeInTheDocument();
+    expect(container.querySelectorAll(".weapon-upgrade-row .upgrade-icon-image")).toHaveLength(4);
   });
 
   it("a Shop minden profilt egységpanelként jelenít meg", () => {
@@ -104,11 +111,11 @@ describe("UnitPanel and Shop presentation contract", () => {
     const illustrations = document.querySelectorAll(".unit-illustration-platform");
     expect(illustrations).toHaveLength(2);
     illustrations.forEach((illustration) => {
-      expect(illustration.querySelectorAll("image")).toHaveLength(2);
+      expect(illustration.querySelectorAll("image")).toHaveLength(5);
       expect(illustration.querySelector("image")?.getAttribute("href")).toBe(tankBarrelUrl);
-      expect(illustration.querySelector("image[filter]")?.getAttribute("href")).toBe(tankBodyUrl);
+      expect(illustration.querySelectorAll("image")[4]?.getAttribute("href")).toBe(tankMarkingsUrl);
     });
     const filters = [...document.querySelectorAll(".unit-illustration-platform filter")];
-    expect(new Set(filters.map((filter) => filter.id)).size).toBe(2);
+    expect(new Set(filters.map((filter) => filter.id)).size).toBe(4);
   });
 });

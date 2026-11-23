@@ -574,9 +574,26 @@ A megvalósíthatóságot ezek a meglévő felületek támasztják alá:
 - [Harctéri test](../../src/game/assets/tank-body.svg) és
   [löveg](../../src/game/assets/tank-barrel.svg): külön SVG-k, jelenleg 24×12 és 16×4
   logikai képpont. A [Game](../../src/game/engine/Game.ts) ezeket textúrává tölti,
-  sprite-okként kezeli; a test kap játékosszín-tintet, a löveg külön forog.
+  sprite-okként kezeli; a külön [jelölésréteg](../../src/game/assets/tank-markings.svg)
+  kap játékosszín-tintet, a löveg külön forog. A Nano Banana tankterv alapján
+  az SVG-k oldalnézeti, tagolt fémpáncélt, futógörgős lánctalpat és világító
+  jelöléseket használnak; a logikai méretek és a forgáspont változatlanok.
   Egyetlen SVG belső csoportjai betöltés után nem animálhatók külön: az önállóan
   mozgó vagy színezhető rétegekhez külön textúra/sprite kell.
+- A testszínezéshez három átlátszó
+  24×12-es réteg: [futómű](../../src/game/assets/tank-chassis.svg),
+  [páncél](../../src/game/assets/tank-armor.svg) és
+  [mechanikus részletek](../../src/game/assets/tank-details.svg). Ebben a sorrendben,
+  azonos mérettel és illesztéssel egymásra rajzolva adják ki a meglévő testet;
+  föléjük kerülhet a meglévő jelölésréteg, mögéjük a külön forgó löveg.
+  A Beállítások → Játékosok → Tankok színe alatt játékosonként külön választható
+  a páncél és a jelzések színe. Az acélszürke a változatlan eredeti testet
+  és löveget használja; a kék, piros és olívazöld a páncélréteget és a löveget
+  színezi az előnézetben, a csatában és a műhelyben. A jelzések továbbra is
+  meghatározzák a játékos HUD-színét.
+  Mindkét választás helyben tárolódik; a régi mentések a meglévő jelzésszín
+  mellé acélszürke páncélt kapnak.
+  A test vagy a rétegek módosításakor a másik változatot is összhangban kell tartani.
 - [Löveg állapotmodell](../../src/game/systems/barrelAnimation.ts): szögsimítás és
   visszarúgás már van; a töltési animáció új munka.
 - [Terrain](../../src/game/terrain/Terrain.ts): RenderTexture-látvány, felszíni él,
@@ -591,17 +608,19 @@ A megvalósíthatóságot ezek a meglévő felületek támasztják alá:
 A harctéri olvashatóság következő próbája statikus, játékosszínű Pixi `GlowFilter`
 a teljes test–löveg konténeren: desktopon 4, érintőeszközön 3 képpontos fényudvar,
 visszafogott belső élkiemeléssel. Nincs pulzálás, a reduced-motion nézetben is statikus.
-A filterek újraindításkor és az engine megsemmisítésekor felszabadulnak; a fizika és
-a tank színezése változatlan. Ez nem a külön emissive/team-color assetréteg megvalósítása.
+A filterek újraindításkor és az engine megsemmisítésekor felszabadulnak; a fizika
+változatlan. A fényudvar nem önálló emissive assetréteg.
 
 Első harctéri assetpróba: a body/barrel SVG szögletes ostromplatform-sziluettet,
 szegmentált járószerkezetet, páncélpaneleket és sínágyús löveget kapott. A logikai
-méret 24×12 / 16×4, a sprite anchorok, a teljes test játékosszín-tintje és a fizika
+méret 24×12 / 16×4, a sprite anchorok és a fizika
 változatlan. Ez SP1 vizuális próba, nem a teljes munkacsomag elfogadása: külön
-team-color/glow réteg, új töltési animáció, terrain shader és VFX még nem készült.
+emissive réteg, új töltési animáció és terrain shader még nem készült.
 Az eredményképernyő következő vizuális próbája ugyanezt a két SVG-t használja:
 `body-barrel` illustration layout, 20°-os löveg, egymás felé forduló P1/P2 és
-SVG-s szorzó színezés a presentation cyan/arany színével. A korábbi részlet- és
+semleges test fölötti, külön SVG-s szorzóval játékosszínre színezett jelzésréteg.
+Ugyanez a réteg a harctéri testen is megjelenik; a fekete választás látható szürke
+jelzést és világos körvonalat használ. A korábbi részlet- és
 accent-assetek nincsenek bekötve ehhez az összeállításhoz; a generikus réteges
 megjelenítés más presentationök számára megmarad.
 

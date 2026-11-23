@@ -2,17 +2,6 @@
   background: radial-gradient(ellipse at center, rgba(8, 44, 68, 0.8), rgba(2, 8, 20, 0.96));
 }
 
-.campaign-panel {
-  box-sizing: border-box;
-  width: min(980px, calc(100% - 24px));
-  min-width: 0;
-  padding: 24px;
-  border: 1px solid var(--bf-shield);
-  border-radius: 2px 18px;
-  background: rgba(4, 22, 42, 0.94);
-  text-align: left;
-}
-
 .campaign-header,
 .campaign-actions {
   display: flex;
@@ -206,14 +195,14 @@
   position: absolute;
   z-index: 2;
   transform: translate(-50%, -50%);
-  width: 42%;
-  max-width: 190px;
-  min-height: 64px;
+  width: 20%;
+  max-width: 140px;
+  min-width: 88px;
+  min-height: 32px;
   box-sizing: border-box;
   display: grid;
-  gap: 2px;
   justify-items: center;
-  padding: 5px;
+  padding: 8px 5px;
   border: 0;
   outline: 1px solid var(--bf-divider);
   border-radius: 8px;
@@ -221,10 +210,6 @@
   color: var(--bf-text);
   font-family: var(--bf-font-ui);
   cursor: pointer;
-}
-
-.campaign-node strong {
-  font-size: 12px;
 }
 
 .campaign-node .sector-code {
@@ -240,24 +225,30 @@
   color: var(--bf-muted);
 }
 
-.campaign-node.is-locked .campaign-node-symbol {
-  color: var(--bf-muted);
-  text-shadow: none;
-}
-
-.campaign-node-symbol {
-  color: var(--bf-shield);
-  font-size: 20px;
-  line-height: 1;
-  text-shadow: 0 0 10px currentColor;
-}
-
-.campaign-node.is-completed .campaign-node-symbol {
-  color: var(--bf-shield);
-}
-
-.campaign-node.is-selected .campaign-node-symbol {
+.campaign-node.is-completed {
+  outline-color: var(--bf-highlight);
+  border: 1px solid var(--bf-highlight);
   color: var(--bf-highlight);
+}
+
+.campaign-node.is-completed::after {
+  content: "✓";
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid var(--bf-highlight);
+  border-radius: 50%;
+  background: #071421;
+  color: var(--bf-highlight);
+  font: 700 12px var(--bf-font-ui);
+}
+
+.campaign-node-is-campaign {
+  border: 1px solid var(--bf-shield);
 }
 
 .campaign-node:focus-visible {
@@ -366,20 +357,12 @@
   margin: 2px 0 0;
 }
 
-.campaign-panel .btn {
-  min-height: 44px;
-}
-
 .campaign-sector-card .btn {
   width: 100%;
   margin-top: auto;
 }
 
 @media (max-width: 700px) {
-  .campaign-panel {
-    padding: 14px;
-  }
-
   .campaign-layout {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -392,10 +375,6 @@
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
-  .campaign-panel {
-    padding: 12px;
-  }
-
   .campaign-layout {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 10px;

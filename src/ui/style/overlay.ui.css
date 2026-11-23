@@ -1,0 +1,18 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bf-overlay);
+  color: var(--bf-text);
+  font: 15px var(--bf-font-ui);
+  animation: fade-in 0.3s ease-out;
+}
+
+.overlay button,
+.overlay input,
+.overlay select,
+.battle-hud button {
+  font-family: inherit;
+}
+

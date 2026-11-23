@@ -1,3 +1,5 @@
+import { DEFAULT_THEME } from "@/game/theme";
+
 export const PIXI_UI_THEME = {
   colors: {
     background: 0x041426,
@@ -8,6 +10,7 @@ export const PIXI_UI_THEME = {
     gold: 0xffc52e,
     goldBright: 0xffeb78,
     orange: 0xff851f,
+    red: DEFAULT_THEME.players[1]!,
     grid: 0x1b5b78,
   },
   alpha: {
@@ -23,7 +26,7 @@ export const PIXI_UI_THEME = {
   },
 } as const;
 
-export type PixiUiAccent = "cyan" | "gold" | "orange";
+export type PixiUiAccent = "cyan" | "gold" | "orange" | "red";
 
 export function accentColor(accent: PixiUiAccent): number {
   return PIXI_UI_THEME.colors[accent];

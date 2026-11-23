@@ -7,13 +7,14 @@ export interface SectorProgress {
 }
 
 export interface CampaignSave {
-  version: 1;
+  version: 2;
   generation: string;
   progress: Record<string, SectorProgress>;
   resources: Record<string, number>;
   technologies: string[];
   claims: Record<string, { contentVersion: number; rewards: CampaignRewards }>;
-  purchases: Record<string, { contentVersion: number; maxEnergyShieldMultiplier: number }>;
+  purchases: Record<string, { contentVersion: number; maxEnergyShieldBonus: number; maxEnergyShieldMultiplier: number }>;
+  equippedShield: string | null;
 }
 
 export const initialSectorProgress = (): SectorProgress => ({
@@ -23,13 +24,14 @@ export const initialSectorProgress = (): SectorProgress => ({
 
 export function newCampaignSave(): CampaignSave {
   return {
-    version: 1,
+    version: 2,
     generation: crypto.randomUUID(),
     progress: { [VEYLORA.sector.id]: initialSectorProgress() },
     resources: {},
     technologies: [],
     claims: {},
     purchases: {},
+    equippedShield: null,
   };
 }
 
@@ -45,11 +47,12 @@ export function purchaseBlock(save: CampaignSave, recipe: CampaignRecipe): "owne
 }
 
 export function applyCampaignUpgrades(stats: TankStats, save: CampaignSave): TankStats {
-  const multiplier = Object.values(save.purchases).reduce(
-    (value, purchase) => value * purchase.maxEnergyShieldMultiplier,
-    1,
-  );
-  return { ...stats, maxEnergyShield: stats.maxEnergyShield * multiplier };
+  const purchase = save.equippedShield === null ? undefined : save.purchases[save.equippedShield];
+  if (!purchase) return { ...stats };
+  return {
+    ...stats,
+    maxEnergyShield: (stats.maxEnergyShield + purchase.maxEnergyShieldBonus) * purchase.maxEnergyShieldMultiplier,
+  };
 }
 
 function object(value: unknown): Record<string, unknown> {
@@ -97,7 +100,7 @@ function techs(value: unknown): string[] {
 
 export function parseCampaignSave(value: unknown): CampaignSave {
   const raw = object(value);
-  if (raw.version !== 1 || typeof raw.generation !== "string" || !raw.generation)
+  if ((raw.version !== 1 && raw.version !== 2) || typeof raw.generation !== "string" || !raw.generation)
     throw new Error("Unsupported campaign save");
   const progress = Object.fromEntries(
     Object.entries(object(raw.progress)).map(([sectorId, value]) => {
@@ -131,8 +134,16 @@ export function parseCampaignSave(value: unknown): CampaignSave {
   const purchases = Object.fromEntries(
     Object.entries(object(raw.purchases)).map(([id, value]) => {
       const entry = object(value);
+      const legacyBonus =
+        raw.version === 1 && id === "reinforced-shield" && entry.maxEnergyShieldBonus === undefined
+          ? 20
+          : entry.maxEnergyShieldBonus;
       if (
         !VEYLORA.recipes.some((recipe) => recipe.id === id) ||
+        typeof legacyBonus !== "number" ||
+        !Number.isFinite(legacyBonus) ||
+        legacyBonus < 0 ||
+        legacyBonus > 1000 ||
         typeof entry.maxEnergyShieldMultiplier !== "number" ||
         !Number.isFinite(entry.maxEnergyShieldMultiplier) ||
         entry.maxEnergyShieldMultiplier < 1.01 ||
@@ -141,17 +152,30 @@ export function parseCampaignSave(value: unknown): CampaignSave {
         throw new Error("Invalid saved upgrade");
       return [
         id,
-        { contentVersion: version(entry.contentVersion), maxEnergyShieldMultiplier: entry.maxEnergyShieldMultiplier },
+        {
+          contentVersion: version(entry.contentVersion),
+          maxEnergyShieldBonus: legacyBonus,
+          maxEnergyShieldMultiplier: entry.maxEnergyShieldMultiplier,
+        },
       ];
     }),
   );
+  const equippedShield =
+    raw.version === 1 && raw.equippedShield === undefined
+      ? Object.hasOwn(purchases, "reinforced-shield")
+        ? "reinforced-shield"
+        : null
+      : raw.equippedShield;
+  if (equippedShield !== null && (typeof equippedShield !== "string" || !Object.hasOwn(purchases, equippedShield)))
+    throw new Error("Invalid equipped shield");
   return {
-    version: 1,
+    version: 2,
     generation: raw.generation,
     progress,
     resources: amounts(raw.resources),
     technologies: techs(raw.technologies),
     claims,
     purchases,
+    equippedShield,
   };
 }

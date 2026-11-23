@@ -15,23 +15,56 @@ A részletes designlisták saját részterületük leírásai, nem párhuzamos p
 Jelölések: `[x]` megvalósított vagy dokumentált korábbi ellenőrzés; `[ ]` nyitott feladat.
 A „javaslat” külön jóváhagyást igényel, és nem kész funkció.
 
+## Nyitóképernyő és főmenü – megvalósítási terv
+
+- [x] A `plans/solvyr-prime_siege_protocol_game.png` képre épülő nyitóképernyő,
+      billentyűzettel is használható START gombbal.
+- [x] A START a jelenlegi funkciókat megtartó főmenüre lép; oda visszatérve
+      ugyanabban az oldalbetöltésben nem jelenik meg újra a nyitóképernyő.
+- [x] A főmenü a `plans/solvyr-prime_siege_protocol_open.png` kompozícióját
+      követi, de a képre rajzolt kezelőszervek helyett valódi, lokalizált gombokat
+      és valós kampányadatokat használ. A stáblista és a beállítások megmaradnak.
+- [x] Reszponzív, görgethető elrendezés, billentyűzetes használat és
+      csökkentett mozgás támogatása; célzott navigációs tesztek és emulált nézet.
+- [ ] Valós telefonos és képernyőolvasós használati próba.
+
 A fejlődési plafon kódbázis-alapú elemzése és a szektorok, környezeti modifikátorok,
 orbitális képességek, egységosztályok és kampány rangsora:
 [Játékmenet és hosszú távú fejlődés](./gameplay-progression.md).
 A jelenlegi és tervezett fejlesztési ágak áttekintő ábrája:
 [Játékmenet-fejlesztési útvonal](./gameplay-development-path.md).
 
+## Fegyverprogresszió – kampányjutalmak (2026-11-18)
+
+**Új tervezési irány, még nem implementált átállás:** a Páncéltörő,
+Gyújtólövedék, Lézer és Célkövető rakéta ne egyszerű XP-vásárlással,
+hanem kampányjutalomként vagy megszerzett technológia és nyersanyag révén
+váljon elérhetővé. Ehhez a műhely információs szerkezete és a többszintű
+műveleti térkép is bővítendő; az XP-s statfejlődés külön maradhat.
+
+A [részletes terv](./campaign-weapon-progression.md) rögzíti a javasolt
+fegyver–hadjárat hozzárendelést, az AP-ra szűkített első próbát, a mentések
+megőrzését, az állapottulajdonlást és a kiadási kapukat.
+Ez a korábbi XP-s fegyverfeloldási cél felülvizsgálata, nem kész funkció
+és nem automatikus jóváhagyás minden receptre vagy szektorfüggőségre.
+A jelenlegi vásárlás a tartalommal és migrációval együtt kiadott átállásig megmarad.
+
 ## Aktuális állapot (2026-11)
 
-- VEYLORA-03 első játszható prototípusa külön főmenübelépéssel elkészült:
-  két konfigurált, aszimmetrikus harctér, rögzített P1–AI ellenfelek,
-  kutatóépület-védelem és külön mentett küldetéshaladás. Az egyszeri
-  érc-/tervrajzjutalom, állomási pajzsvásárlás és tranzakciós helyi gazdaság
+- VEYLORA-03 első játszható prototípusa elkészült, majd a Műveleti térkép
+  második szintű, ALPHA-01 teljesítése után megnyíló szektoraként integrálódott:
+  két bolygóharctér és egy, ezek után feloldódó állomásbiztosító harctér,
+  rögzített P1–AI ellenfelek, kutatóépület-védelem és külön mentett
+  küldetéshaladás. A helyszíntérkép jelöli a teljesített pontokat, a szektor
+  a dokk biztosításakor válik teljesítetté. Az egyszeri érc-/tervrajzjutalom,
+  állomási pajzsvásárlás és tranzakciós helyi gazdaság
   elkészült; külön szektor- és gazdasági reset, megőrzött XP-vel.
   Build nélküli tartalomfrissítés még nincs.
   Részletes hatókör és hátralévő lépések: [VEYLORA fejlesztési alap](./gameplay-progression-todo.md#6c-veylora-03--elfogadott-fejlesztési-alap).
 - A ResultScreen, a HUD és a játéktér sci-fi katonai vizuális rendszere működik.
 - A játéktér rétegezett hátteret használ: csillagos ég, hegyek, atmoszféra, terrain és visszafogott szikla-dekorációk.
+- Minden harctér terepén seedelt, visszafogott sziklarészletek láthatók a rombolható
+  terrain textúrájába rajzolva, a szektor terepszíneit használva.
 - A terrain fizikája, a ballisztika, a szél és a multiplayer determinisztikus működése megmaradt.
 - A robbanással leválasztott talajdarabok azonnal eltűnnek a maszkból és a látványból;
   porladás, lehullás és omlási sebzés még nincs. A külön dekorációs réteg nem érintett.
@@ -49,9 +82,10 @@ A jelenlegi és tervezett fejlesztési ágak áttekintő ábrája:
   bezárható briefingben látható. Az eligazítás minden játékmódban pályánként
   elrejthető, helyileg mentett checkbox-választással.
   Modifikátor, orbitális képesség, osztályválasztás és stratégiai hadjárat még nincs.
-- Campaign Map C3 működik: öt szektoros elágazó térkép, P1 vs AI, OR feloldás,
-  eredmény utáni visszatérés, helyileg mentett 0/5 → 5/5 teljesítés és v1→v2 migráció.
-  Külön kampányreset és teljes mentéstörlés; extra kampányjutalom nincs.
+- Campaign Map C3 működik: öt szektor, P1 vs AI, eredmény utáni visszatérés és
+  helyileg mentett teljesítés. A korábbi C3-ágfüggések már nincsenek beállítva.
+  VEYLORA-03 külön belső nézettel, ALPHA-01 után érhető el. Külön kampányreset
+  és teljes mentéstörlés; extra kampányjutalom nincs.
 - A részletes UX- és hang-redesign következő lépései külön checklistként szerepelnek alább.
 
 ## Alapelvek
@@ -83,6 +117,43 @@ páncélzatú vagy akár más működési tartományú platformok is tartozhatna
   új asset készítése előtt a sziluettet és a rétegszerződést jóvá kell hagyni.
 - A csatolt terveken szereplő **Siege Platform A-1 / B-2** koncepció vizuális referencia,
   nem végleges modell- vagy osztálynév-döntés.
+
+## Gameplay-látvány modernizálása
+
+Az első Solvyr Prime koncepciókép hangulata a cél, nem a teljes kép változatlan
+átvétele: a terep, az egységek és a HUD továbbra is működő, dinamikus elemek.
+A meglévő hegy-, köd- és porrendszerre építünk, nem készítünk párhuzamos atmoszférát.
+
+1. **Terepprototípus, ALPHA-01:** ismétlődő sziklaminta és lefelé sötétedő
+   árnyalás a meglévő rombolható textúrában. A mintát a terep alakja határolja;
+   a kráterek és a leváló darabok látványa az ütközési maszkot követi.
+   Más szektorokra csak a prototípus értékelése után terjesszük ki.
+2. **Kráterek:** tartós perzselés finom peremrészletekkel és rövid talajbecsapódási
+   törmelék; csökkentett mozgásnál az új törmelékeffekt kikapcsol.
+3. **Épületek:** az energiareaktorok képes változatot kaptak minden szektorban: a
+   felhasználó által ChatGPT-vel készített kép fekete hátterét eltávolítottuk és
+   lekicsinyítettük. Ép és sérült állapotban a kép, megsemmisülten a korábbi
+   Pixi-romhalmaz látható; a státuszjelzés és a meglévő füst megmarad.
+   Külön fényréteg még nincs. A biodóm a civil telep képes változata;
+   a FORGE-17 kohója, valamint a VANGUARD-12 radarja és védelmi tornya
+   háttérben maradó díszlet: csatánként 100 HP-val, robbanási sérüléssel és
+   állapotjelző csíkkal. Nem akadályok, nem számítanak küldetéscélnak, és a
+   sérülésük nem marad meg a csata után. A kutatólabor a felhasználó által
+   készített képes változatot használja, a meglévő sérülési állapotokkal.
+4. **Egységek:** a kráter- és reaktorlátvány jóváhagyása után Siege Platform
+   assetek külön testtel és csővel. A jelenlegi ostromplatform semleges testet és
+   külön játékosszínű jelzésréteget kapott a harctéren és az egységpaneleken;
+   a csőforgás, lövedék kiindulópontja és találati terület változatlan.
+   A harctéri test és a jelzések 25%-kal nagyobbak, a löveg vastagabb, de a
+   hossza változatlan: a nagyobb látvány szélei túlnyúlnak a fizikai találati területen.
+5. **HUD és atmoszféra:** jóváhagyás után olvashatóság és szektoronkénti középtér javítása; a
+   felső középső HUD kontrasztja és szövegmérete javult, az elrendezés változatlan.
+   A minitérkép hasznosságáról és a vezérlők átrendezéséről külön döntés szükséges.
+
+Minden ütem vizuális változtatás: a ballisztika, mozgás, terrain-maszk, mentés és
+online protokoll nem változik. Saját vagy megfelelően licencelt asseteket használunk.
+Ellenőrizni kell a rombolást, a teljesítményt és olvashatóságot mobilon, valamint a
+csökkentett mozgás beállítást; a prototípus nem jelenti e próbák lezárását.
 
 ## Designirány – Tipográfia
 
@@ -130,11 +201,11 @@ Csak egy pálya szükséges; nincs új fizika vagy extra kampányjutalom. A hot-
 gyorscsata megmarad; a kampány mindig P1 vs AI. Kampányreset csak teljesítést,
 a teljes mentéstörlés XP-t/szinteket/teljesítést töröl. Valós telefonos próba hátravan.
 **Elkészült bővítés: C3 (2026-11-05); hosszabb balansz- és valódi telefonos próba még hátravan.**
-Összesen öt játszható pont: ALPHA-01 / Training Grounds, DELTA-08 / Crystal Basin,
+Öt játszható C3-harctér: ALPHA-01 / Training Grounds, DELTA-08 / Crystal Basin,
 FORGE-17 / Industrial Expanse, VANGUARD-12 / Defense Grid, PRIME-00 / Capital Perimeter.
-ALPHA → DELTA / FORGE → VANGUARD → PRIME; szabad ágbejárás, VANGUARD feloldása OR,
-extra kampánybónusz/Smart Aim jutalom nélkül. PRIME biztosítása műveletzárás;
-mind az öt szektor teljesítése 5/5, kihagyott ág és replay utólag is elérhető.
+2026-11-14-én a korábbi C3-ágfüggőségeket kivettük a térképből: csak a VEYLORA-03
+igényli ALPHA-01 teljesítését. A további szektorok és saját küldetéseik közti
+függések még nincsenek beállítva. Nincs extra kampánybónusz/Smart Aim jutalom.
 Közös szektorkatalógus, négy valódi új csatadefiníció, szektor-ID alapú mentés és
 a meglévő ALPHA-teljesítés migrációja elkészült. Az ALPHA gyorscsata/online pálya változatlan.
 A [részletes csataprofil-terv](./gameplay-progression.md#1010-c3-csataprofilok--részletes-tervezési-javaslat)
@@ -156,8 +227,10 @@ A részletes feladatok a [progressziós TODO](./gameplay-progression-todo.md) 2.
 Az O1 pályabeli objektumpróba elkészült a meglévő `FORGE-17` és `PRIME-00` szektorban:
 reaktor és civil kupolatelep, robbanási sebzés, állapotjelzés és HU/EN/DE HUD.
 A teljes feature még nincs kész: kampánykár-mentés, szerződéses jutalom,
-következő csata pajzshatása hátravan. FORGE már megnyitja VANGUARD-ot,
-PRIME győzelme a kampányzárás; DELTA kihagyható. A két szektor épületei
+következő csata pajzshatása hátravan. A régi FORGE → VANGUARD → PRIME
+függési javaslat és a PRIME-hoz kötött kampányzárás nem a jelenlegi
+C3-feloldási szabály; a C3 szektorok egymástól függetlenül választhatók.
+A két szektor épületei
 új csatánként seedelt, tankokkal és egymással nem átfedő helyeket kapnak.
 Alapígéret: a csata megnyerhető úgy is, hogy a játékos részben vagy teljesen
 elbukja a küldetés szerződéses célját. A harci győzelem továbbra is az ellenfél
@@ -180,12 +253,14 @@ küldetését befolyásolja.
   nem fix MVP-terjedelem: lehetnek kihagyható és később kulcsfontosságú
   küldetések, a kampánycél pedig egy titkos terv felkutatásától több szektor
   erőforrásának megszerzésén át szektorok felszabadításáig terjedhet.
+- Az alábbi 2026-11-07-i térképszelet és gráf korábbi kampányjavaslat; a
+  2026-11-14-i döntés óta nem a jelenlegi C3-térkép feloldási terve.
 - Az MVP két objektumtípusa `ENERGY_NODE` és `CIVIL_HABITAT`; az
   `ENERGY_NODE` a következő kapcsolódó kulcscsatában a maximális
   energiapajzsra hat. Mozgó civilek, diplomácia,
   frakciókapcsolatok, gazdasági szimuláció, piac, kereskedelem és procedurális
   történet nem része.
-- Az első C3 térképszeletben az `ALPHA-01` tréning után opcionális
+- A korábbi javaslat első C3 térképszeletében az `ALPHA-01` tréning után opcionális
   felderítés, illetve a `DELTA-08` és `FORGE-17` megszállt célágai jelennek
   meg. A `FORGE-17` a rejtett kulcsszektor; felszabadítása nyitja meg a
   `VANGUARD-12`-t. A `DELTA-08` helyi eredményt ad, de a `FORGE-17` később

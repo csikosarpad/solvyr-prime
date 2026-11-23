@@ -1,7 +1,9 @@
+import type { UnitAccent } from "./result.types";
+
 interface SegmentedProgressBarProps {
   value: number;
   max: number;
-  accent?: "cyan" | "gold" | "orange";
+  accent?: UnitAccent;
 }
 
 export function SegmentedProgressBar({ value, max, accent = "cyan" }: SegmentedProgressBarProps) {

@@ -9,16 +9,29 @@ describe("campaign persistence", () => {
     vi.restoreAllMocks();
   });
 
-  it("starts at 0/5, persists completion and does not write it twice", async () => {
+  it("keeps P1 legacy progress and P2 progress in separate saves", async () => {
+    localStorage.setItem(key, JSON.stringify({ version: 1, completed: true }));
+    const { useCampaignStore } = await import("./campaignStore");
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
+    useCampaignStore.getState().switchPlayer("P2");
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    useCampaignStore.getState().complete("forge-17");
+    useCampaignStore.getState().switchPlayer("P1");
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
+    useCampaignStore.getState().switchPlayer("P2");
+    expect(useCampaignStore.getState().completedIds).toEqual(["forge-17"]);
+  });
+
+  it("starts with independent sectors, persists completion and does not write it twice", async () => {
     const { useCampaignStore } = await import("./campaignStore");
     expect(useCampaignStore.getState().completedIds).toEqual([]);
     const write = vi.spyOn(Storage.prototype, "setItem");
-    expect(useCampaignStore.getState().complete("alpha-01")).toEqual(["delta-08", "forge-17"]);
+    expect(useCampaignStore.getState().complete("alpha-01")).toEqual([]);
     expect(useCampaignStore.getState().complete("alpha-01")).toEqual([]);
     expect(write).toHaveBeenCalledTimes(1);
     expect(JSON.parse(localStorage.getItem(key)!)).toEqual({
       version: 2,
-      contentVersion: 2,
+      contentVersion: 3,
       completedIds: ["alpha-01"],
       selectedId: "delta-08",
     });
@@ -37,10 +50,23 @@ describe("campaign persistence", () => {
     expect(localStorage.getItem("ballistic-front:profiles")).toBe(profiles);
     expect(JSON.parse(localStorage.getItem(key)!)).toEqual({
       version: 2,
-      contentVersion: 2,
+      contentVersion: 3,
       completedIds: [],
       selectedId: "alpha-01",
     });
+  });
+
+  it("resetAll clears both players' campaign saves", async () => {
+    const { useCampaignStore } = await import("./campaignStore");
+    useCampaignStore.getState().complete("alpha-01");
+    useCampaignStore.getState().switchPlayer("P2");
+    useCampaignStore.getState().complete("forge-17");
+    useCampaignStore.getState().resetAll();
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    useCampaignStore.getState().switchPlayer("P1");
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    expect(JSON.parse(localStorage.getItem(key)!).completedIds).toEqual([]);
+    expect(JSON.parse(localStorage.getItem(`${key}:P2`)!).completedIds).toEqual([]);
   });
 
   it.each([
@@ -49,8 +75,8 @@ describe("campaign persistence", () => {
     '{"version":1,"completed":"yes"}',
     '{"version":2,"contentVersion":99,"completedIds":[],"selectedId":"alpha-01"}',
     '{"version":2,"contentVersion":1,"completedIds":["unknown"],"selectedId":"alpha-01"}',
-    '{"version":2,"contentVersion":1,"completedIds":["prime-00"],"selectedId":"prime-00"}',
-    '{"version":2,"contentVersion":1,"completedIds":[],"selectedId":"prime-00"}',
+    '{"version":2,"contentVersion":1,"completedIds":["prime-00","unknown"],"selectedId":"prime-00"}',
+    '{"version":2,"contentVersion":1,"completedIds":[],"selectedId":"unknown"}',
     '{"version":2,"contentVersion":1,"completedIds":["alpha-01","alpha-01"],"selectedId":"alpha-01"}',
   ])("reports invalid saves without overwriting them: %s", async (text) => {
     localStorage.setItem(key, text);
@@ -103,12 +129,12 @@ describe("campaign persistence", () => {
     expect(useCampaignStore.getState().error).toBeNull();
   });
 
-  it("requires Forge, allows PRIME at 4/5, and the skipped Delta afterwards", async () => {
+  it("allows sectors to be completed independently without implying a campaign endpoint", async () => {
     const { useCampaignStore } = await import("./campaignStore");
     const store = useCampaignStore.getState();
     store.complete("alpha-01");
-    expect(store.complete("forge-17")).toEqual(["vanguard-12"]);
-    expect(store.complete("vanguard-12")).toEqual(["prime-00"]);
+    expect(store.complete("forge-17")).toEqual([]);
+    expect(store.complete("vanguard-12")).toEqual([]);
     expect(store.complete("prime-00")).toEqual([]);
     expect(useCampaignStore.getState().completedIds).toHaveLength(4);
     const other = "delta-08";
@@ -120,15 +146,14 @@ describe("campaign persistence", () => {
     expect(loaded.useCampaignStore.getState().completedIds).toHaveLength(5);
   });
 
-  it("does not unlock Vanguard after Delta alone", async () => {
+  it("allows independent sector selection before other sectors are completed", async () => {
     const { useCampaignStore } = await import("./campaignStore");
     const store = useCampaignStore.getState();
     store.complete("alpha-01");
     expect(store.complete("delta-08")).toEqual([]);
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(store.select("vanguard-12")).toBe(false);
+    expect(store.select("vanguard-12")).toBe(true);
     expect(store.complete("vanguard-12")).toEqual([]);
-    expect(store.complete("forge-17")).toEqual(["vanguard-12"]);
+    expect(store.complete("forge-17")).toEqual([]);
   });
 
   it("surfaces a content migration write failure and retries without changing completion", async () => {
@@ -142,17 +167,25 @@ describe("campaign persistence", () => {
       throw new Error("quota");
     });
     const { useCampaignStore } = await import("./campaignStore");
-    expect(useCampaignStore.getState()).toMatchObject({
-      completedIds,
-      selectedId: "forge-17",
-      error: "campaign.saveError",
-    });
+    expect(useCampaignStore.getState()).toMatchObject({ completedIds, selectedId: "vanguard-12", error: "campaign.saveError" });
     expect(useCampaignStore.getState().complete("delta-08")).toEqual([]);
     expect(useCampaignStore.getState().error).toBeNull();
-    expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ contentVersion: 2, completedIds });
+    expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ contentVersion: 3, completedIds });
   });
+
+  it("migrates content version 2 saves to the independent-sector graph", async () => {
+    const completedIds = ["alpha-01", "forge-17", "vanguard-12"];
+    localStorage.setItem(
+      key,
+      JSON.stringify({ version: 2, contentVersion: 2, completedIds, selectedId: "prime-00" }),
+    );
+    const { useCampaignStore } = await import("./campaignStore");
+    expect(useCampaignStore.getState()).toMatchObject({ completedIds, selectedId: "prime-00", error: null });
+    expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ contentVersion: 3, completedIds });
+  });
+
   it.each([
-    { completedIds: ["alpha-01", "delta-08"], selectedId: "vanguard-12", expectedSelected: "forge-17" },
+    { completedIds: ["alpha-01", "delta-08"], selectedId: "vanguard-12", expectedSelected: "vanguard-12" },
     {
       completedIds: ["alpha-01", "delta-08", "vanguard-12", "prime-00"],
       selectedId: "prime-00",
@@ -164,7 +197,7 @@ describe("campaign persistence", () => {
       localStorage.setItem(key, JSON.stringify({ version: 2, contentVersion: 1, completedIds, selectedId }));
       const { useCampaignStore } = await import("./campaignStore");
       expect(useCampaignStore.getState()).toMatchObject({ completedIds, selectedId: expectedSelected, error: null });
-      expect(JSON.parse(localStorage.getItem(key)!).contentVersion).toBe(2);
+      expect(JSON.parse(localStorage.getItem(key)!).contentVersion).toBe(3);
       vi.resetModules();
       const reloaded = await import("./campaignStore");
       expect(reloaded.useCampaignStore.getState()).toMatchObject({
@@ -174,12 +207,12 @@ describe("campaign persistence", () => {
       });
     },
   );
-  it("blocks locked operations in both selection and completion", async () => {
+  it("allows unconfigured sectors without inventing locked routes", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const { useCampaignStore } = await import("./campaignStore");
-    expect(useCampaignStore.getState().select("prime-00")).toBe(false);
+    expect(useCampaignStore.getState().select("prime-00")).toBe(true);
     expect(useCampaignStore.getState().complete("prime-00")).toEqual([]);
-    expect(useCampaignStore.getState().completedIds).toEqual([]);
-    expect(log).toHaveBeenCalledTimes(2);
+    expect(useCampaignStore.getState().completedIds).toEqual(["prime-00"]);
+    expect(log).not.toHaveBeenCalled();
   });
 });

@@ -4,6 +4,8 @@ import type { Sector } from "../data/sectors";
 import { TerrainMask, type TerrainSpan } from "./mask";
 import { scorchDots } from "./scorch";
 import { DEFAULT_THEME, type Theme } from "../theme";
+import { rockDetails } from "./rockDetails";
+import { createRockMaterial } from "./rockMaterial";
 
 /** Terep: a látvány egy RenderTexture, a rombolás `erase` blendű körökkel történik; az ütközést a TerrainMask adja. */
 export class Terrain {
@@ -53,12 +55,25 @@ export class Terrain {
     }
 
     const terrainVisuals = new Container();
-    terrainVisuals.addChild(shape, strata);
+    terrainVisuals.addChild(shape);
+    const material = sector?.id === "alpha-01"
+      ? createRockMaterial(this.renderer, heightmap, height, seed, this.colors)
+      : null;
+    if (material) terrainVisuals.addChild(material.layer);
+    const rocks = new Graphics();
+    for (const detail of rockDetails(heightmap, height, seed)) {
+      rocks.poly(detail.points).fill({
+        color: detail.light ? this.colors.soilLight : this.colors.soilDeep,
+        alpha: detail.light ? 0.12 : 0.22,
+      }).stroke({ color: this.colors.soilDeep, alpha: 0.25, width: 1 });
+    }
+    terrainVisuals.addChild(rocks, strata);
 
     this.texture?.destroy(true);
     this.texture = RenderTexture.create({ width, height });
     this.renderer.render({ container: terrainVisuals, target: this.texture });
     terrainVisuals.destroy({ children: true });
+    material?.tile.destroy(true);
     this.sprite.texture = this.texture;
   }
 
@@ -67,8 +82,14 @@ export class Terrain {
     if (!this.texture) return;
     // Előbb égetünk (a régi maszkkal), a lyuk kivájása a belső részt úgyis törli.
     this.scorch.clear();
-    for (const d of scorchDots(this.mask, x, y, radius)) {
+    const dots = scorchDots(this.mask, x, y, radius);
+    for (const d of dots) {
       this.scorch.circle(d.x, d.y, d.radius).fill({ color: this.colors.scorch, alpha: d.alpha });
+    }
+    for (const d of dots) {
+      if (Math.hypot(d.x - x, d.y - y) < radius + 3) {
+        this.scorch.circle(d.x, d.y, 0.8).fill({ color: this.colors.soilLight, alpha: d.alpha * 0.32 });
+      }
     }
     this.renderer.render({ container: this.scorch, target: this.texture, clear: false });
 

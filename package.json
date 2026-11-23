@@ -14,6 +14,8 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "fmt": "prettier --write .",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui --headed --trace on",
     "test:watch": "vitest",
     "deploy:ftp": "pnpm run build && node scripts/deploy-ftp.mjs",
     "deploy:ftp:only": "node scripts/deploy-ftp.mjs"

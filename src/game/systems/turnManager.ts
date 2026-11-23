@@ -41,4 +41,15 @@ export class TurnManager {
     } while (!alive.includes(this.current));
     this.phase = "aiming";
   }
+
+  /** Lövésen kívüli halál (pl. égő talaj) feloldása: győztes vagy a következő élő játékos. */
+  resolveElimination(alive: string[]): void {
+    if (this.phase === "gameOver") return;
+    if (alive.length <= 1) {
+      this.phase = "gameOver";
+      this.winner = alive[0] ?? null;
+      return;
+    }
+    while (!alive.includes(this.current)) this.index = (this.index + 1) % this.ids.length;
+  }
 }

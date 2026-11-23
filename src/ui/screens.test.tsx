@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Game } from "@/game/engine/Game";
 import { useGameStore } from "@/game/state/gameStore";
@@ -9,9 +9,17 @@ import { useCampaignStore } from "@/game/state/campaignStore";
 import { gameRef } from "./gameRef";
 import { MainMenu } from "./main-menu/MainMenu";
 import { ResultScreen } from "./ResultScreen";
+import { Workshop } from "./Workshop";
+import { IDBFactory } from "fake-indexeddb";
+import { useVeyloraStore } from "@/game/state/veyloraStore";
+import { DEFAULT_ARMOR_COLORS, DEFAULT_DISTANCE, DEFAULT_LIGHTNESS, DEFAULT_PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
 
 const mockGame = (overrides: Partial<Record<keyof Game, unknown>>) => {
   gameRef.current = { leaveBattle: vi.fn(), ...overrides } as unknown as Game;
+};
+
+const openSettingsGroup = (name: string) => {
+  fireEvent.click(screen.getByText(name, { selector: "summary" }));
 };
 
 describe("MainMenu", () => {
@@ -19,6 +27,11 @@ describe("MainMenu", () => {
     useGameStore.setState({ screen: "menu", muted: false, matchMode: "skirmish", aiActive: false });
     useMultiplayerStore.getState().leave();
     useCampaignStore.getState().reset();
+    usePlayerColors.setState({
+      colors: { ...DEFAULT_PLAYER_COLORS }, armorColors: { ...DEFAULT_ARMOR_COLORS },
+      lightness: { P1: DEFAULT_LIGHTNESS, P2: DEFAULT_LIGHTNESS },
+      distances: { P1: DEFAULT_DISTANCE, P2: DEFAULT_DISTANCE }, error: null,
+    });
     useAudioSettings.setState({
       channels: { music: true, voice: true, effects: true },
       volume: 1,
@@ -39,11 +52,13 @@ describe("MainMenu", () => {
   it("a nyelvváltó angolra állítja a menüt, majd vissza magyarra", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Nyelv");
     fireEvent.click(screen.getByRole("button", { name: "English" }));
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("button", { name: "Start game" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Play online" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    openSettingsGroup("Language");
     fireEvent.click(screen.getByRole("button", { name: "Magyar" }));
     fireEvent.click(screen.getByRole("button", { name: "Vissza" }));
     expect(screen.getByRole("button", { name: "Játék indítása" })).toBeInTheDocument();
@@ -60,29 +75,110 @@ describe("MainMenu", () => {
     expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
   });
 
+  it("a bezárás gomb visszatér a főmenübe", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások bezárása" }));
+    expect(screen.getByRole("button", { name: "Játék indítása" })).toBeInTheDocument();
+  });
+
+  it("a beállításcsoportok külön nyithatók és becsukáskor megtartják az értékeket", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    const groups = ["Nyelv", "Hang", "Játékosok"].map((name) =>
+      screen.getByText(name, { selector: "summary" }).closest("details"),
+    );
+    groups.forEach((group) => expect(group).not.toHaveAttribute("open"));
+
+    openSettingsGroup("Hang");
+    fireEvent.change(screen.getByRole("slider", { name: "Játék hangereje" }), { target: { value: "35" } });
+    openSettingsGroup("Játékosok");
+    expect(groups[1]).toHaveAttribute("open");
+    expect(groups[2]).toHaveAttribute("open");
+    expect(screen.getByRole("button", { name: "P1: Kék" })).toBeInTheDocument();
+    openSettingsGroup("Hang");
+    expect(groups[1]).not.toHaveAttribute("open");
+    expect(groups[2]).toHaveAttribute("open");
+    openSettingsGroup("Hang");
+    expect(screen.getByRole("slider", { name: "Játék hangereje" })).toHaveValue("35");
+  });
+
   it("a beállítások megmaradnak a panelek közötti váltáskor", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     fireEvent.change(screen.getByRole("slider", { name: "Játék hangereje" }), { target: { value: "80" } });
     fireEvent.click(screen.getByRole("button", { name: "Vissza" }));
     fireEvent.click(screen.getByRole("button", { name: "Online játék" }));
     fireEvent.click(screen.getByRole("button", { name: "Vissza" }));
     expect(screen.getByRole("complementary", { name: "Köszönet" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     expect(screen.getByRole("slider", { name: "Játék hangereje" })).toHaveValue("80");
     expect(screen.getByRole("slider", { name: "Játék hangereje" })).toHaveAttribute("data-volume-high", "true");
+  });
+
+  it("a tankszínek játékosonként választhatók és mentődnek", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékosok");
+    expect(screen.getByRole("button", { name: "P1: Kék" })).toHaveAttribute("aria-pressed", "true");
+    const steel = screen.getByRole("button", { name: "P1 páncélszíne: Acélszürke" });
+    const olive = screen.getByRole("button", { name: "P1 páncélszíne: Olívazöld" });
+    expect(steel).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(olive);
+    fireEvent.click(screen.getByRole("button", { name: "P1: Zöld" }));
+    fireEvent.click(screen.getByRole("button", { name: "P2" }));
+    fireEvent.click(screen.getByRole("button", { name: "P2: Lila" }));
+    expect(screen.getByRole("button", { name: "P2: Lila" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "P1" }));
+    expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "P1 páncélszíne: Olívazöld" })).toHaveAttribute("aria-pressed", "true");
+    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toMatchObject({
+      P1: "green", P2: "purple", armorColors: { P1: "olive", P2: "steel" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "P1 páncélszíne: Acélszürke" }));
+    expect(screen.getByRole("button", { name: "P1 páncélszíne: Acélszürke" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("a semleges palettaszín mindkét játékosnál választható", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékosok");
+    fireEvent.click(screen.getByRole("button", { name: "P1: Semleges szürke" }));
+    fireEvent.click(screen.getByRole("button", { name: "P2" }));
+    fireEvent.click(screen.getByRole("button", { name: "P2: Semleges szürke" }));
+    expect(screen.getByRole("button", { name: "P2: Semleges szürke" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "P1" }));
+    expect(screen.getByRole("button", { name: "P1: Semleges szürke" })).toHaveAttribute("aria-pressed", "true");
+    expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toMatchObject({ P1: "white", P2: "white" });
+  });
+
+  it("megjeleníti a tankszín mentési hibáját", () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const save = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("storage"); });
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékosok");
+    fireEvent.click(screen.getByRole("button", { name: "P1: Zöld" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("A tankszínek mentése sikertelen");
+    expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
+    save.mockRestore();
+    log.mockRestore();
   });
 
   it("a beállításokból módosítható és visszajelzett a hang állapota", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
 
-    const soundButton = screen.getByRole("button", { name: "Kommunikáció: aktív (M)" });
-    expect(soundButton).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(soundButton);
+    const soundSwitch = screen.getByRole("switch", { name: "Kommunikáció: aktív (M)" });
+    expect(soundSwitch).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(soundSwitch);
 
     expect(useGameStore.getState().muted).toBe(true);
-    expect(screen.getByRole("button", { name: "Kommunikáció: némítva (M)" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "Kommunikáció: némítva (M)" })).toHaveAttribute("aria-checked", "false");
   });
 
   it("az online játék gomb megnyitja a szobalobbyt", () => {
@@ -95,6 +191,7 @@ describe("MainMenu", () => {
   it("a hangerőcsúszka ment és némítva is állítható a némítás feloldása nélkül", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     const slider = screen.getByRole("slider", { name: "Játék hangereje" });
     expect(slider).toHaveValue("100");
     fireEvent.change(slider, { target: { value: "35" } });
@@ -102,10 +199,10 @@ describe("MainMenu", () => {
     expect(screen.getByText("35%")).toBeInTheDocument();
     expect(useAudioSettings.getState().volume).toBe(0.35);
     expect(JSON.parse(localStorage.getItem("ballistic-front:audio-settings")!).volume).toBe(0.35);
-    fireEvent.click(screen.getByRole("button", { name: "Kommunikáció: aktív (M)" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Kommunikáció: aktív (M)" }));
     fireEvent.change(slider, { target: { value: "0" } });
     expect(useGameStore.getState().muted).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "Kommunikáció: némítva (M)" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Kommunikáció: némítva (M)" }));
     expect(slider).toHaveValue("0");
     expect(useAudioSettings.getState().volume).toBe(0);
   });
@@ -119,6 +216,7 @@ describe("MainMenu", () => {
   ])("a hangerő %i százalékánál megfelelő színt és fényküszöböt ad át", (value, whiteness, high) => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     const slider = screen.getByRole("slider", { name: "Játék hangereje" });
     fireEvent.change(slider, { target: { value: String(value) } });
     expect(slider.style.getPropertyValue("--volume-whiteness")).toBe(whiteness);
@@ -128,6 +226,7 @@ describe("MainMenu", () => {
   it("a csatornák hangereje külön állítható, ment, és nem módosítja a központi hangerőt", () => {
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Hang");
     fireEvent.change(screen.getByRole("slider", { name: "Zene hangereje" }), { target: { value: "20" } });
     fireEvent.change(screen.getByRole("slider", { name: "Parancsnok hangereje" }), { target: { value: "90" } });
     fireEvent.change(screen.getByRole("slider", { name: "Effektek hangereje" }), { target: { value: "60" } });
@@ -199,48 +298,65 @@ describe("MainMenu", () => {
     expect(useGameStore.getState().screen).toBe("playing");
   });
 
-  it("a haladás törlése csak megerősítés után fut le", () => {
+  it("a játékmenet kijelölt összetevői csak megerősítés után törlődnek", async () => {
     const resetProgress = vi.fn();
     mockGame({ resetProgress });
+    useAiSettings.setState({ memory: { matches: 4, wins: 2, shots: 30, hits: 9 } });
+    useCampaignStore.getState().complete("alpha-01");
+    const originalResetEconomyAll = useVeyloraStore.getState().resetEconomyAll;
+    const resetEconomyAll = vi.fn().mockResolvedValue(true);
+    useVeyloraStore.setState({ resetEconomyAll });
     const confirm = vi.spyOn(window, "confirm");
     render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékmenet");
 
-    fireEvent.click(screen.getByRole("button", { name: /mentés törlése/i }));
-    const dialog = screen.getByRole("dialog", { name: "Törlöd a mentést?" });
+    const veyloraSwitch = screen.getByRole("switch", { name: "VEYLORA-haladás és kampánygazdaság" });
+    expect(veyloraSwitch).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(screen.getByRole("switch", { name: "XP és fejlesztések" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Kampányhaladás" }));
+    fireEvent.click(screen.getByRole("switch", { name: /AI-tapasztalat/ }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Kijelöltek törlése" }));
+    const dialog = screen.getByRole("dialog", { name: "Törlöd a kijelölt játékmenet-adatokat?" });
     expect(dialog).toHaveAccessibleDescription(/nem vonható vissza/);
     fireEvent.click(within(dialog).getByRole("button", { name: "Mégse" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(resetProgress).not.toHaveBeenCalled();
+    expect(useAiSettings.getState().memory.matches).toBe(4);
+    expect(useCampaignStore.getState().completedIds).toEqual(["alpha-01"]);
 
-    fireEvent.click(screen.getByRole("button", { name: /mentés törlése/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Kijelöltek törlése" }));
     fireEvent.click(screen.getByRole("button", { name: "Törlés" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(resetProgress).toHaveBeenCalledOnce();
+    expect(useCampaignStore.getState().completedIds).toEqual([]);
+    expect(useAiSettings.getState().memory.matches).toBe(0);
+    expect(resetEconomyAll).not.toHaveBeenCalled();
     expect(confirm).not.toHaveBeenCalled();
     confirm.mockRestore();
+    useVeyloraStore.setState({ resetEconomyAll: originalResetEconomyAll });
   });
 
-  it("az AI tapasztalat törlése csak megerősítés után fut le", () => {
-    const memory = { matches: 4, wins: 2, shots: 30, hits: 9 };
-    useAiSettings.setState({ enabled: true, memory });
+  it("üres kijelölésnél a törlés tiltott; egyedüli VEYLORA-kijelölés csak a gazdaságot törli", async () => {
+    const resetProgress = vi.fn();
+    mockGame({ resetProgress });
+    const originalResetEconomyAll = useVeyloraStore.getState().resetEconomyAll;
+    const resetEconomyAll = vi.fn().mockResolvedValue(true);
+    useVeyloraStore.setState({ resetEconomyAll });
     render(<MainMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékmenet");
 
-    const resetButton = screen.getByRole("button", { name: /AI tapasztalat: 4 meccs/ });
-    fireEvent.click(resetButton);
-    const dialog = screen.getByRole("dialog", { name: "Törlöd az AI tapasztalatát?" });
-    expect(dialog).toHaveAccessibleDescription(/4 meccsnyi tapasztalata/);
-    expect(within(dialog).getByRole("button", { name: "Mégse" })).toHaveFocus();
-    fireEvent.keyDown(dialog, { key: "Escape" });
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(useAiSettings.getState().memory).toEqual(memory);
+    expect(screen.getByRole("button", { name: "Kijelöltek törlése" })).toBeDisabled();
 
-    fireEvent.click(resetButton);
+    fireEvent.click(screen.getByRole("switch", { name: "VEYLORA-haladás és kampánygazdaság" }));
+    fireEvent.click(screen.getByRole("button", { name: "Kijelöltek törlése" }));
     fireEvent.click(screen.getByRole("button", { name: "Törlés" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(useAiSettings.getState().memory.matches).toBe(0);
-    expect(screen.getByRole("button", { name: /AI tapasztalat: 0 meccs/ })).toBeDisabled();
-    useAiSettings.setState({ enabled: false });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(resetEconomyAll).toHaveBeenCalledOnce();
+    expect(resetProgress).not.toHaveBeenCalled();
+    useVeyloraStore.setState({ resetEconomyAll: originalResetEconomyAll });
   });
 });
 
@@ -262,6 +378,8 @@ describe("ResultScreen", () => {
     render(<ResultScreen />);
     expect(screen.getByText("P1 nyert!")).toBeInTheDocument();
     expect(screen.getByText("+150")).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /P1/ })).toHaveClass("is-winner");
+    expect(screen.getByRole("row", { name: /P2/ })).toHaveClass("is-runner-up");
   });
 
   it("a főmenü gomb visszavált a menüre", () => {
@@ -291,7 +409,8 @@ describe("ResultScreen", () => {
     expect(useGameStore.getState().screen).toBe("menu");
   });
 
-  it("lezárt online meccs után a host új meccset indíthat és csak a saját tankját fejlesztheti", () => {
+  it("lezárt online meccs után a host új meccset indíthat és csak a saját tankját fejlesztheti", async () => {
+    vi.stubGlobal("indexedDB", new IDBFactory());
     const requestMultiplayerRematch = vi.fn();
     const buy = vi.fn();
     mockGame({ requestMultiplayerRematch, buy });
@@ -305,13 +424,24 @@ describe("ResultScreen", () => {
         players: { P1: "Ada", P2: "Grace" },
       },
     });
-    render(<ResultScreen />);
+    const result = render(<ResultScreen />);
 
     expect(screen.getByRole("button", { name: "Visszavágó" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "P1: Páncél" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Fejlesztés" }));
+    expect(useGameStore.getState().screen).toBe("workshop");
+    result.unmount();
+    const workshop = render(<Workshop />);
+    await waitFor(() => expect(useVeyloraStore.getState().pending).toBe(0));
     expect(screen.getByRole("button", { name: "P1: Páncél" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "P2: Páncél" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "P2: Páncél" }).closest(".unit-panel")).toHaveClass("is-inactive");
     fireEvent.click(screen.getByRole("button", { name: "P1: Páncél" }));
     expect(buy).toHaveBeenCalledWith("P1", "armor");
+    fireEvent.click(screen.getByRole("button", { name: "Vissza" }));
+    expect(useGameStore.getState().screen).toBe("playing");
+    workshop.unmount();
+    render(<ResultScreen />);
     fireEvent.click(screen.getByRole("button", { name: "Visszavágó" }));
     expect(requestMultiplayerRematch).toHaveBeenCalledOnce();
   });

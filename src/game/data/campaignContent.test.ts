@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { VEYLORA, missionById, missionBattlefield, parseCampaignContent } from "./campaignContent";
 
 describe("campaign content", () => {
-  it("loads the two planets and non-combat station from the bundled JSON", () => {
+  it("loads the two planets and the final station mission from the bundled JSON", () => {
     expect(VEYLORA.sector.id).toBe("veylora-03");
     expect(VEYLORA.sector.locations.map((location) => location.kind)).toEqual(["planet", "planet", "station"]);
-    expect(VEYLORA.missions).toHaveLength(2);
+    expect(VEYLORA.missions).toHaveLength(3);
+    expect(missionById("secure-station").prerequisites).toEqual(["secure-mine", "secure-lab"]);
+    expect(missionBattlefield(missionById("secure-station")).code).toBe("VEYLORA-STATION");
     expect(missionBattlefield(missionById("secure-lab")).strategicObjectives?.[0]?.type).toBe("RESEARCH_LAB");
     expect(parseCampaignContent(structuredClone(VEYLORA))).toEqual(VEYLORA);
   });
@@ -39,7 +41,24 @@ describe("campaign content", () => {
     const protection = structuredClone(VEYLORA);
     protection.missions[1]!.protection!.objectiveId = "missing";
     expect(() => parseCampaignContent(protection)).toThrow("protection");
+    const prerequisite = structuredClone(VEYLORA);
+    prerequisite.missions[2]!.prerequisites = ["missing-mission"];
+    expect(() => parseCampaignContent(prerequisite)).toThrow("prerequisite");
+    const cycle = structuredClone(VEYLORA);
+    cycle.missions[0]!.prerequisites = ["secure-station"];
+    expect(() => parseCampaignContent(cycle)).toThrow("Cyclic");
   });
+
+  it.each([{ weapons: ["unknown"] }, { weapons: ["standard"] }, { weapons: ["ap", "ap"] }])(
+    "rejects invalid opponent weapon lists ($weapons)",
+    ({ weapons }) => {
+      const content = structuredClone(VEYLORA);
+      const missions = content.missions.map((mission, index) =>
+        index === 0 ? { ...mission, opponent: { ...mission.opponent, weapons } } : mission,
+      );
+      expect(() => parseCampaignContent({ ...content, missions })).toThrow(/weapon|Duplicate/);
+    },
+  );
 
   it("requires one location per mission but accepts additional configured locations and missions", () => {
     const duplicate = structuredClone(VEYLORA);
@@ -61,6 +80,7 @@ describe("campaign content", () => {
   it("validates reward amounts, economic references and station recipes", () => {
     expect(VEYLORA.missions[0]!.rewards.resources["industrial-ore"]).toBe(20);
     expect(VEYLORA.recipes[0]!.effect.maxEnergyShieldMultiplier).toBe(1.1);
+    expect(VEYLORA.recipes[0]!.effect.maxEnergyShieldBonus).toBe(20);
     for (const amount of [-1, 0, 0.5, Infinity, NaN]) {
       const content = structuredClone(VEYLORA);
       content.missions[0]!.rewards.resources["industrial-ore"] = amount;
@@ -74,6 +94,9 @@ describe("campaign content", () => {
     expect(() => parseCampaignContent(station)).toThrow("station");
     const effect = structuredClone(VEYLORA);
     effect.recipes[0]!.effect.maxEnergyShieldMultiplier = 10;
+    expect(() => parseCampaignContent(effect)).toThrow("number");
+    effect.recipes[0]!.effect.maxEnergyShieldMultiplier = 1.1;
+    effect.recipes[0]!.effect.maxEnergyShieldBonus = -1;
     expect(() => parseCampaignContent(effect)).toThrow("number");
   });
 });

@@ -17,12 +17,34 @@ pnpm.cmd install
 pnpm.cmd dev          # fejlesztői szerver
 pnpm.cmd build        # típusellenőrzés + build
 pnpm.cmd test         # Vitest
+pnpm.cmd test:e2e     # Playwright böngészős E2E tesztek
+pnpm.cmd test:e2e:ui  # Interaktív Playwright UI
 pnpm.cmd lint
 pnpm.cmd fmt
 ```
 
 Ha a PowerShell a `pnpm` szkriptet letiltja, a `pnpm.cmd` használható.
 A `fmt` a teljes repositoryt formázza; célzott változtatásnál csak az érintett fájlokat formázd.
+
+Az E2E tesztek automatikusan elindítják a Vite szervert. Első használat előtt telepítsd
+a Chromium böngészőt:
+
+```powershell
+pnpm.cmd exec playwright install chromium
+```
+
+A konfiguráció a Playwright által telepített alapértelmezett Chromium böngészőt
+használja; így az interaktív UI és a tesztfuttatás ugyanazt a böngészőkészletet
+használja. Egy egyedi csatornát nem szükséges kényszeríteni.
+
+Az interaktív felületen a tesztek külön-külön indíthatók, és követhető a böngésző
+állapota, a lépések és az eredmény. A UI szkript headed módot és élő trace-rögzítést
+használ, ezért a játék külön Chromium-ablakban megnyílik, a tesztlépésekhez pedig
+képkockák is megjelennek:
+
+```powershell
+pnpm.cmd test:e2e:ui
+```
 
 Online módhoz a PHP API és MySQL/MariaDB is szükséges. A repository gyökeréből:
 
@@ -114,8 +136,12 @@ A jelenlegi, rétegen kívüli saját CSS azonos tulajdonság esetén elsőbbsé
 a Tailwind utility rétegével szemben. Ha egy tulajdonságot utility class kezel,
 az ütköző saját deklarációt távolítsd el; a meglévő CSS-t nem kell átírni.
 
-A közös téma (`--bf-*` változók), alapstílusok (`overlay`, `panel`, `btn`) és a több
-képernyőn használt osztályok a globális [ui.css](../../src/ui/ui.css) fájlban maradnak.
+A közös téma (`--bf-*` változók), az `overlay`, `btn` és a több képernyőn használt
+osztályok a globális [ui.css](../../src/ui/ui.css) fájlban maradnak. A
+[panels.css](../../src/ui/panels.css) tartalmazza a fő képernyőpanelek közös alapját,
+változatait és panelspecifikus reszponzív méreteit; a `ui.css` importálja.
+A megerősítő dialógus külön [ConfirmDialog.css](../../src/ui/ConfirmDialog.css)
+stíluslapot használ, és megőrzi a veszélyes műveletek piros kiemelését.
 Az önálló komponensek saját stílusai fokozatosan melléjük emelhetők ki:
 a [CampaignMap.tsx](../../src/ui/CampaignMap.tsx) közvetlenül importálja a
 [CampaignMap.css](../../src/ui/CampaignMap.css) fájlt, a reszponzív szabályokkal és
@@ -134,14 +160,18 @@ az input 32 px magas kezelési területe ezektől független. A WebKit és Firef
 pszeudoelemei külön szabályokat kapnak, közös CSS-változókkal.
 A `MainMenuSettings` a hangerőből számítja a `--volume-whiteness` értékét: a sín 0%-nál
 semleges, 80%-ra fehérré válik. A `data-volume-high` 80%-tól fehér ragyogást kapcsol be.
-A projekt sima CSS-t használ; Sass `@mixin` / `@include` nincs beállítva.
+A projekt natív CSS-beágyazást és változókat használ; ezekhez nincs szükség SCSS-re
+vagy további fordítási függőségre. Sass akkor lehet indokolt, ha ténylegesen szükség
+lesz fordítási idejű mixinekre, ciklusokra vagy függvényekre. A natív beágyazás
+szelektorspecifikussága eltérhet a Sass-étól, ezért vegyes szelektorlistáknál ezt
+és a szabályok sorrendjét átalakításkor ellenőrizni kell.
 
 ## Csata megszakítása
 
 Offline csata és kampány közben a HUD főmenügombja natív, a játék témájához igazított
 megerősítő dialógust nyit. A kampánytérképre visszalépés ugyanezt használja.
-A közös komponens a `src/ui/ConfirmDialog.tsx`; a főmenü „Mentés törlése”, a kampánytérkép
-„Kampányhaladás törlése” és a beállítások „AI tapasztalat … törlés” gombja is ezt használja
+A közös komponens a `src/ui/ConfirmDialog.tsx`; a beállítások „Játékmenet” szakaszának
+kijelölhető összetevőket törlő gombja is ezt használja
 (piros, `destructive` változat), böngészős `confirm()` nincs.
 Offline csata közben az Escape is megnyitja a főmenübe lépés megerősítését, lövés vagy az AI köre alatt is.
 Az ablak alatt a HUD gyorsbillentyűi nem aktívak; újabb Escape vagy a folytatás gomb megszakítja a kilépést.

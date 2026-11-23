@@ -10,7 +10,11 @@ export function UpgradeIcon({ upgradeId, iconSet }: UpgradeIconProps) {
 
   return (
     <span className={`upgrade-icon accent-${presentation.accent}`} aria-hidden="true">
-      <span className="upgrade-icon-glyph">{presentation.glyph}</span>
+      {presentation.asset ? (
+        <img className="upgrade-icon-image" src={presentation.asset} alt="" />
+      ) : (
+        <span className="upgrade-icon-glyph">{presentation.glyph}</span>
+      )}
     </span>
   );
 }
