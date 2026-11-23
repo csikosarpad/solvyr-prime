@@ -22,6 +22,7 @@ import { armorColorMatrix, armorTint, DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLOR
 import type { WeaponId } from "../data/weapons";
 import { DEFAULT_THEME } from "../theme";
 import { usePlayerNamesStore } from "../state/playerNames";
+import { DEFAULT_UNITS, usePlayerUnits } from "../state/playerUnits";
 
 vi.hoisted(() => {
   HTMLCanvasElement.prototype.getContext = () => null;
@@ -38,6 +39,7 @@ describe("Game campaign lifecycle", () => {
     await useVeyloraStore.getState().resetEconomy();
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
     useMultiplayerStore.getState().leave();
+    usePlayerUnits.setState({ units: { ...DEFAULT_UNITS }, error: null });
     useCampaignStore.getState().switchPlayer("P1");
     useCampaignStore.getState().reset();
     useAiSettings.getState().setEnabled(false);
@@ -68,6 +70,90 @@ describe("Game campaign lifecycle", () => {
     Reflect.get(game, "explode").call(game, 640, 100);
   };
 
+  it("uses soldier weapons and suppresses tank movement audio while hovering and walking", () => {
+    usePlayerUnits.setState({ units: { P1: "soldier", P2: "tank" } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    const sound = { moveTick: vi.fn() };
+    Reflect.set(game, "audio", sound);
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const ground = tanks[0]!.y;
+    expect(useGameStore.getState().weaponOptions).toEqual(["plasma"]);
+    game.hover(-1);
+    game.move(1);
+    expect(tanks[0]).toMatchObject({ y: ground - 2, moveLeft: 56, hovering: true });
+    expect(sound.moveTick).not.toHaveBeenCalled();
+    game.hover(1);
+    expect(tanks[0]).toMatchObject({ y: ground, moveLeft: 55.5, hovering: false });
+    Reflect.set(game, "audio", null);
+  });
+
+  it("burns a soldier only after landing on burning ground", () => {
+    usePlayerUnits.setState({ units: { P1: "soldier", P2: "tank" } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const soldier = tanks[0]!;
+    Reflect.set(game, "burnZones", [{
+      x: soldier.x, radius: 42, secondsLeft: 5, damagePerSecond: 8, ownerId: "P2", exposure: new Map(),
+    }]);
+    game.hover(-1);
+    Reflect.get(game, "stepBurnZones").call(game, 1);
+    expect(soldier.hp).toBe(100);
+    game.hover(1);
+    Reflect.get(game, "stepBurnZones").call(game, 1);
+    expect(soldier.hp).toBe(92);
+  });
+
+  it("automatically lands a soldier after releasing ascent and reserves the descent cost", () => {
+    usePlayerUnits.setState({ units: { P1: "soldier", P2: "tank" } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    const soldier: Tank = Reflect.get(game, "tanks")[0];
+    const ground = soldier.y;
+    for (let i = 0; i < 30; i++) game.hover(-1);
+    expect(soldier).toMatchObject({ y: ground - 48, moveLeft: 12, hovering: true });
+    game.land();
+    for (let i = 0; i < 24; i++) Reflect.get(game, "stepLanding").call(game);
+    expect(soldier).toMatchObject({ y: ground, moveLeft: 0, hovering: false });
+  });
+
+  it("starts landing when a hovering soldier fires, even if the shot resolves immediately", () => {
+    usePlayerUnits.setState({ units: { P1: "soldier", P2: "tank" } });
+    game.restart({ seed: 42, starterIndex: 0 });
+    const soldier: Tank = Reflect.get(game, "tanks")[0];
+    const ground = soldier.y;
+    game.hover(-1);
+    game.fire();
+    expect(Reflect.get(game, "activeShot").weapon.id).toBe("plasma");
+    Reflect.get(game, "explode").call(game, 640, 100, null);
+    Reflect.get(game, "stepLanding").call(game);
+    expect(soldier).toMatchObject({ y: ground, moveLeft: 57.5, hovering: false });
+  });
+
+  it("replays soldier hover events using synchronized match units, not local preferences", () => {
+    usePlayerUnits.setState({ units: { P1: "tank", P2: "tank" } });
+    useMultiplayerStore.setState({ credentials: { roomCode: "AB12CD", playerId: "P1", token: "test" } });
+    game.startMultiplayer(
+      { seed: 42, starterIndex: 0, units: { P1: "soldier", P2: "tank" } },
+      { P1: { xp: 0, levels: {} }, P2: { xp: 0, levels: {} } }, 1,
+    );
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    const ground = tanks[0]!.y;
+    expect(useGameStore.getState().weaponOptions).toEqual(["plasma"]);
+    Reflect.get(game, "receiveMultiplayerEvents").call(game, [
+      { revision: 2, playerId: "P1", type: "hover", payload: { direction: -1 }, createdAt: "" },
+    ]);
+    expect(tanks[0]).toMatchObject({ unit: "soldier", y: ground - 2, moveLeft: 58, hovering: true });
+    Reflect.get(game, "receiveMultiplayerEvents").call(game, [
+      { revision: 3, playerId: "P1", type: "hover", payload: { direction: 0 }, createdAt: "" },
+      { revision: 4, playerId: "P1", type: "fire", payload: { angle: 45, power: 400 }, createdAt: "" },
+    ]);
+    expect(Reflect.get(game, "activeShot")).toBeNull();
+    Reflect.get(game, "stepLanding").call(game);
+    Reflect.get(game, "processPendingMultiplayerEvents").call(game);
+    expect(tanks[0]).toMatchObject({ y: ground, moveLeft: 57.5, hovering: false });
+    expect(Reflect.get(game, "activeShot").weapon.id).toBe("plasma");
+    useMultiplayerStore.getState().leave();
+  });
+
   it("applies both selected colors to the tank and HUD on a new battle", () => {
     usePlayerColors.setState({ colors: { P1: "green", P2: "purple" } });
     vi.stubGlobal("matchMedia", () => ({ matches: false }));
@@ -75,6 +161,7 @@ describe("Game campaign lifecycle", () => {
       body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY,
       chassis: Texture.EMPTY, armor: Texture.WHITE, details: Texture.EMPTY,
     });
+
     game.restart({ seed: 42, starterIndex: 0 });
     const tanks: Tank[] = Reflect.get(game, "tanks");
     const colors = [markingColor("P1", usePlayerColors.getState()), markingColor("P2", usePlayerColors.getState())];
@@ -91,6 +178,30 @@ describe("Game campaign lifecycle", () => {
       expect([body.scale.x, body.scale.y, markings.scale.x, markings.scale.y]).toEqual([1.25, 1.25, 1.25, 1.25]);
       expect([barrel.scale.x, barrel.scale.y]).toEqual([1, 1.25]);
     }
+    vi.unstubAllGlobals();
+  });
+
+  it("renders a selected soldier with the same gameplay and faces the aiming direction", () => {
+    usePlayerUnits.setState({ units: { P1: "soldier", P2: "tank" } });
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    Reflect.set(game, "tankTextures", {
+      body: Texture.EMPTY, barrel: Texture.EMPTY, markings: Texture.EMPTY,
+      chassis: Texture.EMPTY, armor: Texture.WHITE, details: Texture.EMPTY,
+      soldierBody: Texture.WHITE, soldierMarkings: Texture.EMPTY, soldierWeapon: Texture.WHITE,
+    });
+    game.restart({ seed: 42, starterIndex: 0 });
+    const tanks: Tank[] = Reflect.get(game, "tanks");
+    expect(tanks[0]!.stats).toEqual(tanks[1]!.stats);
+    const views = Reflect.get(game, "tankViews");
+    const soldier = views.get("P1");
+    expect(soldier.barrel.texture).toBe(Texture.WHITE);
+    expect(soldier.soldierLayers[0].texture).toBe(Texture.WHITE);
+    expect(soldier.soldierLayers[1].tint).toBe(markingColor("P1", usePlayerColors.getState()));
+    expect(views.get("P2").soldierLayers).toBeUndefined();
+    useGameStore.getState().setAim(135, 400);
+    Reflect.get(game, "draw").call(game, 1);
+    expect(soldier.soldierLayers[0].scale.x).toBe(-1.25);
+    expect(soldier.soldierLayers[1].scale.x).toBe(-1.25);
     vi.unstubAllGlobals();
   });
 
@@ -885,6 +996,8 @@ describe("Game campaign lifecycle", () => {
         incendiary: { core: 0xffedb5, glow: 0xff792e },
         homing: { core: 0xe2ffe8, glow: 0x70edb0 },
         laser: { core: 0xff8296, glow: 0xff2e4d },
+        plasma: { core: 0xe2ffff, glow: 0x29d9ff },
+        pulse: { core: 0xe2ffff, glow: 0x29d9ff },
       };
       expect(stroke).toHaveBeenNthCalledWith(1, expect.objectContaining({ color: colors[weapon].glow }));
       expect(stroke).toHaveBeenNthCalledWith(2, expect.objectContaining({ color: colors[weapon].core }));

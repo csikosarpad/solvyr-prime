@@ -138,6 +138,19 @@ A játék körökre osztott. A soron lévő játékos mozoghat a körönkénti m
 beállíthatja a löveg szögét és erejét, majd tüzelhet. A szél minden körben változik
 és eltéríti a lövedéket. A lövés lezárása után a következő élő játékos jön.
 
+A tank és a harcos külön fegyverkészletet használ. A harcos kezdő plazmagömbje
+ballisztikus, 50 sebzésű, kis robbanással és kráterrel; a 200 XP-ért feloldható
+impulzuspuska azonnal talál, 40-et sebez, és a pajzs utáni sebzés negyede
+megkerüli a páncélt. A tankfegyverek és harcosfegyverek feloldásai elkülönülnek.
+A Robbanófej és Robbanóerő fejlesztés továbbra is csak a tank Standard lövedékét módosítja.
+Online jelenleg mindkét egység csak a saját kezdőfegyverét használhatja.
+
+A harcos a saját körében legfeljebb 60 px magasra emelkedhet; emelkedéskor 1 px
+1 mozgáspontba, ereszkedéskor 0,25 pontba kerül. Felszálláskor és vízszintes
+mozgáskor mindig marad elég keret a leszálláshoz. Az emelkedés elengedésekor
+automatikusan leereszkedik; lövés után is megkezdi a leszállást. A levegőben
+vízszintesen is mozoghat, és a talajon égő tűz nem sebzi. Az AI harcos egyelőre nem lebeg.
+
 A fegyverek fénycsíkja eltér: a standard a pálya alapszínét követi, a páncéltörő
 vékonyabb, kékesfehér, a gyújtólövedék narancsos, a célkövető rakéta zöldes,
 a lézer pedig vörös sugarat húz. A Robbanófej fejlesztése szintenként erősebb
@@ -178,7 +191,8 @@ az eredményképernyőn összesíti.
 | Vezérlő | Művelet |
 | --- | --- |
 | Bal / jobb nyíl | Mozgás; az ellenfél lövedéke alatt kitérés |
-| Fel / le nyíl | Lövési erő ±10; Shift mellett ±50 |
+| Fel / le nyíl | Lövési erő ±10; tanknál Shift mellett ±50 |
+| Shift + fel / le nyíl | A harcos emelkedése / ereszkedése; a felengedésekor automatikus leszállás |
 | Ctrl + bal / jobb nyíl | Szög ±1°; Shift mellett ±5° |
 | Szóköz | Tűz |
 | T | Célzástámogatás / röppálya-előnézet |
@@ -194,7 +208,7 @@ az előre jelzett becsapódás elől. Online meccsen nincs kitérés.
 
 ### Érintésvezérlés
 
-- A HUD ±1° / ±10 erő gombjai és a mozgásgombok nyomva tartva ismételnek.
+- A HUD ±1° / ±10 erő gombjai, mozgásgombjai és a harcos lebegésgombjai nyomva tartva ismételnek.
 - A soron lévő tank közeléből indított húzás iránya a szöget, hossza az erőt állítja.
 - Alacsony, fekvő kijelzőn a vezérlők oldalra rendeződnek.
 - Mobilnézetben kisebb védelmi műszerek és tömörebb vezérlőpanelek hagynak helyet
@@ -271,12 +285,15 @@ A Beállításokban a **Nyelv**, **Hang** és **Játékosok** csoport külön ny
   böngészőnyelv esetén az adott nyelv, egyébként angol indul.
 - **Játékosnevek:** P1/P2 neve legfeljebb 16 karakter. Üres névnél az azonosító marad;
   online a lobbyban megadott név az elsődleges.
-- **Tankok színe:** P1 és P2 külön választhat fő színt a páncélhoz és a löveghez (acélszürke,
-  kék, piros vagy olívazöld) és kiegészítő színt a jelzésekhez. A tankelőnézet
-  azonnal mutatja a változást. Mindkét választás
+- **Karakterek és színek:** P1 és P2 külön választhat tankot vagy harcost, valamint fő
+  színt a páncélhoz és a fegyverhez (acélszürke, kék, piros vagy olívazöld) és
+  kiegészítő színt a jelzésekhez. A harcos saját fegyvereket és lebegést kap;
+  az alapértékek, fejlesztések és találati terület egyébként közösek.
+  Az előnézet azonnal mutatja a változást. A választás
   látszik a következő csatában és a Fejlesztésben; a játékosválasztók továbbra is
   a kiegészítő színt használják. A beállítás helyben mentődik.
-  Online a színek csak a saját böngésző megjelenítését módosítják, nem szinkronizálódnak.
+  Online a karakterválasztás a szoba létrehozásakor, illetve a csatlakozáskor
+  szinkronizálódik; a színek továbbra is csak a saját böngészőre érvényesek.
   Azonos színek is választhatók, ezért a játékosazonosítókat is érdemes figyelni.
 - **Hang:** a fő hang és a Zene, Parancsnok, Effektek csoportok külön-külön
   be/ki kapcsolóval kapcsolhatók; az M billentyű bármely képernyőn némít, és a fő

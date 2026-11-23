@@ -225,7 +225,8 @@ export function parseCampaignContent(value: unknown): CampaignContent {
     const opponent = record(entry.opponent);
     const armor = number(opponent.armor, 0, 100);
     const weapons = opponent.weapons === undefined ? undefined : list(opponent.weapons).map((id) => {
-      if (!isWeaponId(id) || id === "standard") throw new Error("Invalid opponent special weapon");
+      if (!isWeaponId(id) || id === "standard" || id === "plasma" || id === "pulse")
+        throw new Error("Invalid opponent special weapon");
       return id;
     });
     if (weapons) unique(weapons);

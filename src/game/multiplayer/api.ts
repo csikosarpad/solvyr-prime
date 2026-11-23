@@ -1,4 +1,5 @@
 import type { RoomAccess, RoomCredentials, RoomUpdate } from "./protocol";
+import type { UnitAppearance } from "../state/playerUnits";
 
 export class MultiplayerApiError extends Error {
   constructor(
@@ -24,17 +25,17 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return body;
 }
 
-export async function createRoom(baseUrl: string, playerName: string): Promise<RoomAccess> {
+export async function createRoom(baseUrl: string, playerName: string, unit: UnitAppearance = "tank"): Promise<RoomAccess> {
   return request(endpoint(baseUrl, "/rooms"), {
     method: "POST",
-    body: JSON.stringify({ playerName }),
+    body: JSON.stringify({ playerName, unit }),
   });
 }
 
-export async function joinRoom(baseUrl: string, roomCode: string, playerName: string): Promise<RoomAccess> {
+export async function joinRoom(baseUrl: string, roomCode: string, playerName: string, unit: UnitAppearance = "tank"): Promise<RoomAccess> {
   return request(endpoint(baseUrl, `/rooms/${encodeURIComponent(roomCode)}/join`), {
     method: "POST",
-    body: JSON.stringify({ playerName }),
+    body: JSON.stringify({ playerName, unit }),
   });
 }
 

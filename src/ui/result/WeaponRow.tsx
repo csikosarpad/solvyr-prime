@@ -17,7 +17,7 @@ interface WeaponRowProps {
 /** Egy fegyver sora a fegyvertárban: tartós XP-feloldás, a kezdőfegyver mindig elérhető. */
 export function WeaponRow({ playerId, profile, definition, editable, disabled, iconSet }: WeaponRowProps) {
   const t = useT();
-  const owned = unlockedWeapons(profile).includes(definition.id);
+  const owned = unlockedWeapons(profile, definition.unit).includes(definition.id);
   const unaffordable = !owned && profile.xp < definition.cost;
   const purchasable = !disabled && editable && !owned && !unaffordable;
   const name = t(`weapon.${definition.id}.name` as MessageKey);

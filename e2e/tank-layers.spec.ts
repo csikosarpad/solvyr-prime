@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 
 test("tank layers reconstruct the original body", async ({ page }) => {
   const names = ["tank-body.svg", "tank-chassis.svg", "tank-armor.svg", "tank-details.svg"];
-  const svgs = names.map((name) => readFileSync(join(process.cwd(), "src", "game", "assets", name), "utf8"));
+  const svgs = names.map((name) => readFileSync(join(process.cwd(), "src", "game", "assets", "tank", name), "utf8"));
 
   for (const width of [24, 72, 240]) {
     const sources = svgs.map((svg) =>

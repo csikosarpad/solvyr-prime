@@ -13,6 +13,8 @@ import { Workshop } from "./Workshop";
 import { IDBFactory } from "fake-indexeddb";
 import { useVeyloraStore } from "@/game/state/veyloraStore";
 import { DEFAULT_ARMOR_COLORS, DEFAULT_DISTANCE, DEFAULT_LIGHTNESS, DEFAULT_PLAYER_COLORS, usePlayerColors } from "@/game/state/playerColors";
+import { DEFAULT_UNITS, usePlayerUnits } from "@/game/state/playerUnits";
+import soldierBodyUrl from "@/game/assets/soldier/soldier-body.svg?url";
 
 const mockGame = (overrides: Partial<Record<keyof Game, unknown>>) => {
   gameRef.current = { leaveBattle: vi.fn(), ...overrides } as unknown as Game;
@@ -26,6 +28,7 @@ describe("MainMenu", () => {
   beforeEach(() => {
     useGameStore.setState({ screen: "menu", muted: false, matchMode: "skirmish", aiActive: false });
     useMultiplayerStore.getState().leave();
+    usePlayerUnits.setState({ units: { ...DEFAULT_UNITS }, error: null });
     useCampaignStore.getState().reset();
     usePlayerColors.setState({
       colors: { ...DEFAULT_PLAYER_COLORS }, armorColors: { ...DEFAULT_ARMOR_COLORS },
@@ -137,9 +140,22 @@ describe("MainMenu", () => {
     expect(JSON.parse(localStorage.getItem("ballistic-front:player-colors")!)).toMatchObject({
       P1: "green", P2: "purple", armorColors: { P1: "olive", P2: "steel" },
     });
+
     fireEvent.click(screen.getByRole("button", { name: "P1 páncélszíne: Acélszürke" }));
     expect(screen.getByRole("button", { name: "P1 páncélszíne: Acélszürke" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "P1: Zöld" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("a karakter játékosonként választható és az előnézet frissül", () => {
+    render(<MainMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Beállítások" }));
+    openSettingsGroup("Játékosok");
+    fireEvent.click(screen.getByRole("button", { name: "Harcos" }));
+    expect(screen.getByRole("button", { name: "Harcos" })).toHaveAttribute("aria-pressed", "true");
+    expect(document.querySelector(`.player-color-preview image[href="${soldierBodyUrl}"]`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "P2" }));
+    expect(screen.getByRole("button", { name: "Tank" })).toHaveAttribute("aria-pressed", "true");
+    expect(JSON.parse(localStorage.getItem("ballistic-front:player-units")!)).toEqual({ P1: "soldier", P2: "tank" });
   });
 
   it("a semleges palettaszín mindkét játékosnál választható", () => {

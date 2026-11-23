@@ -571,19 +571,19 @@ kell rögzíteni, a ResultScreen combat-dossier stílusával összehangolva.
 
 A megvalósíthatóságot ezek a meglévő felületek támasztják alá:
 
-- [Harctéri test](../../src/game/assets/tank-body.svg) és
-  [löveg](../../src/game/assets/tank-barrel.svg): külön SVG-k, jelenleg 24×12 és 16×4
+- [Harctéri test](../../src/game/assets/tank/tank-body.svg) és
+  [löveg](../../src/game/assets/tank/tank-barrel.svg): külön SVG-k, jelenleg 24×12 és 16×4
   logikai képpont. A [Game](../../src/game/engine/Game.ts) ezeket textúrává tölti,
-  sprite-okként kezeli; a külön [jelölésréteg](../../src/game/assets/tank-markings.svg)
+  sprite-okként kezeli; a külön [jelölésréteg](../../src/game/assets/tank/tank-markings.svg)
   kap játékosszín-tintet, a löveg külön forog. A Nano Banana tankterv alapján
   az SVG-k oldalnézeti, tagolt fémpáncélt, futógörgős lánctalpat és világító
   jelöléseket használnak; a logikai méretek és a forgáspont változatlanok.
   Egyetlen SVG belső csoportjai betöltés után nem animálhatók külön: az önállóan
   mozgó vagy színezhető rétegekhez külön textúra/sprite kell.
 - A testszínezéshez három átlátszó
-  24×12-es réteg: [futómű](../../src/game/assets/tank-chassis.svg),
-  [páncél](../../src/game/assets/tank-armor.svg) és
-  [mechanikus részletek](../../src/game/assets/tank-details.svg). Ebben a sorrendben,
+  24×12-es réteg: [futómű](../../src/game/assets/tank/tank-chassis.svg),
+  [páncél](../../src/game/assets/tank/tank-armor.svg) és
+  [mechanikus részletek](../../src/game/assets/tank/tank-details.svg). Ebben a sorrendben,
   azonos mérettel és illesztéssel egymásra rajzolva adják ki a meglévő testet;
   föléjük kerülhet a meglévő jelölésréteg, mögéjük a külön forgó löveg.
   A Beállítások → Játékosok → Tankok színe alatt játékosonként külön választható

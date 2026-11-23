@@ -129,11 +129,12 @@ Az alábbi útvonalak az API-alap URL-hez képest értendők. Helyi fejlesztésk
 
 ```json
 {
-  "playerName": "Ada"
+  "playerName": "Ada",
+  "unit": "soldier"
 }
 ```
 
-`201 Created` választ ad. A válasz `credentials` objektuma tartalmazza a szobakódot, a játékosazonosítót és a titkos tokent. A `update.session` tartalmazza a seedet és a kezdő játékost. A tokent a backend csak hash formájában tárolja; a kliens ezt a tokent használja a későbbi kérésekhez.
+`201 Created` választ ad. A `unit` értéke `tank` vagy `soldier`; hiányában `tank`. A válasz `credentials` objektuma tartalmazza a szobakódot, a játékosazonosítót és a titkos tokent. A `update.session` tartalmazza a seedet, a kezdő játékost és a kiválasztott egységeket. A tokent a backend csak hash formájában tárolja; a kliens ezt a tokent használja a későbbi kérésekhez.
 
 ### Csatlakozás
 
@@ -141,7 +142,8 @@ Az alábbi útvonalak az API-alap URL-hez képest értendők. Helyi fejlesztésk
 
 ```json
 {
-  "playerName": "Grace"
+  "playerName": "Grace",
+  "unit": "tank"
 }
 ```
 
@@ -186,7 +188,7 @@ Státuszok:
 
 Engedélyezett események és állapotok:
 
-- `move`, `fire` csak `playing` állapotban írható.
+- `move`, `hover`, `fire` csak `playing` állapotban írható. A `hover` iránya `-1` (fel), `1` (le) vagy `0` (automatikus leszállás).
 - `upgrade_purchased` csak `finished` állapotban írható; az esemény a hitelesített játékoshoz tartozik.
 - `match_started` `ready` vagy `finished` állapotból írható, kizárólag a szoba hostja (`P1`) által.
 - `match_finished` csak `playing` állapotban írható, kizárólag a host által.

@@ -73,6 +73,12 @@ export function Hud() {
 
   // Bal/jobb: mozgás, Ctrl+bal/jobb: szög (Shift: x5), fel/le: erő (Shift: x5), szóköz: tűz.
   useEffect(() => {
+    let ascending = false;
+    const releaseHover = () => {
+      if (!ascending) return;
+      ascending = false;
+      gameRef.current?.land();
+    };
     const onKey = (e: KeyboardEvent) => {
       if (exitDestination) return;
       if (e.key === "Escape" && !online && !e.repeat) {
@@ -88,6 +94,14 @@ export function Hud() {
         return;
       }
       if (phase !== "aiming" || !canControl) return;
+      const current = useGameStore.getState().tanks.find((tank) => tank.id === useGameStore.getState().currentId);
+      if (current?.unit === "soldier" && e.shiftKey && !e.ctrlKey &&
+        (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        if (e.key === "ArrowUp") ascending = true;
+        gameRef.current?.hover(e.key === "ArrowUp" ? -1 : 1);
+        e.preventDefault();
+        return;
+      }
       // 1–5: fegyverválasztás a feloldott készletből.
       const digit = Number(e.key);
       if (Number.isInteger(digit) && digit >= 1 && digit <= 9) {
@@ -129,8 +143,18 @@ export function Hud() {
       // Megakadályozza, hogy a fókuszban lévő csúszó vagy az oldal is reagáljon.
       e.preventDefault();
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp" || e.key === "Shift") releaseHover();
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", releaseHover);
+    return () => {
+      releaseHover();
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", releaseHover);
+    };
   }, [exitDestination, online]);
 
   return (
@@ -338,6 +362,21 @@ export function Hud() {
             </span>
             <span>{t("hud.moveRight")}</span>
           </RepeatButton>
+          {me?.unit === "soldier" && (
+            <>
+              <RepeatButton aria-label={t("hud.hoverUp")} title={t("hud.hoverUp")}
+                disabled={locked} intervalMs={140} onPress={() => gameRef.current?.hover(-1)}
+                onRelease={() => gameRef.current?.land()}>
+                <span className="hud-action-icon" aria-hidden="true">▲</span>
+                <span>{t("hud.hoverUp")}</span>
+              </RepeatButton>
+              <RepeatButton aria-label={t("hud.hoverDown")} title={t("hud.hoverDown")}
+                disabled={locked} intervalMs={140} onPress={() => gameRef.current?.hover(1)}>
+                <span className="hud-action-icon" aria-hidden="true">▼</span>
+                <span>{t("hud.hoverDown")}</span>
+              </RepeatButton>
+            </>
+          )}
           <button
             aria-pressed={previewActive}
             disabled={locked || previewActive || !previewAvailable}

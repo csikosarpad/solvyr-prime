@@ -5,10 +5,12 @@ import { Shop } from "../Shop";
 import { UnitPanel } from "./UnitPanel";
 import { getUnitPresentation } from "./unitPresentation";
 import { getUpgradePresentation } from "./upgradePresentation";
-import tankBodyUrl from "@/game/assets/tank-body.svg?url";
-import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
-import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
+import tankBodyUrl from "@/game/assets/tank/tank-body.svg?url";
+import tankBarrelUrl from "@/game/assets/tank/tank-barrel.svg?url";
+import tankMarkingsUrl from "@/game/assets/tank/tank-markings.svg?url";
 import { DEFAULT_THEME } from "@/game/theme";
+import { DEFAULT_UNITS, usePlayerUnits } from "@/game/state/playerUnits";
+import soldierBodyUrl from "@/game/assets/soldier/soldier-body.svg?url";
 
 describe("result presentation contract", () => {
   it("ground theme tank presentationt ad a P1/P2 accentet is megtartja", () => {
@@ -64,11 +66,22 @@ describe("result presentation contract", () => {
 
 describe("UnitPanel and Shop presentation contract", () => {
   beforeEach(() => {
+    usePlayerUnits.setState({ units: { ...DEFAULT_UNITS }, error: null });
     useGameStore.setState({
       profiles: {
         P1: { xp: 240, levels: { armor: 1 } },
       },
     });
+
+  });
+
+  it("shows each player's selected appearance in the workshop", () => {
+    usePlayerUnits.setState({ units: { P1: "soldier", P2: "tank" } });
+    useGameStore.setState({ profiles: { P1: { xp: 0, levels: {} }, P2: { xp: 0, levels: {} } } });
+    const { container } = render(<Shop />);
+    expect(screen.getByText("Harcos")).toBeInTheDocument();
+    expect(screen.getByText("Tank")).toBeInTheDocument();
+    expect(container.querySelector(`image[href="${soldierBodyUrl}"]`)).toBeInTheDocument();
   });
 
   it("a space presentation ugyanazt a panel és upgrade layoutot használja", () => {

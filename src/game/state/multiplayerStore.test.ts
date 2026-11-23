@@ -22,6 +22,39 @@ afterEach(() => {
 });
 
 describe("multiplayer store", () => {
+  it("serializes repeated hover commands using the latest revision", async () => {
+    const session = { ...waitingRoom.update.session, status: "playing" as const };
+    useMultiplayerStore.setState({ credentials: waitingRoom.credentials, session, events: [] });
+    let release: ((response: Response) => void) | undefined;
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => { release = resolve; }))
+      .mockResolvedValueOnce(Response.json({ session: { ...session, revision: 2 }, events: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    const first = useMultiplayerStore.getState().publish("hover", { direction: -1 });
+    const second = useMultiplayerStore.getState().publish("hover", { direction: -1 });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    release!(Response.json({ session: { ...session, revision: 1 }, events: [] }));
+    await Promise.all([first, second]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body).expectedRevision).toBe(0);
+    expect(JSON.parse(fetchMock.mock.calls[1]![1].body).expectedRevision).toBe(1);
+  });
+
+  it("does not roll back the room revision when an older poll finishes after a command", async () => {
+    const session = { ...waitingRoom.update.session, status: "playing" as const };
+    useMultiplayerStore.setState({ credentials: waitingRoom.credentials, session, events: [] });
+    let release: ((response: Response) => void) | undefined;
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => { release = resolve; }))
+      .mockResolvedValueOnce(Response.json({ session: { ...session, revision: 1 }, events: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    const poll = useMultiplayerStore.getState().refresh();
+    await useMultiplayerStore.getState().publish("hover", { direction: -1 });
+    release!(Response.json({ session, events: [] }));
+    await poll;
+    expect(useMultiplayerStore.getState().session?.revision).toBe(1);
+  });
+
   it("stores room credentials for this browser session and merges polled events", async () => {
     const readyUpdate = {
       session: {

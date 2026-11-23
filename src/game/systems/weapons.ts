@@ -8,6 +8,7 @@ import type { Profile } from "./upgrades";
 import { tankContains, type Tank } from "../entities/tank";
 import type { Vec2 } from "../physics/ballistics";
 import type { TerrainMask } from "../terrain/mask";
+import type { UnitAppearance } from "../state/playerUnits";
 
 export interface ShotEffect {
   /** Egységsebzés a középpontban. */
@@ -92,16 +93,16 @@ export function steerHoming(
 }
 
 /** A játékos használható fegyverei: a kezdő standard és az érvényes feloldások, katalógus-sorrendben. */
-export function unlockedWeapons(profile: Pick<Profile, "weapons"> | undefined): WeaponId[] {
+export function unlockedWeapons(profile: Pick<Profile, "weapons"> | undefined, unit: UnitAppearance = "tank"): WeaponId[] {
   const owned = new Set(profile?.weapons?.filter(isWeaponId) ?? []);
-  return WEAPONS.filter((weapon) => weapon.cost === 0 || owned.has(weapon.id)).map((weapon) => weapon.id);
+  return WEAPONS.filter((weapon) => weapon.unit === unit && (weapon.cost === 0 || owned.has(weapon.id))).map((weapon) => weapon.id);
 }
 
 /** Új profilt ad vissza, vagy null-t, ha ismeretlen/már feloldott fegyver vagy kevés az XP. */
-export function buyWeapon(profile: Profile, id: string): Profile | null {
+export function buyWeapon(profile: Profile, id: string, unit: UnitAppearance = "tank"): Profile | null {
   if (!isWeaponId(id)) return null;
   const weapon = weaponById(id);
-  if (weapon.cost === 0 || unlockedWeapons(profile).includes(id)) return null;
+  if (weapon.unit !== unit || weapon.cost === 0 || unlockedWeapons(profile, unit).includes(id)) return null;
   if (profile.xp < weapon.cost) return null;
   return { ...profile, xp: profile.xp - weapon.cost, weapons: [...(profile.weapons ?? []), id] };
 }

@@ -11,7 +11,7 @@ import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import { cssPlayerColor, DEFAULT_ARMOR_COLORS, DEFAULT_PLAYER_COLORS, markingColor, playerAccent, usePlayerColors } from "@/game/state/playerColors";
-import { tankArmorLayers } from "@/game/assets/tankArmorLayers";
+import { tankArmorLayers } from "@/game/assets/tank/tankArmorLayers";
 
 vi.mock("./result/ResultDecorCanvas", () => ({ ResultDecorCanvas: () => null }));
 vi.mock("./CampaignStarfieldCanvas", () => ({ CampaignStarfieldCanvas: () => null }));

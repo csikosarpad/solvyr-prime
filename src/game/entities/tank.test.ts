@@ -1,11 +1,66 @@
 import { describe, expect, it } from "vitest";
 import { computeStats } from "../systems/upgrades";
 import { TerrainMask } from "../terrain/mask";
-import { applyDamage, createTank, explosionDamage, moveTank, MOVE_BUDGET, regenTankShield, settleTank } from "./tank";
+import { applyDamage, createTank, explosionDamage, hoverTank, moveTank, MOVE_BUDGET, regenTankShield, settleTank } from "./tank";
 
 const flat = () => TerrainMask.fromHeightmap(new Float32Array(200).fill(100), 200);
 
 describe("tank", () => {
+  it("only a soldier can hover up to 60px and descend for one quarter of the cost", () => {
+    const mask = flat();
+    const soldier = createTank("a", 50, 0, 45, undefined, "soldier");
+    const tank = createTank("b", 50, 0, 45);
+    settleTank(soldier, mask);
+    settleTank(tank, mask);
+    expect(hoverTank(tank, -1, mask)).toBe(false);
+    soldier.moveLeft = 75;
+    for (let i = 0; i < 30; i++) expect(hoverTank(soldier, -1, mask)).toBe(true);
+    expect(soldier).toMatchObject({ y: 40, moveLeft: 15, hovering: true });
+    expect(hoverTank(soldier, -1, mask)).toBe(false);
+    soldier.moveLeft = 100;
+    expect(hoverTank(soldier, -1, mask)).toBe(false);
+    expect(moveTank(soldier, 1, mask)).toBe(true);
+    expect(soldier.y).toBe(40);
+    settleTank(soldier, mask);
+    expect(soldier.y).toBe(40);
+    for (let i = 0; i < 30; i++) expect(hoverTank(soldier, 1, mask)).toBe(true);
+    expect(soldier).toMatchObject({ y: 100, moveLeft: 83, hovering: false });
+    expect(hoverTank(soldier, 1, mask)).toBe(false);
+  });
+
+  it("reserves enough movement for landing, including when moving over lower ground", () => {
+    const heights = new Float32Array(200).fill(100);
+    heights.fill(112, 52);
+    const mask = TerrainMask.fromHeightmap(heights, 200);
+    const soldier = createTank("a", 50, 0, 45, undefined, "soldier");
+    settleTank(soldier, mask);
+    expect(hoverTank(soldier, -1, mask)).toBe(true);
+    soldier.moveLeft = 3;
+    expect(moveTank(soldier, 1, mask)).toBe(false);
+    expect(hoverTank(soldier, 1, mask)).toBe(true);
+    expect(soldier).toMatchObject({ y: 100, moveLeft: 2.5, hovering: false });
+
+    soldier.moveLeft = 60;
+    for (let i = 0; i < 30; i++) hoverTank(soldier, -1, mask);
+    expect(soldier).toMatchObject({ y: 52, moveLeft: 12, hovering: true });
+    expect(moveTank(soldier, -1, mask)).toBe(false);
+    for (let i = 0; i < 30; i++) hoverTank(soldier, 1, mask);
+    expect(soldier).toMatchObject({ y: 100, moveLeft: 0, hovering: false });
+  });
+
+  it("blocks hovering movement through terrain and beyond the height limit over a drop", () => {
+    const hm = new Float32Array(200).fill(100);
+    hm.fill(70, 52, 70);
+    hm.fill(180, 70);
+    const mask = TerrainMask.fromHeightmap(hm, 200);
+    const soldier = createTank("a", 50, 0, 45, undefined, "soldier");
+    settleTank(soldier, mask);
+    expect(hoverTank(soldier, -1, mask)).toBe(true);
+    expect(moveTank(soldier, 1, mask)).toBe(false);
+    soldier.x = 68;
+    expect(moveTank(soldier, 1, mask)).toBe(false);
+  });
+
   it("a talajra igazodik", () => {
     const t = createTank("a", 50, 0, 45);
     settleTank(t, flat());

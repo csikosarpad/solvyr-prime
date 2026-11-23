@@ -1,10 +1,12 @@
 import type { UnitAccent } from "./result.types";
 import type { WeaponId } from "@/game/data/weapons";
-import standardWeaponIcon from "@/game/assets/weapons/standard.webp?url";
-import apWeaponIcon from "@/game/assets/weapons/ap.webp?url";
-import incendiaryWeaponIcon from "@/game/assets/weapons/incendiary.webp?url";
-import laserWeaponIcon from "@/game/assets/weapons/laser.webp?url";
-import homingWeaponIcon from "@/game/assets/weapons/homing.webp?url";
+import standardWeaponIcon from "@/game/assets/tank/weapons/standard.webp?url";
+import apWeaponIcon from "@/game/assets/tank/weapons/ap.webp?url";
+import incendiaryWeaponIcon from "@/game/assets/tank/weapons/incendiary.webp?url";
+import laserWeaponIcon from "@/game/assets/tank/weapons/laser.webp?url";
+import homingWeaponIcon from "@/game/assets/tank/weapons/homing.webp?url";
+import plasmaWeaponIcon from "@/game/assets/soldier/plasma.svg?url";
+import pulseWeaponIcon from "@/game/assets/soldier/pulse.svg?url";
 
 export interface UpgradePresentation {
   glyph: string;
@@ -32,6 +34,8 @@ export const ICON_PRESENTATIONS: Record<string, UpgradePresentation> = {
   incendiary: { ...DEFAULT_UPGRADE_PRESENTATION, asset: incendiaryWeaponIcon },
   laser: { ...DEFAULT_UPGRADE_PRESENTATION, asset: laserWeaponIcon },
   homing: { ...DEFAULT_UPGRADE_PRESENTATION, asset: homingWeaponIcon },
+  plasma: { ...DEFAULT_UPGRADE_PRESENTATION, asset: plasmaWeaponIcon },
+  pulse: { ...DEFAULT_UPGRADE_PRESENTATION, asset: pulseWeaponIcon },
 };
 
 export const UPGRADE_PRESENTATIONS = ICON_PRESENTATIONS;

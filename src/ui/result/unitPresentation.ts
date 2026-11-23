@@ -1,10 +1,14 @@
 import type { UnitPresentation } from "./result.types";
 import { DEFAULT_THEME } from "@/game/theme";
 import { ARMOR_COLORS, type ArmorColor } from "@/game/state/playerColors";
-import { tankArmorLayers } from "@/game/assets/tankArmorLayers";
-import tankBodyUrl from "@/game/assets/tank-body.svg?url";
-import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
-import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
+import { tankArmorLayers } from "@/game/assets/tank/tankArmorLayers";
+import tankBodyUrl from "@/game/assets/tank/tank-body.svg?url";
+import tankBarrelUrl from "@/game/assets/tank/tank-barrel.svg?url";
+import tankMarkingsUrl from "@/game/assets/tank/tank-markings.svg?url";
+import soldierBodyUrl from "@/game/assets/soldier/soldier-body.svg?url";
+import soldierWeaponUrl from "@/game/assets/soldier/soldier-weapon.svg?url";
+import soldierMarkingsUrl from "@/game/assets/soldier/soldier-markings.svg?url";
+import type { UnitAppearance } from "@/game/state/playerUnits";
 
 const GROUND_PRESENTATION: UnitPresentation = {
   domain: "ground",
@@ -50,9 +54,22 @@ const SPACE_PRESENTATIONS: Record<string, UnitPresentation> = {
 
 export function getUnitPresentation(
   id: string, domain: UnitPresentation["domain"] = "ground", color?: number, armorColor: ArmorColor = "steel", tint?: number,
+  unit: UnitAppearance = "tank",
 ): UnitPresentation {
   const presentations = domain === "space" ? SPACE_PRESENTATIONS : PRESENTATIONS;
   const presentation = presentations[id] ?? (domain === "space" ? SPACE_PRESENTATION : GROUND_PRESENTATION);
+  if (domain === "ground" && unit === "soldier") {
+    return {
+      ...presentation,
+      displayName: "Soldier",
+      silhouetteAsset: soldierBodyUrl,
+      secondaryAsset: soldierWeaponUrl,
+      accentAsset: soldierMarkingsUrl,
+      illustrationLayout: "soldier",
+      primaryColor: color ?? presentation.primaryColor,
+      paintTint: tint ?? ARMOR_COLORS[armorColor].tint,
+    };
+  }
   if (presentation.illustrationLayout === "body-barrel" && (armorColor !== "steel" || tint !== undefined)) {
     return {
       ...presentation,

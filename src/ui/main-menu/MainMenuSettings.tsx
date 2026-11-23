@@ -11,6 +11,7 @@ import {
   PLAYER_COLORS, PLAYER_COLOR_OPTIONS, usePlayerColors, type ColorPreferences,
 } from "@/game/state/playerColors";
 import type { LocalPlayerId } from "@/game/state/playerId";
+import { usePlayerUnits } from "@/game/state/playerUnits";
 import { useT, type MessageKey } from "@/i18n";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { gameRef } from "../gameRef";
@@ -130,6 +131,7 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
   const names = usePlayerNamesStore((s) => s.names);
   const setName = usePlayerNamesStore((s) => s.setName);
   const colorSettings = usePlayerColors();
+  const { units, setUnit, error: unitError } = usePlayerUnits();
   const [colorPlayer, setColorPlayer] = useState<LocalPlayerId>("P1");
   const { colors, armorColors, lightness, distances, setColor, setArmorColor, resetPlayer, resetColors, restoreColors, error: colorError } = colorSettings;
   const [colorUndo, setColorUndo] = useState<ColorPreferences | null>(null);
@@ -282,11 +284,19 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
               </div>
               <fieldset className="player-color-palette" key={colorPlayer}>
                 <legend>{t("colors.player", { id: colorPlayer })}</legend>
+                <span>{t("units.title")}</span>
+                <div className="audio-channel-buttons" role="group" aria-label={t("units.player", { id: colorPlayer })}>
+                  {(["tank", "soldier"] as const).map((unit) => (
+                    <button key={unit} type="button" className="btn secondary" aria-pressed={units[colorPlayer] === unit}
+                      onClick={() => setUnit(colorPlayer, unit)}>{t(`units.${unit}`)}</button>
+                  ))}
+                </div>
+                <small>{t("units.hint")}</small>
                 <button type="button" className="color-reset" aria-label={t("colors.resetPlayer", { id: colorPlayer })}
                   disabled={playerDefault(colorPlayer)} onClick={() => resetWithUndo(() => resetPlayer(colorPlayer))}>↺</button>
                 <div className="player-color-preview">
                   <UnitIllustration
-                    presentation={getUnitPresentation(colorPlayer, "ground", markingColor(colorPlayer, colorSettings), armorColors[colorPlayer], armorTint(colorPlayer, colorSettings))}
+                    presentation={getUnitPresentation(colorPlayer, "ground", markingColor(colorPlayer, colorSettings), armorColors[colorPlayer], armorTint(colorPlayer, colorSettings), units[colorPlayer])}
                   />
                 </div>
                 <span>{t("colors.armor")}</span>
@@ -340,6 +350,7 @@ export function MainMenuSettings({ onBack }: MainMenuSettingsProps) {
           </div>
         </details>
         {colorError && <small className="settings-error" role="alert">{t(colorError)}</small>}
+        {unitError && <small className="settings-error" role="alert">{t(unitError)}</small>}
         <details className="settings-group">
           <summary>{t("menu.gameplay")}<span className="settings-group-indicator" aria-hidden="true" /></summary>
           <div className="settings-group-content">

@@ -18,10 +18,12 @@ export function UnitIllustration({ presentation, facing = "right" }: UnitIllustr
   const tintId = useId();
   if (!presentation.silhouetteAsset) return null;
 
-  if (presentation.illustrationLayout === "body-barrel") {
+  if (presentation.illustrationLayout === "body-barrel" || presentation.illustrationLayout === "soldier") {
     const paint = presentation.paintedBody;
+    const soldier = presentation.illustrationLayout === "soldier";
+    const paintTint = soldier ? presentation.paintTint : paint?.tint;
     const paintTintId = `${tintId}-armor`;
-    const paintFilter = paint ? `url(#${paintTintId})` : undefined;
+    const paintFilter = paintTint !== undefined ? `url(#${paintTintId})` : undefined;
     return (
       <div
         className={`unit-illustration unit-illustration-platform accent-${presentation.accent} facing-${facing}`}
@@ -35,9 +37,9 @@ export function UnitIllustration({ presentation, facing = "right" }: UnitIllustr
                 values={tintMatrix(tankTint(presentation.primaryColor))}
               />
             </filter>
-            {paint && (
+            {paintTint !== undefined && (
               <filter id={paintTintId} colorInterpolationFilters="sRGB">
-                <feColorMatrix type="matrix" values={armorColorMatrix(paint.tint).join(" ")} />
+                <feColorMatrix type="matrix" values={armorColorMatrix(paintTint).join(" ")} />
               </filter>
             )}
           </defs>
@@ -45,14 +47,16 @@ export function UnitIllustration({ presentation, facing = "right" }: UnitIllustr
             <image
               href={presentation.secondaryAsset}
               x="16"
-              y="4"
+              y={soldier ? 8 : 4}
               width="16"
               height="4"
-              transform="rotate(-20 16 6)"
+              transform={soldier ? "rotate(-20 16 10)" : "rotate(-20 16 6)"}
               filter={paintFilter}
             />
           )}
-          {paint ? (
+          {soldier ? (
+            <image href={presentation.silhouetteAsset} x="4" y="0" width="24" height="16" preserveAspectRatio="none" filter={paintFilter} />
+          ) : paint ? (
             <>
               <image href={paint.chassis} x="4" y="4" width="24" height="12" />
               <image href={paint.armor} x="4" y="4" width="24" height="12" filter={paintFilter} />
@@ -62,7 +66,8 @@ export function UnitIllustration({ presentation, facing = "right" }: UnitIllustr
             <image href={presentation.silhouetteAsset} x="4" y="4" width="24" height="12" />
           )}
           {presentation.accentAsset && (
-            <image href={presentation.accentAsset} x="4" y="4" width="24" height="12" filter={`url(#${tintId})`} />
+            <image href={presentation.accentAsset} x="4" y={soldier ? 0 : 4} width="24" height={soldier ? 16 : 12}
+              preserveAspectRatio={soldier ? "none" : undefined} filter={`url(#${tintId})`} />
           )}
         </svg>
       </div>

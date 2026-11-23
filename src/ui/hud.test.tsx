@@ -28,6 +28,36 @@ describe("Hud billentyűk", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it("a harcos az emelkedés elengedésekor leszáll, az erő nem változik", () => {
+    const hover = vi.fn();
+    const land = vi.fn();
+    gameRef.current = { hover, land } as unknown as Game;
+    act(() => useGameStore.setState({
+      tanks: [{ id: "P1", unit: "soldier", hp: 100, maxHp: 100, shield: 0, maxShield: 0,
+        armor: 0, maxArmor: 0, moveLeft: 60, color: 0xffffff }],
+    }));
+    fireEvent.keyDown(window, { key: "ArrowUp", shiftKey: true });
+    fireEvent.keyDown(window, { key: "ArrowDown", shiftKey: true });
+    expect(hover.mock.calls).toEqual([[-1], [1]]);
+    expect(power()).toBe(400);
+    fireEvent.keyUp(window, { key: "Shift" });
+    expect(land).toHaveBeenCalledTimes(1);
+    fireEvent.keyUp(window, { key: "ArrowUp" });
+    expect(land).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Emelkedés" }));
+    expect(hover).toHaveBeenLastCalledWith(-1);
+    expect(land).toHaveBeenCalledTimes(2);
+    const button = screen.getByRole("button", { name: "Emelkedés" });
+    fireEvent.pointerDown(button, { button: 0 });
+    fireEvent.pointerUp(button);
+    expect(land).toHaveBeenCalledTimes(3);
+    fireEvent.keyDown(window, { key: "ArrowUp", shiftKey: true });
+    fireEvent.blur(window);
+    expect(land).toHaveBeenCalledTimes(4);
+    fireEvent.keyDown(window, { key: "ArrowUp" });
+    expect(power()).toBe(410);
+  });
+
   it.each(["skirmish", "campaign"] as const)("Escape megnyitja a főmenü megerősítését lövés közben is: %s", (matchMode) => {
     const leaveBattle = vi.fn();
     gameRef.current = { leaveBattle } as unknown as Game;

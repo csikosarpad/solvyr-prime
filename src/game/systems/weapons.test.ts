@@ -70,6 +70,17 @@ describe("homing guidance", () => {
 });
 
 describe("weapon unlocks", () => {
+  it("keeps tank and soldier inventories and purchases separate", () => {
+    const profile = { xp: 500, levels: {}, weapons: ["ap", "pulse"] };
+    expect(unlockedWeapons(profile, "tank")).toEqual(["standard", "ap"]);
+    expect(unlockedWeapons(profile, "soldier")).toEqual(["plasma", "pulse"]);
+    expect(buyWeapon(profile, "pulse", "tank")).toBeNull();
+    expect(buyWeapon(profile, "ap", "soldier")).toBeNull();
+    expect(buyWeapon({ xp: 500, levels: {} }, "pulse", "soldier")).toMatchObject({
+      xp: 300, weapons: ["pulse"],
+    });
+  });
+
   it("starts with the free standard and keeps only valid saved unlocks", () => {
     expect(unlockedWeapons(undefined)).toEqual(["standard"]);
     expect(unlockedWeapons({ weapons: ["laser", "bogus", "ap"] })).toEqual(["standard", "ap", "laser"]);
@@ -85,8 +96,8 @@ describe("weapon unlocks", () => {
     expect(buyWeapon({ xp: 10, levels: {} }, "laser")).toBeNull();
   });
 
-  it("every catalog weapon has a stable id and the starter pack is exactly one free weapon", () => {
-    expect(WEAPONS.filter((weapon) => weapon.cost === 0).map((weapon) => weapon.id)).toEqual(["standard"]);
+  it("every catalog weapon has a stable id and each unit has one free weapon", () => {
+    expect(WEAPONS.filter((weapon) => weapon.cost === 0).map((weapon) => weapon.id)).toEqual(["standard", "plasma"]);
     expect(new Set(WEAPONS.map((weapon) => weapon.id)).size).toBe(WEAPONS.length);
   });
 });

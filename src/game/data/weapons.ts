@@ -1,12 +1,14 @@
 /**
  * Cserélhető fegyvertár: stabil ID-jű, adatvezérelt katalógus.
  * A megjelenített szövegek kulcsai: `weapon.<id>.name` és `weapon.<id>.desc` (lásd src/i18n).
- * A harci eszköztől (tank, később űrhajó vagy gyalogos) független; a lövés feloldása
- * a közös `systems/weapons.ts` szabályokból származik (Game, előnézet és AI ugyanazt használja).
+ * A fegyvereket egységtípusonként különíti el; a lövés feloldása a közös
+ * `systems/weapons.ts` szabályokból származik.
  */
 
-export type WeaponId = "standard" | "ap" | "incendiary" | "laser" | "homing";
-export type SpecialWeaponId = Exclude<WeaponId, "standard">;
+import type { UnitAppearance } from "../state/playerUnits";
+
+export type WeaponId = "standard" | "ap" | "incendiary" | "laser" | "homing" | "plasma" | "pulse";
+export type SpecialWeaponId = Exclude<WeaponId, "standard" | "plasma" | "pulse">;
 
 export interface BurnEffect {
   /** Az égő zóna sugara a becsapódás körül (px). */
@@ -26,6 +28,7 @@ export interface HomingGuidance {
 
 export interface WeaponDefinition {
   id: WeaponId;
+  unit: UnitAppearance;
   /** Ballisztikus lövedék vagy azonnali, egyenes vonalú (hitscan) találat. */
   kind: "ballistic" | "hitscan";
   /** XP-feloldás ára; 0 = kezdőfegyver, mindig elérhető. */
@@ -48,6 +51,7 @@ export interface WeaponDefinition {
 export const WEAPONS: readonly WeaponDefinition[] = [
   {
     id: "standard",
+    unit: "tank",
     kind: "ballistic",
     cost: 0,
     baseDamage: 60,
@@ -58,6 +62,7 @@ export const WEAPONS: readonly WeaponDefinition[] = [
   },
   {
     id: "ap",
+    unit: "tank",
     kind: "ballistic",
     cost: 150,
     baseDamage: 70,
@@ -68,6 +73,7 @@ export const WEAPONS: readonly WeaponDefinition[] = [
   },
   {
     id: "incendiary",
+    unit: "tank",
     kind: "ballistic",
     cost: 180,
     baseDamage: 40,
@@ -79,6 +85,7 @@ export const WEAPONS: readonly WeaponDefinition[] = [
   },
   {
     id: "laser",
+    unit: "tank",
     kind: "hitscan",
     cost: 250,
     baseDamage: 34,
@@ -89,6 +96,7 @@ export const WEAPONS: readonly WeaponDefinition[] = [
   },
   {
     id: "homing",
+    unit: "tank",
     kind: "ballistic",
     cost: 300,
     baseDamage: 48,
@@ -97,6 +105,28 @@ export const WEAPONS: readonly WeaponDefinition[] = [
     usesTankStats: false,
     armorPierce: 0,
     homing: { acquireRadius: 220, maxTurnRad: 0.03 },
+  },
+  {
+    id: "plasma",
+    unit: "soldier",
+    kind: "ballistic",
+    cost: 0,
+    baseDamage: 50,
+    blastRadius: 20,
+    carveRadius: 12,
+    usesTankStats: false,
+    armorPierce: 0,
+  },
+  {
+    id: "pulse",
+    unit: "soldier",
+    kind: "hitscan",
+    cost: 200,
+    baseDamage: 40,
+    blastRadius: 0,
+    carveRadius: 4,
+    usesTankStats: false,
+    armorPierce: 0.25,
   },
 ];
 

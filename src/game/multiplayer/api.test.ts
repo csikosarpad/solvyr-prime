@@ -28,7 +28,7 @@ describe("multiplayer API", () => {
       "https://game.example/api/rooms",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ playerName: "Ada" }),
+        body: JSON.stringify({ playerName: "Ada", unit: "tank" }),
       }),
     );
   });
@@ -61,10 +61,11 @@ describe("multiplayer API", () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json(access));
     vi.stubGlobal("fetch", fetchMock);
 
-    await joinRoom("/api", "AB12CD", "Grace");
+    await joinRoom("/api", "AB12CD", "Grace", "soldier");
     await appendRoomEvent("/api", access.credentials, 3, "move", { direction: -1 });
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/rooms/AB12CD/join");
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ body: JSON.stringify({ playerName: "Grace", unit: "soldier" }) });
     expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
       method: "POST",
       headers: { Authorization: "Bearer secret" },

@@ -12,8 +12,9 @@ export interface UnitPresentation {
   secondaryAsset?: string;
   detailAsset?: string;
   accentAsset?: string;
-  illustrationLayout?: "body-barrel";
+  illustrationLayout?: "body-barrel" | "soldier";
   paintedBody?: { chassis: string; armor: string; details: string; tint: number };
+  paintTint?: number;
   primaryColor: number;
   secondaryColor: number;
   iconSet: string;

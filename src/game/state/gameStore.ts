@@ -8,6 +8,7 @@ import type { CampaignMission } from "../data/campaignContent";
 import type { MessageKey } from "@/i18n";
 import type { LocalPlayerId } from "./playerId";
 import type { WeaponId } from "../data/weapons";
+import type { UnitAppearance } from "./playerUnits";
 
 export type Screen = "menu" | "playing" | "campaignMap" | "veylora" | "workshop";
 export type WorkshopOrigin = Exclude<Screen, "workshop">;
@@ -27,6 +28,7 @@ function readMuted(): boolean {
 
 export interface TankView {
   id: string;
+  unit?: UnitAppearance;
   hp: number;
   maxHp: number;
   /** Az erőtér pajzs aktuális és maximális értéke; maximum 0 esetén nincs pajzs. */

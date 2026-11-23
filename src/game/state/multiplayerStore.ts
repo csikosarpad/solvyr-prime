@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { t } from "../../i18n";
 import { appendRoomEvent, createRoom, fetchRoom, joinRoom, MultiplayerApiError } from "../multiplayer/api";
 import type { RoomCredentials, RoomEvent, RoomSession } from "../multiplayer/protocol";
+import { usePlayerUnits } from "./playerUnits";
 
 const STORAGE_KEY = "ballistic-front:multiplayer-session";
 const API_URL = import.meta.env.VITE_MULTIPLAYER_API_URL || "/api";
@@ -49,6 +50,7 @@ function mergeEvents(current: RoomEvent[], incoming: RoomEvent[]): RoomEvent[] {
 }
 
 const saved = loadSession();
+const publishQueues = new WeakMap<RoomCredentials, Promise<void>>();
 
 export const useMultiplayerStore = create<MultiplayerState>((set, get) => ({
   credentials: saved?.credentials ?? null,
@@ -59,7 +61,7 @@ export const useMultiplayerStore = create<MultiplayerState>((set, get) => ({
   create: async (playerName) => {
     set({ busy: true, error: null });
     try {
-      const access = await createRoom(API_URL, playerName);
+      const access = await createRoom(API_URL, playerName, usePlayerUnits.getState().units.P1);
       saveSession(access.credentials, access.update.session);
       set({ credentials: access.credentials, session: access.update.session, events: access.update.events });
     } catch (error) {
@@ -71,7 +73,7 @@ export const useMultiplayerStore = create<MultiplayerState>((set, get) => ({
   join: async (roomCode, playerName) => {
     set({ busy: true, error: null });
     try {
-      const access = await joinRoom(API_URL, roomCode.trim().toUpperCase(), playerName);
+      const access = await joinRoom(API_URL, roomCode.trim().toUpperCase(), playerName, usePlayerUnits.getState().units.P2);
       saveSession(access.credentials, access.update.session);
       set({ credentials: access.credentials, session: access.update.session, events: access.update.events });
     } catch (error) {
@@ -88,8 +90,9 @@ export const useMultiplayerStore = create<MultiplayerState>((set, get) => ({
       const current = get();
       if (current.credentials !== credentials) return;
       const events = mergeEvents(current.events, update.events);
-      saveSession(credentials, update.session);
-      set({ session: update.session, events, error: null });
+      const latest = current.session && current.session.revision > update.session.revision ? current.session : update.session;
+      saveSession(credentials, latest);
+      set({ session: latest, events, error: null });
     } catch (error) {
       if (get().credentials === credentials) {
         set({ error: error instanceof Error ? error.message : t("error.refreshRoom") });
@@ -97,19 +100,28 @@ export const useMultiplayerStore = create<MultiplayerState>((set, get) => ({
     }
   },
   publish: async (type, payload) => {
-    const { credentials, session } = get();
-    if (!credentials || !session) return;
-    try {
-      const update = await appendRoomEvent(API_URL, credentials, session.revision, type, payload);
-      if (get().credentials !== credentials) return;
-      const events = mergeEvents(get().events, update.events);
-      saveSession(credentials, update.session);
-      set({ session: update.session, events, error: null });
-    } catch (error) {
-      if (get().credentials !== credentials) return;
-      set({ error: error instanceof Error ? error.message : t("error.publishEvent") });
-      if (error instanceof MultiplayerApiError && error.status === 409) void get().refresh();
-    }
+    const credentials = get().credentials;
+    if (!credentials || !get().session) return;
+    const previous = publishQueues.get(credentials) ?? Promise.resolve();
+    const operation = previous.then(async () => {
+      const { session } = get();
+      if (get().credentials !== credentials || !session) return;
+      try {
+        const update = await appendRoomEvent(API_URL, credentials, session.revision, type, payload);
+        const current = get();
+        if (current.credentials !== credentials) return;
+        const events = mergeEvents(current.events, update.events);
+        const latest = current.session && current.session.revision > update.session.revision ? current.session : update.session;
+        saveSession(credentials, latest);
+        set({ session: latest, events, error: null });
+      } catch (error) {
+        if (get().credentials !== credentials) return;
+        if (error instanceof MultiplayerApiError && error.status === 409) await get().refresh();
+        if (get().credentials === credentials) set({ error: error instanceof Error ? error.message : t("error.publishEvent") });
+      }
+    });
+    publishQueues.set(credentials, operation);
+    await operation;
   },
   leave: () => {
     saveSession(null, null);

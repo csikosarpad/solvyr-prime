@@ -34,8 +34,13 @@ try {
     if ($method === 'POST' && $path === '/rooms') {
         $body = jsonBody();
         $name = playerName($body['playerName'] ?? null);
+        $unit = $body['unit'] ?? 'tank';
+        if (!in_array($unit, ['tank', 'soldier'], true)) {
+            throw new ApiException(400, 'Invalid unit.');
+        }
         $token = bin2hex(random_bytes(32));
-        $setup = json_encode(['seed' => random_int(1, 999999999), 'starterIndex' => 0], JSON_THROW_ON_ERROR);
+        $setup = json_encode(['seed' => random_int(1, 999999999), 'starterIndex' => 0,
+            'units' => ['P1' => $unit, 'P2' => 'tank']], JSON_THROW_ON_ERROR);
         $code = '';
         for ($attempt = 0; $attempt < 5; $attempt++) {
             $code = newRoomCode();
@@ -66,6 +71,10 @@ try {
     if (preg_match('#^/rooms/([A-Z0-9]{6})/join$#', $path, $matches) && $method === 'POST') {
         $body = jsonBody();
         $name = playerName($body['playerName'] ?? null);
+        $unit = $body['unit'] ?? 'tank';
+        if (!in_array($unit, ['tank', 'soldier'], true)) {
+            throw new ApiException(400, 'Invalid unit.');
+        }
         $token = bin2hex(random_bytes(32));
         $pdo->beginTransaction();
         $room = roomByCode($pdo, $matches[1], true);
@@ -73,8 +82,10 @@ try {
             throw new ApiException(409, 'Room is no longer waiting for a player.');
         }
         $revision = (int) $room['revision'] + 1;
-        $pdo->prepare('UPDATE rooms SET guest_name = :name, guest_token_hash = :token, status = \'ready\', revision = :revision WHERE id = :id')
-            ->execute(['name' => $name, 'token' => hash('sha256', $token), 'revision' => $revision, 'id' => $room['id']]);
+        $setup = json_decode($room['setup'], true, 32, JSON_THROW_ON_ERROR);
+        $setup['units'] = ['P1' => $setup['units']['P1'] ?? 'tank', 'P2' => $unit];
+        $pdo->prepare('UPDATE rooms SET guest_name = :name, guest_token_hash = :token, setup = :setup, status = \'ready\', revision = :revision WHERE id = :id')
+            ->execute(['name' => $name, 'token' => hash('sha256', $token), 'setup' => json_encode($setup, JSON_THROW_ON_ERROR), 'revision' => $revision, 'id' => $room['id']]);
         $pdo->prepare('INSERT INTO room_events (room_id, revision, player_id, event_type, payload) VALUES (:room, :revision, \'P2\', \'player_joined\', :payload)')
             ->execute(['room' => $room['id'], 'revision' => $revision, 'payload' => json_encode(['name' => $name], JSON_THROW_ON_ERROR)]);
         $pdo->commit();
@@ -114,7 +125,7 @@ try {
         $allowedStatuses = match ($type) {
             'match_started' => ['ready', 'finished'],
             'match_finished' => ['playing'],
-            'move', 'fire' => ['playing'],
+            'move', 'hover', 'fire' => ['playing'],
             'upgrade_purchased' => ['finished'],
             default => [],
         };

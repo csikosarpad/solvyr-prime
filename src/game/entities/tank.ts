@@ -2,15 +2,20 @@ import { BASE_STATS, type TankStats } from "../data/upgrades";
 import type { Vec2 } from "../physics/ballistics";
 import { regenShield, resolveDamage } from "../systems/damage";
 import type { TerrainMask } from "../terrain/mask";
+import type { UnitAppearance } from "../state/playerUnits";
 
 export const MOVE_BUDGET = BASE_STATS.moveBudget;
 const MOVE_STEP = 2;
 const MAX_CLIMB = 4;
 const BARREL_LENGTH = 16;
 const BARREL_PIVOT_HEIGHT = 10;
+export const MAX_HOVER_HEIGHT = 60;
+const DESCENT_COST = 0.25;
 
 export interface Tank {
   id: string;
+  unit: UnitAppearance;
+  hovering: boolean;
   x: number;
   /** A talajszint (a tank alja). */
   y: number;
@@ -29,9 +34,13 @@ export interface Tank {
   stats: TankStats;
 }
 
-export function createTank(id: string, x: number, color: number, angle: number, stats: TankStats = BASE_STATS): Tank {
+export function createTank(
+  id: string, x: number, color: number, angle: number, stats: TankStats = BASE_STATS, unit: UnitAppearance = "tank",
+): Tank {
   return {
     id,
+    unit,
+    hovering: false,
     x,
     y: 0,
     hp: stats.maxHp,
@@ -50,7 +59,11 @@ export const isAlive = (t: Tank) => t.hp > 0;
 
 /** A tankot a talajra igazítja (indításkor és rombolás után). */
 export function settleTank(tank: Tank, mask: TerrainMask): void {
-  tank.y = mask.surfaceY(tank.x);
+  const ground = mask.surfaceY(tank.x);
+  if (!tank.hovering || tank.y >= ground) {
+    tank.y = ground;
+    tank.hovering = false;
+  }
 }
 
 /** Egy lépés a mozgáskeret terhére; fal vagy pályaszél megállítja. Igaz, ha mozdult. */
@@ -59,10 +72,34 @@ export function moveTank(tank: Tank, dir: -1 | 1, mask: TerrainMask): boolean {
   const nx = tank.x + dir * MOVE_STEP;
   if (nx < 8 || nx > mask.width - 8) return false;
   const ny = mask.surfaceY(nx);
+  if (tank.hovering) {
+    if (ny < tank.y || ny - tank.y > MAX_HOVER_HEIGHT) return false;
+    if (tank.moveLeft - MOVE_STEP < (ny - tank.y) * DESCENT_COST) return false;
+    tank.x = nx;
+    tank.moveLeft -= MOVE_STEP;
+    if (ny === tank.y) tank.hovering = false;
+    return true;
+  }
   if (tank.y - ny > MAX_CLIMB) return false;
   tank.x = nx;
   tank.y = ny;
   tank.moveLeft -= MOVE_STEP;
+  return true;
+}
+
+/** Vertical travel uses one point per pixel up and one quarter point per pixel down. */
+export function hoverTank(tank: Tank, dir: -1 | 1, mask: TerrainMask): boolean {
+  if (tank.unit !== "soldier") return false;
+  const ground = mask.surfaceY(tank.x);
+  const height = Math.max(0, ground - tank.y);
+  const available = dir === -1
+    ? Math.min(MAX_HOVER_HEIGHT - height, tank.y, (tank.moveLeft - height * DESCENT_COST) / (1 + DESCENT_COST))
+    : Math.min(height, tank.moveLeft / DESCENT_COST);
+  const distance = Math.min(MOVE_STEP, available);
+  if (distance <= 0) return false;
+  tank.y += dir * distance;
+  tank.moveLeft = Math.max(0, tank.moveLeft - distance * (dir === -1 ? 1 : DESCENT_COST));
+  tank.hovering = tank.y < ground;
   return true;
 }
 

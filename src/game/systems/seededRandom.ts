@@ -1,6 +1,9 @@
+import type { UnitChoices } from "../state/playerUnits";
+
 export interface MatchSetup {
   seed: number;
   starterIndex: number;
+  units?: UnitChoices;
 }
 
 /** Determinisztikus PRNG: azonos seed ugyanazt a meccs-időjárást adja minden kliensen. */

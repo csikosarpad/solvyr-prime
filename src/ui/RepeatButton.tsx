@@ -4,19 +4,24 @@ const FIRST_DELAY_MS = 350;
 
 interface RepeatButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
   onPress: () => void;
+  onRelease?: () => void;
   /** Nyomva tartáskor ennyi ms-onként ismétli a műveletet. */
   intervalMs?: number;
 }
 
 /** Gomb, amely nyomva tartva ismétel; a billentyűs aktiválás (Enter/szóköz) egyszer fut le. */
-export function RepeatButton({ onPress, intervalMs = 90, disabled, onPointerDown, ...rest }: RepeatButtonProps) {
+export function RepeatButton({ onPress, onRelease, intervalMs = 90, disabled, onPointerDown, ...rest }: RepeatButtonProps) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const action = useRef(onPress);
+  const release = useRef(onRelease);
   action.current = onPress;
+  release.current = onRelease;
 
   const stop = useCallback(() => {
-    if (timer.current !== null) clearTimeout(timer.current);
+    if (timer.current === null) return;
+    clearTimeout(timer.current);
     timer.current = null;
+    release.current?.();
   }, []);
 
   useEffect(() => stop, [stop]);
@@ -49,7 +54,10 @@ export function RepeatButton({ onPress, intervalMs = 90, disabled, onPointerDown
       onContextMenu={(e) => e.preventDefault()}
       // Az egér/érintés a pointerdown-ban már lefutott; a click csak a billentyűs aktiválás (detail 0).
       onClick={(e) => {
-        if (e.detail === 0) action.current();
+        if (e.detail === 0) {
+          action.current();
+          release.current?.();
+        }
       }}
     />
   );

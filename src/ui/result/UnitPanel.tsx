@@ -15,7 +15,8 @@ export function UnitPanel({ id, profile, presentation, filter = "all", editable,
   const name = usePlayerName();
   const label = opponent ? t("workshop.aiOpponent") : name(id);
   const fixedArmor = opponent?.fixedArmor ?? null;
-  const weapons = opponent ? unlockedWeapons(profile) : null;
+  const unit = presentation.illustrationLayout === "soldier" ? "soldier" : "tank";
+  const weapons = opponent ? unlockedWeapons(profile, unit) : null;
 
   return (
     <section
@@ -28,7 +29,7 @@ export function UnitPanel({ id, profile, presentation, filter = "all", editable,
       {opponent && <p className="unit-inactive-label">{t("workshop.readOnly")}</p>}
       <div className="player-upgrades-header">
         <div>
-          <span className="unit-domain">{presentation.displayName}</span>
+          <span className="unit-domain">{presentation.illustrationLayout === "soldier" ? t("units.soldier") : presentation.displayName}</span>
           <h3 id={`unit-${id}`}>{label}</h3>
         </div>
         {fixedArmor === null && (
@@ -75,7 +76,8 @@ export function UnitPanel({ id, profile, presentation, filter = "all", editable,
               <section className="unit-inventory-section">
                 <h4 className="weapon-list-title">{t("shop.weapons")}</h4>
                 <div className="upgrade-list weapon-upgrade-list">
-                  {WEAPONS.filter((definition) => weapons ? weapons.includes(definition.id) : definition.cost > 0).map((definition) => (
+                  {WEAPONS.filter((definition) => definition.unit === unit &&
+                    (weapons ? weapons.includes(definition.id) : definition.cost > 0)).map((definition) => (
                     <WeaponRow
                       key={definition.id}
                       playerId={id}

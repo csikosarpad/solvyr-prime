@@ -1,5 +1,7 @@
 import { useGameStore, type AiOpponentView } from "@/game/state/gameStore";
 import { armorTint, markingColor, usePlayerColors } from "@/game/state/playerColors";
+import { usePlayerUnits } from "@/game/state/playerUnits";
+import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import type { WorkshopFilter } from "./result/result.types";
 import { getUnitPresentation } from "./result/unitPresentation";
 import { UnitPanel } from "./result/UnitPanel";
@@ -16,6 +18,9 @@ interface ShopProps {
 export function Shop({ filter = "all", editablePlayerId, disabled = false, dimInactive = false, opponent = null }: ShopProps) {
   const profiles = useGameStore((s) => s.profiles);
   const colors = usePlayerColors();
+  const units = usePlayerUnits((state) => state.units);
+  const tanks = useGameStore((state) => state.tanks);
+  const online = useMultiplayerStore((state) => state.credentials !== null);
 
   return (
     <div className="shop-players">
@@ -27,7 +32,8 @@ export function Shop({ filter = "all", editablePlayerId, disabled = false, dimIn
             id={ai ? "AI" : id}
             profile={ai?.profile ?? profile}
             presentation={id === "P1" || id === "P2"
-              ? getUnitPresentation(id, "ground", markingColor(id, colors), colors.armorColors[id], armorTint(id, colors))
+              ? getUnitPresentation(id, "ground", markingColor(id, colors), colors.armorColors[id], armorTint(id, colors),
+                online ? tanks.find((tank) => tank.id === id)?.unit ?? "tank" : units[id])
               : getUnitPresentation(id)}
             filter={filter}
             editable={!ai && (editablePlayerId === undefined || editablePlayerId === id)}

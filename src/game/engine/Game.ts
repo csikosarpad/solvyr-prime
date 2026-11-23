@@ -2,10 +2,13 @@ import { Application, Assets, ColorMatrixFilter, Container, Graphics, Sprite, ty
 import { GlowFilter } from "pixi-filters";
 import { TerrainBloomFilter } from "./TerrainBloomFilter";
 import { bloomSettings } from "./bloomQuality";
-import tankBodyUrl from "@/game/assets/tank-body.svg?url";
-import tankBarrelUrl from "@/game/assets/tank-barrel.svg?url";
-import tankMarkingsUrl from "@/game/assets/tank-markings.svg?url";
-import { tankArmorLayers } from "@/game/assets/tankArmorLayers";
+import tankBodyUrl from "@/game/assets/tank/tank-body.svg?url";
+import tankBarrelUrl from "@/game/assets/tank/tank-barrel.svg?url";
+import tankMarkingsUrl from "@/game/assets/tank/tank-markings.svg?url";
+import soldierBodyUrl from "@/game/assets/soldier/soldier-body.svg?url";
+import soldierMarkingsUrl from "@/game/assets/soldier/soldier-markings.svg?url";
+import soldierWeaponUrl from "@/game/assets/soldier/soldier-weapon.svg?url";
+import { tankArmorLayers } from "@/game/assets/tank/tankArmorLayers";
 import forgeReactorUrl from "@/game/assets/forge-reactor.png?url";
 import habitatUrl from "@/game/assets/buildings/habitat.png?url";
 import labUrl from "@/game/assets/buildings/research-lab.png?url";
@@ -43,6 +46,7 @@ import {
   barrelTip,
   createTank,
   explosionDamage,
+  hoverTank,
   isAlive,
   moveTank,
   regenTankShield,
@@ -67,6 +71,7 @@ import { useMultiplayerStore } from "@/game/state/multiplayerStore";
 import { useCommandStore } from "@/game/state/commandStore";
 import { playerName } from "@/game/state/playerNames";
 import { armorColorMatrix, armorTint, markingColor, playerAccent, tankTint, usePlayerColors } from "@/game/state/playerColors";
+import { usePlayerUnits } from "@/game/state/playerUnits";
 import { useAiSettings } from "@/game/state/aiSettings";
 import { useCampaignStore } from "@/game/state/campaignStore";
 import type { MatchMode } from "@/game/state/gameStore";
@@ -151,6 +156,7 @@ const DRAG_GRAB_RADIUS = 64;
 interface TankView {
   root: Container;
   barrel: Sprite;
+  soldierLayers?: Sprite[];
   anim: BarrelState;
   glow: GlowFilter;
   paint?: ColorMatrixFilter;
@@ -174,6 +180,9 @@ export class Game {
     chassis: Texture;
     armor: Texture;
     details: Texture;
+    soldierBody: Texture;
+    soldierMarkings: Texture;
+    soldierWeapon: Texture;
   } | null = null;
   private shellGfx = new Graphics();
   private shellGlow = new Sprite();
@@ -193,6 +202,7 @@ export class Game {
   private theme: Theme = DEFAULT_THEME;
   private particles = new ParticleSystem(Math.random, this.theme.fx);
   private tanks: Tank[] = [];
+  private landingTank: Tank | null = null;
   /** A meccsek között megmaradó fejlődés (meta-progresszió). */
   private profiles: Record<string, Profile> = loadProfiles(["P1", "P2"]);
   private aiProfile: Profile = loadProfiles(["AI"]).AI!;
@@ -242,7 +252,7 @@ export class Game {
   }[] = [];
   private groundFire: GroundFireRenderer | null = null;
   /** A lézersugár rövid, halványuló visszajelzése. */
-  private laserBeam: { from: Vec2; to: Vec2; ttl: number } | null = null;
+  private laserBeam: { from: Vec2; to: Vec2; ttl: number; core: number; glow: number } | null = null;
   private beamGfx = new Graphics();
   private acc = 0;
   private destroyed = false;
@@ -254,13 +264,16 @@ export class Game {
     host.appendChild(this.app.canvas);
     this.setupDragAim(this.app.canvas);
 
-    const [body, barrel, markings, chassis, armor, details, reactor, habitat, lab, radar, defense, foundry, fxTextures, groundFlame] = await Promise.all([
+    const [body, barrel, markings, chassis, armor, details, soldierBody, soldierMarkings, soldierWeapon, reactor, habitat, lab, radar, defense, foundry, fxTextures, groundFlame] = await Promise.all([
       Assets.load<Texture>({ src: tankBodyUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankBarrelUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankMarkingsUrl, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankArmorLayers.chassis, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankArmorLayers.armor, data: { resolution: 3 } }),
       Assets.load<Texture>({ src: tankArmorLayers.details, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: soldierBodyUrl, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: soldierMarkingsUrl, data: { resolution: 3 } }),
+      Assets.load<Texture>({ src: soldierWeaponUrl, data: { resolution: 3 } }),
       Assets.load<Texture>(forgeReactorUrl),
       Assets.load<Texture>(habitatUrl),
       Assets.load<Texture>(labUrl),
@@ -279,7 +292,7 @@ export class Game {
         this.lockTarget();
       }
     });
-    this.tankTextures = { body, barrel, markings, chassis, armor, details };
+    this.tankTextures = { body, barrel, markings, chassis, armor, details, soldierBody, soldierMarkings, soldierWeapon };
     this.objectiveGraphics.setReactorTexture(reactor);
     this.objectiveGraphics.setHabitatTexture(habitat);
     this.objectiveGraphics.setLabTexture(lab);
@@ -425,10 +438,12 @@ export class Game {
         : [];
     this.buildingDecor.draw(this.sector.id, this.terrain.mask, this.strategicObjectives);
     const colors = usePlayerColors.getState();
+    const units = this.multiplayer ? (matchSetup.units ?? { P1: "tank", P2: "tank" }) : usePlayerUnits.getState().units;
     this.tanks = [
-      createTank("P1", width * 0.12, markingColor("P1", colors), 45, this.statsFor("P1")),
-      createTank("P2", width * 0.88, markingColor("P2", colors), 135, this.statsFor("P2")),
+      createTank("P1", width * 0.12, markingColor("P1", colors), 45, this.statsFor("P1"), units.P1),
+      createTank("P2", width * 0.88, markingColor("P2", colors), 135, this.statsFor("P2"), units.P2),
     ];
+    this.landingTank = null;
     this.tanks.forEach((t) => settleTank(t, this.terrain!.mask));
     this.buildTankViews();
     // Az első lövő meccsenként változik, hogy ne legyen fix kezdő előny.
@@ -603,13 +618,27 @@ export class Game {
       return sprite;
     };
     for (const t of this.tanks) {
-      const barrel = new Sprite(textures.barrel);
+      const soldier = t.unit === "soldier";
+      const barrel = new Sprite(soldier ? textures.soldierWeapon : textures.barrel);
       barrel.anchor.set(0, 0.5);
       barrel.scale.y = TANK_VISUAL_SCALE;
       const root = new Container();
       root.addChild(barrel);
       let paint: ColorMatrixFilter | undefined;
-      if (t.id !== "P1" && t.id !== "P2") {
+      let soldierLayers: Sprite[] | undefined;
+      if (soldier && (t.id === "P1" || t.id === "P2")) {
+        const body = bodySprite(textures.soldierBody);
+        const markings = bodySprite(textures.soldierMarkings);
+        body.scale.y = 1.8;
+        markings.scale.y = 1.8;
+        paint = new ColorMatrixFilter();
+        paint.matrix = armorColorMatrix(armorTint(t.id, colors));
+        body.filters = [paint];
+        barrel.filters = [paint];
+        markings.tint = tankTint(t.color);
+        root.addChild(body, markings);
+        soldierLayers = [body, markings];
+      } else if (t.id !== "P1" && t.id !== "P2") {
         root.addChild(bodySprite(textures.body));
       } else {
         const armor = bodySprite(textures.armor);
@@ -620,9 +649,11 @@ export class Game {
         armor.filters = [paint];
         root.addChild(bodySprite(textures.chassis), armor, bodySprite(textures.details));
       }
-      const markings = bodySprite(textures.markings);
-      markings.tint = tankTint(t.color);
-      root.addChild(markings);
+      if (!soldier) {
+        const markings = bodySprite(textures.markings);
+        markings.tint = tankTint(t.color);
+        root.addChild(markings);
+      }
       const glow = new GlowFilter({
         color: playerAccent(t.color),
         distance: coarsePointer ? 3 : 4,
@@ -633,7 +664,7 @@ export class Game {
       });
       root.filters = [glow];
       this.tankLayer.addChild(root);
-      this.tankViews.set(t.id, { root, barrel, glow, paint, anim: { angle: t.angle, recoil: 0 } });
+      this.tankViews.set(t.id, { root, barrel, soldierLayers, glow, paint, anim: { angle: t.angle, recoil: 0 } });
     }
   }
 
@@ -701,7 +732,11 @@ export class Game {
       session?.status !== "finished"
     )
       return;
-    const setup = { seed: Math.floor(Math.random() * 1_000_000), starterIndex: this.nextStarter };
+    const setup: MatchSetup = {
+      seed: Math.floor(Math.random() * 1_000_000),
+      starterIndex: this.nextStarter,
+      units: { P1: this.tanks[0]!.unit, P2: this.tanks[1]!.unit },
+    };
     void useMultiplayerStore.getState().publish("match_started", { setup, profiles: this.profiles });
   }
 
@@ -773,7 +808,7 @@ export class Game {
       zone.secondsLeft = Math.max(0, zone.secondsLeft - dt);
       for (const tank of this.tanks) {
         const previous = zone.exposure.get(tank.id);
-        if (!isAlive(tank) || Math.abs(tank.x - zone.x) > zone.radius) {
+        if (!isAlive(tank) || tank.hovering || Math.abs(tank.x - zone.x) > zone.radius) {
           if (previous) previous.notified = false;
           continue;
         }
@@ -862,7 +897,7 @@ export class Game {
       this.terrain &&
       moveTankAvoidingFire(this.current, dir, this.terrain.mask, this.burnZones)
     ) {
-      this.audio?.moveTick();
+      this.playMove(this.current);
       this.syncStore();
       this.afterAi(AI_MOVE_STEP_MS, () => this.aiMove(dir, stepsLeft - 1));
       return;
@@ -890,7 +925,7 @@ export class Game {
     }
     if (!moveTankAvoidingFire(ai, escape.dir, this.terrain.mask, this.burnZones)) return;
     this.aiFireEscapeCooldown = AI_MOVE_STEP_MS / 1000;
-    this.audio?.moveTick();
+    this.playMove(ai);
     this.syncStore();
   }
 
@@ -900,10 +935,11 @@ export class Game {
     const shooter = this.current;
     const mask = this.terrain.mask;
     const options = this.weaponOptionsFor(shooter.id);
-    if (options.includes("laser")) {
+    const precision = options.includes("laser") ? "laser" : options.includes("pulse") ? "pulse" : null;
+    if (precision) {
       const angle = planLaserAngle(shooter, target, mask);
       if (angle !== null) {
-        this.scheduleAiShot("laser", angle, shooter.power);
+        this.scheduleAiShot(precision, angle, shooter.power);
         return;
       }
     }
@@ -916,7 +952,7 @@ export class Game {
     const plan = precise ?? this.aiBrain.decide(shooter, target, mask, wind, DEFAULT_WORLD.gravity);
     const angle = Math.round(plan?.angle ?? (this.aiId() === "P1" ? 45 : 135));
     const power = Math.round(plan?.power ?? shooter.stats.maxPower * 0.6);
-    let weapon: WeaponId = "standard";
+    let weapon: WeaponId = options[0]!;
     if (plan && options.length > 1) {
       const impact = simulateImpact(barrelTip({ ...shooter, angle }), angle, power, { gravity: DEFAULT_WORLD.gravity, wind }, mask, target);
       for (const option of options) {
@@ -1002,6 +1038,7 @@ export class Game {
       weaponOptions: this.weaponOptionsFor(this.turns.current),
       tanks: this.tanks.map((t) => ({
         id: t.id,
+        unit: t.unit,
         hp: t.hp,
         maxHp: t.stats.maxHp,
         shield: t.shield,
@@ -1065,17 +1102,60 @@ export class Game {
     if (this.turns.phase === "flying") {
       const dodger = this.humanDodger();
       if (dodger && moveTank(dodger, dir, this.terrain.mask)) {
-        this.audio?.moveTick();
+        this.playMove(dodger);
         this.syncStore();
       }
       return;
     }
+    if (this.landingTank === this.current) return;
     if (this.turns.inputLocked || this.isAiTurn()) return;
     if (moveTank(this.current, dir, this.terrain.mask)) {
-      this.audio?.moveTick();
+      this.playMove(this.current);
       this.lockTarget();
       this.syncStore();
     }
+
+  }
+
+  private playMove(unit: Tank): void {
+    if (unit.unit === "tank") this.audio?.moveTick();
+  }
+
+  hover(dir: -1 | 1): void {
+    if (!this.matchActive || !this.terrain || this.turns.inputLocked || this.isAiTurn() || !this.canControlCurrentTurn()) return;
+    if (this.multiplayer) {
+      void useMultiplayerStore.getState().publish("hover", { direction: dir });
+      return;
+    }
+    if (this.landingTank === this.current) return;
+    if (hoverTank(this.current, dir, this.terrain.mask)) {
+      this.lockTarget();
+      this.syncStore();
+    } else if (dir === -1 && this.current.hovering) {
+      this.landingTank = this.current;
+    }
+  }
+
+  land(): void {
+    if (!this.matchActive || !this.terrain || !this.canControlCurrentTurn() || this.turns.inputLocked ||
+      this.current.unit !== "soldier") return;
+    if (this.multiplayer) {
+      void useMultiplayerStore.getState().publish("hover", { direction: 0 });
+    } else if (this.current.hovering) {
+      this.landingTank = this.current;
+    }
+  }
+
+  private stepLanding(): void {
+    const tank = this.landingTank;
+    if (!tank || !this.terrain) return;
+    if (!hoverTank(tank, 1, this.terrain.mask)) {
+      const ground = this.terrain.mask.surfaceY(tank.x);
+      tank.y = Math.min(ground, tank.y + 2);
+      tank.hovering = tank.y < ground;
+    }
+    if (!tank.hovering) this.landingTank = null;
+    this.syncStore();
   }
 
   /** A lövedék repülése alatt kitérésre jogosult emberi tank (csak offline); különben null. */
@@ -1102,6 +1182,7 @@ export class Game {
   private launchShot(angle: number, power: number): void {
     if (!this.turns.fire()) return;
     const tank = this.current;
+    if (tank.hovering) this.landingTank = tank;
     tank.angle = angle;
     tank.power = power;
     useGameStore.getState().setAim(angle, power);
@@ -1130,26 +1211,33 @@ export class Game {
     if (!this.terrain) return;
     const targets = this.tanks.filter((t) => isAlive(t) && t.id !== tank.id);
     const result = traceHitscan(tip, angle, this.terrain.mask, targets, WORLD_HEIGHT);
-    this.laserBeam = { from: tip, to: result.pos, ttl: LASER_BEAM_TTL };
+    const pulse = this.activeShot?.weapon.id === "pulse";
+    this.laserBeam = {
+      from: tip, to: result.pos, ttl: LASER_BEAM_TTL,
+      core: pulse ? 0xe2ffff : 0xff8296, glow: pulse ? 0x29d9ff : 0xff2e4d,
+    };
     this.explode(result.pos.x, result.pos.y, result.hit);
   }
 
   /** Az adott játékos lövéshez használt, a készletében elérhető fegyver. */
   private weaponFor(id: string): WeaponDefinition {
-    const selected = this.selectedWeapons[id] ?? "standard";
-    return weaponById(this.weaponOptionsFor(id).includes(selected) ? selected : "standard");
+    const options = this.weaponOptionsFor(id);
+    const selected = this.selectedWeapons[id];
+    return weaponById(selected && options.includes(selected) ? selected : options[0]!);
   }
 
   /** A kampányellenfél felszerelése független a mentett játékosprofiloktól. */
   private weaponOptionsFor(id: string): WeaponId[] {
-    if (this.multiplayer) return ["standard"];
+    const unit = this.tanks.find((tank) => tank.id === id)?.unit ?? "tank";
+    if (this.multiplayer) return [unit === "soldier" ? "plasma" : "standard"];
     if (this.aiActive && id === this.aiId()) {
+      if (unit === "soldier") return ["plasma"];
       const specials = this.matchMode === "operation" ? this.campaignMission?.opponent.weapons
         : this.matchMode === "campaign" ? sectorById(this.sector.id).opponentWeapons
           : undefined;
       return ["standard", ...(specials ?? [])];
     }
-    return unlockedWeapons(this.profiles[id]);
+    return unlockedWeapons(this.profiles[id], unit);
   }
 
   /** Lövésenkénti fegyverválasztás a soron lévő játékosnak; csak feloldott fegyver választható. */
@@ -1167,7 +1255,8 @@ export class Game {
     if (this.matchActive && this.multiplayer) return;
     const profile = this.profiles[playerId];
     if (!profile) return;
-    const next = buyWeapon(profile, weaponId);
+    const unit = (playerId === "P1" || playerId === "P2") ? usePlayerUnits.getState().units[playerId] : "tank";
+    const next = buyWeapon(profile, weaponId, unit);
     if (!next) return;
     const profiles = { ...this.profiles, [playerId]: next };
     if (!this.saveProfiles(profiles)) {
@@ -1201,7 +1290,7 @@ export class Game {
     if (!ai || !isAlive(ai) || !this.terrain) return;
     if (Math.abs(ai.x - impactX) >= danger) return;
     if (!moveTankAvoidingFire(ai, dir, this.terrain.mask, this.burnZones)) return;
-    this.audio?.moveTick();
+    this.playMove(ai);
     this.syncStore();
     this.afterDodge(AI_MOVE_STEP_MS, () => this.aiDodgeStep(dir, impactX, danger));
   }
@@ -1278,7 +1367,7 @@ export class Game {
         this.syncStore();
         continue;
       }
-      if (event.type !== "move" && event.type !== "fire") {
+      if (event.type !== "move" && event.type !== "hover" && event.type !== "fire") {
         this.pendingMultiplayerEvents.shift();
         changed = true;
         continue;
@@ -1288,7 +1377,7 @@ export class Game {
         changed = true;
         continue;
       }
-      if (this.turns.inputLocked) break;
+      if (this.turns.inputLocked || this.landingTank) break;
 
       this.pendingMultiplayerEvents.shift();
       changed = true;
@@ -1299,8 +1388,18 @@ export class Game {
           this.terrain &&
           moveTank(this.current, direction, this.terrain.mask)
         ) {
-          this.audio?.moveTick();
+          this.playMove(this.current);
           this.lockTarget();
+        }
+        continue;
+      }
+      if (event.type === "hover") {
+        const direction = event.payload.direction;
+        if (direction === 0 && this.current.hovering) {
+          this.landingTank = this.current;
+        } else if ((direction === -1 || direction === 1) && this.terrain) {
+          if (hoverTank(this.current, direction, this.terrain.mask)) this.lockTarget();
+          else if (direction === -1 && this.current.hovering) this.landingTank = this.current;
         }
         continue;
       }
@@ -1483,6 +1582,7 @@ export class Game {
     this.acc += Math.min(frameDt, 0.1);
     while (this.acc >= FIXED_DT) {
       this.acc -= FIXED_DT;
+      this.stepLanding();
       this.stepAiFireEscape(FIXED_DT);
       this.stepBurnZones(FIXED_DT);
       this.stepShell();
@@ -1556,10 +1656,10 @@ export class Game {
       this.laserBeam = null;
       return;
     }
-    const { from, to, ttl } = this.laserBeam;
+    const { from, to, ttl, core, glow } = this.laserBeam;
     const alpha = Math.min(1, ttl / LASER_BEAM_TTL);
-    g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ width: 6, color: 0xff2e4d, alpha: alpha * 0.25, cap: "round" });
-    g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ width: 2, color: 0xff8296, alpha: alpha * 0.9, cap: "round" });
+    g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ width: 6, color: glow, alpha: alpha * 0.25, cap: "round" });
+    g.moveTo(from.x, from.y).lineTo(to.x, to.y).stroke({ width: 2, color: core, alpha: alpha * 0.9, cap: "round" });
   }
 
   /** Vékony (3 px) csík a tank fölött; a háttér a hiányzó részt jelzi. */
@@ -1590,6 +1690,8 @@ export class Game {
       incendiary: { core: 0xffedb5, glow: 0xff792e, scale: 1.1 },
       laser: { core: 0xff8296, glow: 0xff2e4d, scale: 1 },
       homing: { core: 0xe2ffe8, glow: 0x70edb0, scale: 1.05 },
+      plasma: { core: 0xe2ffff, glow: 0x29d9ff, scale: 0.9 },
+      pulse: { core: 0xe2ffff, glow: 0x29d9ff, scale: 1 },
     };
     // A becsapódás után elhalványuló csík is az eredeti lövés stílusát tartja meg.
     const boost = weapon.usesTankStats ? Math.min(0.75, Math.max(0, damage - 1)) : 0;
@@ -1627,6 +1729,9 @@ export class Game {
       // Cénzás közben a soron lévő tank csőve a csúszó értékét követi.
       const target = aiming && t.id === this.turns.current ? aimAngle : t.angle;
       view.anim = stepBarrel(view.anim, target, dt);
+      for (const layer of view.soldierLayers ?? []) {
+        layer.scale.x = view.anim.angle > 90 ? -TANK_VISUAL_SCALE : TANK_VISUAL_SCALE;
+      }
       const rad = (view.anim.angle * Math.PI) / 180;
       view.barrel.rotation = -rad;
       view.barrel.position.set(
